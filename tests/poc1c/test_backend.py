@@ -32,6 +32,8 @@ class BackendTests(unittest.TestCase):
         self.assertIn("sub a0, t0, a1", asm)
         self.assertEqual(1, state["temporary_pool_high_water_mark"])
         self.assertEqual(0, state["spill_count"])
+        self.assertEqual("a0", state["abi_fixed_locations"]["arguments"]["a"])
+        self.assertEqual("a1", state["abi_fixed_locations"]["arguments"]["b"])
         self.assertEqual("a0", state["abi_fixed_locations"]["return"])
 
     def test_mul_rejected(self):
@@ -44,6 +46,23 @@ class BackendTests(unittest.TestCase):
         ir = copy.deepcopy(self.ir)
         ir["function"]["target"] = "host-c"
         with self.assertRaisesRegex(backend.Poc1CError, "E_SPECIR_TARGET_LEAK"):
+            backend.validate_codegen_specir(ir)
+
+    def test_temporary_pool_exhaustion_rejected(self):
+        pool = backend.RegisterPool()
+        for _ in range(7):
+            pool.acquire()
+        with self.assertRaisesRegex(backend.Poc1CError, "E_TARGET_OUT_OF_REGISTERS"):
+            pool.acquire()
+
+    def test_ninth_argument_rejected(self):
+        ir = copy.deepcopy(self.ir)
+        template = copy.deepcopy(ir["function"]["inputs"][0])
+        for i in range(2, 9):
+            item = copy.deepcopy(template)
+            item["id"] = f"x{i}"
+            ir["function"]["inputs"].append(item)
+        with self.assertRaisesRegex(backend.Poc1CError, "E_TARGET_ABI"):
             backend.validate_codegen_specir(ir)
 
 
