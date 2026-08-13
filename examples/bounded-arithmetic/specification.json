@@ -1,0 +1,40 @@
+{
+  "specification_version": "spec2exec.specification/v0.1",
+  "artifact_id": "SPEC-ARITH-001",
+  "acceptance": {
+    "status": "accepted-for-poc",
+    "authority_role": "project-owner"
+  },
+  "function": {
+    "id": "REQ-ARITH-001",
+    "name": "safe_add",
+    "inputs": [
+      {
+        "clause_id": "REQ-ARITH-001-A",
+        "name": "a",
+        "type": "i32",
+        "range": {"min": 0, "max": 100}
+      },
+      {
+        "clause_id": "REQ-ARITH-001-B",
+        "name": "b",
+        "type": "i32",
+        "range": {"min": 0, "max": 100}
+      }
+    ],
+    "output": {
+      "clause_id": "REQ-ARITH-001-R",
+      "name": "result",
+      "type": "i32",
+      "range": {"min": 0, "max": 200}
+    },
+    "behavior": {
+      "clause_id": "REQ-ARITH-001-BEH",
+      "expr": {"op": "+", "args": ["a", "b"]}
+    },
+    "overflow_behavior": {
+      "clause_id": "REQ-ARITH-001-OVF",
+      "mode": "forbidden"
+    }
+  }
+}
