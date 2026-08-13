@@ -1,0 +1,24 @@
+name: POC-0
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  deterministic-hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          python3 --version
+          cc --version | head -n 1
+
+      - name: Run negative and positive verifier tests
+        run: make test
+
+      - name: Build and execute POC-0
+        run: make poc0
