@@ -3,13 +3,16 @@
 - **Status:** Active
 - **POC-0:** complete
 - **POC-1A:** complete and evidence-hardened
-- **POC-1B:** complete for the initial host-C experiment
-- **Next deterministic experiment:** POC-2 — State Machine
+- **POC-1B:** complete for the initial host-C reference experiment
+- **Next architecture experiment:** POC-1C — First Native Target Backend
+- **Next semantic experiment:** POC-2 — State Machine
 - **Parallel research:** A0 — Adversarial Semantic Resolution
 
 ## Objective
 
 Phase 1 tests the deterministic lower half without connecting AI to executable generation.
+
+Following RFC 0009, the primary architecture is now:
 
 ```text
 Accepted Specification
@@ -18,12 +21,22 @@ SpecIR
       ↓
 Deterministic Verification
       ↓
-Preservation Evidence
+Verified SpecIR
       ↓
-Lowering / Compiler
+Target Code Generation
       ↓
-Executable
+Target Assembly
+      ↓
+Assembler
+      ↓
+Object
+      ↓
+Linker
+      ↓
+Executable / Firmware
 ```
+
+C and LLVM are optional reference/comparison paths rather than mandatory architecture stages.
 
 ## POC-1A — Bounded Integer Semantics
 
@@ -36,7 +49,7 @@ P2.no_signed_overflow_ub
 P2.no_unsigned_wraparound
 ```
 
-P3-A now uses a model-scoped 32-bit bit-vector claim instead of the earlier bare `PROVEN` wording:
+P3-A uses a model-scoped 32-bit bit-vector claim:
 
 ```text
 P3A.restricted_emitted_expression_equivalence = SOLVER_PROVEN
@@ -53,13 +66,11 @@ Q3 result_equivalence       UNSAT
 Q4 harness_sensitivity      SAT
 ```
 
-P2 interval analysis and P3-A bit-vector safety cross-validate each other. Generated C uses type-aware integer literals and exact SpecIR/C hashes bind evidence to the compiled source.
-
-For `safe_add`, P4 still executes all 10,201 accepted input pairs and records `TESTED_EXHAUSTIVE`.
+P2 interval analysis and P3-A bit-vector safety cross-validate each other. For `safe_add`, P4 executes all 10,201 accepted input pairs and records `TESTED_EXHAUSTIVE`.
 
 ## POC-1B — C Semantic and Optimization Preservation
 
-POC-1B adds an independent C-aware path using CBMC.
+POC-1B adds an independent C-aware reference path using CBMC.
 
 ```text
 function: safe_add_sub
@@ -80,11 +91,43 @@ P4 exhaustive cases           40,401
 POC-1B result                 PASS
 ```
 
-The optimization observation has no semantic proof status by itself. It demonstrates that the original add/sub structure disappeared while contract-level evidence and exhaustive behavior checks remained available.
+This remains valid reference-path evidence. It does not make generated C a mandatory final architecture stage. See RFC 0008 and RFC 0009.
 
-This supports only a narrow result: for the current straight-line bounded-integer example, traceability does not require one-to-one node identity.
+## POC-1C — First Native Target Backend
 
-POC-1B does not claim compiler correctness, machine-code equivalence, target ABI correctness, or hardware semantics. See RFC 0008.
+POC-1C should prove that the architecture can bypass a high-level-language compiler and generate target assembly directly from verified SpecIR.
+
+Minimal objective:
+
+```text
+Verified SpecIR
+      ↓
+Target Code Generator
+      ↓
+Target Assembly
+      ↓
+Existing Assembler
+      ↓
+Object
+      ↓
+Linker
+      ↓
+Executable / Firmware Artifact
+```
+
+POC-1C should remain intentionally small. The first backend should reuse the current bounded-arithmetic semantic core and should not introduce state, timing, memory aliasing, or hardware-register semantics at the same time.
+
+Required evidence should distinguish:
+
+```text
+SpecIR semantic verification
+target-code-generation preservation evidence
+assembler/object artifact identity
+linker/image construction evidence
+runtime or emulator behavior when practical
+```
+
+The target ISA/profile remains an explicit selection decision rather than an assumption baked into SpecIR.
 
 ## A0 — Semantic Resolution
 
@@ -92,7 +135,9 @@ A0 remains independent from executable generation. The benchmark/scoring harness
 
 ## POC-2 — State Machine
 
-POC-2 should introduce persistent finite-state behavior and measure transition correctness, invariant burden, solver scaling, evidence coverage, and SpecIR maintenance cost without simultaneously adding timing or hardware semantics.
+POC-2 remains the next semantic-complexity experiment. It should introduce persistent finite-state behavior and measure transition correctness, invariant burden, solver scaling, evidence coverage, and SpecIR maintenance cost without simultaneously adding timing or hardware semantics.
+
+POC-1C and POC-2 answer different questions: POC-1C validates the native target architecture; POC-2 validates behavioral-state semantics.
 
 ## POC-3 — Thermal Motor Protection
 
@@ -100,4 +145,4 @@ POC-3 remains the first domain-significant embedded/control experiment, adding p
 
 ## Falsification orientation
 
-The project should continue measuring engineering effort, defect detection, traceability, verification coverage, change propagation, and maintenance burden. A technically working pipeline is not sufficient evidence of value if its specification/verifier complexity outweighs the benefits.
+The project should continue measuring engineering effort, defect detection, traceability, verification coverage, change propagation, and maintenance burden. A technically working pipeline is not sufficient evidence of value if its specification/verifier/backend complexity outweighs the benefits.
