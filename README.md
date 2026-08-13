@@ -30,13 +30,13 @@ Linker
 Executable / Firmware
 ```
 
-Native target code generation is the primary architecture path. C and LLVM are optional reference or comparison paths, not mandatory stages.
+Native target code generation is the primary architecture path. C and LLVM are optional reference/comparison paths, not mandatory stages.
 
-`Lowering` remains a transformation term, not a required top-level component. A named TargetIR/MachineIR is optional, while machine-oriented backend bookkeeping must still be explicit and testable. It is promoted to a named representation when register/liveness/control-flow complexity justifies it.
+`Lowering` remains a transformation term, not a required top-level component. A named TargetIR/MachineIR is optional, while machine-oriented backend bookkeeping must remain explicit and testable.
 
-The assembler and linker remain explicit downstream trust/evidence boundaries; a SpecIR-to-assembly semantic-preservation claim does not automatically prove the linked executable.
+Target-specific information is selected through a **Target Profile** after SpecIR verification. Optional **Platform Profiles** carry SoC/board memory and image-layout details. Neither is part of machine-independent SpecIR.
 
-See `rfcs/0009-native-target-code-generation.md` for the architecture decision and hostile-review hardening.
+The native evidence path keeps SpecIR→assembly, assembly→object, object→linked executable, and runtime observation as separate claims.
 
 ## Status
 
@@ -44,8 +44,9 @@ See `rfcs/0009-native-target-code-generation.md` for the architecture decision a
 POC-0     COMPLETE
 POC-1A    COMPLETE
 POC-1B    COMPLETE
-POC-1C.A  NEXT-ARCH    RV32I native pipeline proof
-POC-1C.B  FOLLOW-UP    native backend stress
+POC-1C.A  NEXT-ARCH    RV32I native pipeline validation
+POC-1C.B  FOLLOW-UP    RV32I backend stress
+POC-1D    PLANNED      cross-target Cortex-M3 / ARMv7-M
 POC-2     NEXT-SEMANTIC
 POC-3     PLANNED
 A0        PARALLEL
@@ -53,38 +54,22 @@ A0        PARALLEL
 
 POC-1A and POC-1B remain valid C-based reference-path experiments.
 
-POC-1C selects **RISC-V RV32I base integer** as the first native target profile, with M/C/A/F/D extensions excluded from the initial experiment. This target choice is not embedded into machine-independent SpecIR.
+POC-1C selects **RISC-V RV32I base integer** as the first native Target Profile, with M/C/A/F/D extensions excluded from the initial experiment.
 
-POC-1C.A will test:
+POC-1C.A initially supports only target operations that are explicitly implemented for that profile. The first whitelist is `add` and `sub`; unsupported operations such as `mul` fail closed. The backend uses a bounded temporary-register pool, fails on register exhaustion, enforces a narrow integer ABI boundary, and emits machine-readable backend bookkeeping evidence.
 
-```text
-Verified SpecIR
-    ↓
-RV32I Target Code Generator
-    ↓
-RV32I Assembly
-    ↓
-Unmodified Assembler
-    ↓
-ELF32 Object
-    ↓
-Unmodified Linker
-    ↓
-RV32I ELF
-    ↓
-Emulator / Runtime Evidence
-```
+POC-1C.B later stresses live-value pressure/spilling, a single branch/merge, and a single non-recursive call to determine whether an explicit TargetIR/MachineIR becomes justified.
 
-The first code generator must use a minimal register-resource model rather than a hard-coded assembly template for one example.
-
-POC-1C.B will later stress multiple live values/spilling, a single branch/merge, and a single non-recursive function call. Those experiments determine when an explicit TargetIR/MachineIR becomes justified.
+POC-1D is planned as the first cross-target portability experiment using the same verified SpecIR with a **Cortex-M3 / ARMv7-M** Target Profile. **Cortex-M4 / ARMv7E-M** follows later, with FPU/float-ABI choices declared explicitly when used.
 
 ## Key documents
 
 ```text
 docs/architecture.md
 docs/phase1-plan.md
+docs/target-profiles.md
 rfcs/0001-spec2exec-architecture.md
+rfcs/0006-semantic-preservation-and-evidence-model.md
 rfcs/0009-native-target-code-generation.md
 ```
 
