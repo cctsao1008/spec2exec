@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec2exec.dev/schema/specir-v0.1.schema.json",
+  "title": "Spec2Exec Experimental SpecIR v0.1",
+  "type": "object",
+  "required": ["specir_version", "function"],
+  "properties": {
+    "specir_version": {"const": "spec2exec.specir/v0.1"},
+    "function": {
+      "type": "object",
+      "required": ["id", "name", "target", "trace", "inputs", "output", "overflow_behavior", "overflow_trace", "preconditions", "postconditions", "body"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "target": {"const": "host-c"},
+        "trace": {"$ref": "#/$defs/trace"},
+        "inputs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/value"}},
+        "output": {"$ref": "#/$defs/value"},
+        "overflow_behavior": {"const": "forbidden"},
+        "overflow_trace": {"$ref": "#/$defs/trace"},
+        "preconditions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/contract"}},
+        "postconditions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/contract"}},
+        "body": {
+          "type": "object",
+          "required": ["kind", "expr", "trace"],
+          "properties": {
+            "kind": {"const": "expr"},
+            "expr": {},
+            "trace": {"$ref": "#/$defs/trace"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "trace": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "range": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {"min": {"type": "integer"}, "max": {"type": "integer"}},
+      "additionalProperties": false
+    },
+    "value": {
+      "type": "object",
+      "required": ["id", "type", "range", "trace"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"enum": ["i32", "u32"]},
+        "range": {"$ref": "#/$defs/range"},
+        "trace": {"$ref": "#/$defs/trace"}
+      },
+      "additionalProperties": false
+    },
+    "contract": {
+      "type": "object",
+      "required": ["id", "trace", "expr"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "trace": {"$ref": "#/$defs/trace"},
+        "expr": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}
