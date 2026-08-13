@@ -30,13 +30,7 @@ Linker
 Executable / Firmware
 ```
 
-Native target code generation is the primary architecture path. C and LLVM are optional reference/comparison paths, not mandatory stages.
-
-`Lowering` remains a transformation term, not a required top-level component. A named TargetIR/MachineIR is optional, while machine-oriented backend bookkeeping must remain explicit and testable.
-
-Target-specific information is selected through a **Target Profile** after SpecIR verification. Optional **Platform Profiles** carry SoC/board memory and image-layout details. Neither is part of machine-independent SpecIR.
-
-The native evidence path keeps SpecIR→assembly, assembly→object, object→linked executable, and runtime observation as separate claims.
+Native target code generation is the primary path. C and LLVM remain optional reference/comparison paths. Target-specific information is selected after SpecIR verification through Target Profiles; SoC/board details belong to optional Platform Profiles.
 
 ## Status
 
@@ -44,34 +38,34 @@ The native evidence path keeps SpecIR→assembly, assembly→object, object→li
 POC-0     COMPLETE
 POC-1A    COMPLETE
 POC-1B    COMPLETE
-POC-1C.A  NEXT-ARCH    RV32I native pipeline validation
-POC-1C.B  FOLLOW-UP    RV32I backend stress
-POC-1D    PLANNED      cross-target Cortex-M3 / ARMv7-M
+POC-1C.A  NEXT-ARCH    Pico 2 Hazard3 / RV32I native validation
+POC-1C.B  FOLLOW-UP    Hazard3 backend stress
+POC-1D    PLANNED      Pico 2 Cortex-M33 / Armv8-M cross-target validation
 POC-2     NEXT-SEMANTIC
 POC-3     PLANNED
 A0        PARALLEL
 ```
 
-POC-1A and POC-1B remain valid C-based reference-path experiments.
+POC-1C uses the Hazard3 RISC-V cores in RP2350 on Raspberry Pi Pico 2 while deliberately constraining generated semantics to the RV32I base-integer subset.
 
-POC-1C selects **RISC-V RV32I base integer** as the first native Target Profile, with M/C/A/F/D extensions excluded from the initial experiment.
-
-POC-1C.A initially supports only target operations that are explicitly implemented for that profile. The first whitelist is `add` and `sub`; unsupported operations such as `mul` fail closed. The backend uses a bounded temporary-register pool, fails on register exhaustion, enforces a narrow integer ABI boundary, and emits machine-readable backend bookkeeping evidence.
-
-POC-1C.B later stresses live-value pressure/spilling, a single branch/merge, and a single non-recursive call to determine whether an explicit TargetIR/MachineIR becomes justified.
-
-POC-1D is planned as the first cross-target portability experiment using the same verified SpecIR with a **Cortex-M3 / ARMv7-M** Target Profile. **Cortex-M4 / ARMv7E-M** follows later, with FPU/float-ABI choices declared explicitly when used.
-
-## Key documents
+POC-1D uses the same Raspberry Pi Pico 2 / RP2350 platform switched to its Arm Cortex-M33 cores. The initial Arm Target Profile is Armv8-M Mainline / Cortex-M33.
 
 ```text
-docs/architecture.md
-docs/phase1-plan.md
-docs/target-profiles.md
-rfcs/0001-spec2exec-architecture.md
-rfcs/0006-semantic-preservation-and-evidence-model.md
-rfcs/0009-native-target-code-generation.md
+                     same Verified SpecIR
+                            │
+                 ┌──────────┴──────────┐
+                 ▼                     ▼
+       Hazard3 / RV32I        Cortex-M33 / Armv8-M
+                 │                     │
+                 ▼                     ▼
+          RISC-V assembly          Arm assembly
+                 │                     │
+                 └──────────┬──────────┘
+                            ▼
+                    same RP2350 / Pico 2
 ```
+
+See `docs/target-profiles.md`, `docs/phase1-plan.md`, and `rfcs/0009-native-target-code-generation.md`.
 
 ## License
 
