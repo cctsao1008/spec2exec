@@ -5,14 +5,18 @@ on:
     branches: [main]
     paths:
       - "prototypes/poc1c/**"
+      - "prototypes/poc1/spec2exec_poc1_v2.py"
       - "examples/native-rv32i/**"
+      - "examples/optimization-preservation/specification.json"
       - "tests/poc1c/**"
       - "Makefile"
       - ".github/workflows/poc1c.yml"
   pull_request:
     paths:
       - "prototypes/poc1c/**"
+      - "prototypes/poc1/spec2exec_poc1_v2.py"
       - "examples/native-rv32i/**"
+      - "examples/optimization-preservation/specification.json"
       - "tests/poc1c/**"
       - "Makefile"
       - ".github/workflows/poc1c.yml"
