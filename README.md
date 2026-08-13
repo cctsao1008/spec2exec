@@ -107,25 +107,41 @@ Evidence is property-oriented rather than a single undifferentiated PASS. See RF
 
 **Phase 1 — Minimal SpecIR and Deterministic Pipeline**
 
-Phase 0 established the initial architecture, trust boundaries, specification model, SpecIR direction, verification model, and semantic-preservation/evidence model.
-
-POC-0 now provides the first working deterministic path without AI:
+Completed deterministic experiments:
 
 ```text
-Accepted Hello Specification
+POC-0  Hello / deterministic plumbing
+POC-1A bounded integer semantics / contracts / preservation evidence
+```
+
+POC-1A currently demonstrates this experimental path without AI:
+
+```text
+Accepted Arithmetic Specification
     ↓
-Experimental SpecIR v0
+Experimental SpecIR v0.1
     ↓
-Deterministic Verifier
+P1 specification-link checks
+    ↓
+P2 type/range/overflow checks
     ↓
 C Lowering
     ↓
-Host C Compiler
+P3 SMT Translation Validation
     ↓
-Executable
+Host C Compiler (-O2)
     ↓
-Runtime Check
+P4 Exhaustive Binary Testing
 ```
+
+The initial `safe_add` experiment records:
+
+```text
+P3 function-output equivalence   PROVEN
+P4 compiled-binary behavior      TESTED_EXHAUSTIVE (10,201 cases)
+```
+
+These are narrow evidence claims. They do not prove human intent fidelity, general specification completeness, C compiler correctness, or machine-code equivalence.
 
 ## Run POC-0
 
@@ -135,37 +151,65 @@ Requirements:
 - `make`
 - a host C compiler available as `cc`, `gcc`, or `clang`
 
-From the repository root:
-
 ```bash
-make test
+make test-poc0
 make poc0
 ```
 
-POC-0 currently uses only the Python standard library and the host C toolchain.
+## Run POC-1A
+
+Additional requirement:
+
+- Python package `z3-solver==4.13.0.0`
+
+```bash
+python -m pip install 'z3-solver==4.13.0.0'
+make test-poc1
+make poc1
+```
+
+GitHub Actions reproduces the same POC-1A path.
+
+## Parallel semantic-resolution research
+
+The `research/a0-semantic-resolution/` track is intentionally separate from executable generation. It begins testing whether AI systems expose ambiguity, missing semantics, and conflicting requirements instead of silently inventing values.
+
+The initial benchmark uses:
+
+```text
+RESOLVED
+UNRESOLVED
+CONFLICT
+```
+
+and measures unsafe-resolution rate, unresolved/conflict recall, and resolved-case accuracy. Model baselines have not yet been run.
 
 ## Current POC sequence
 
 ```text
-POC-0  Hello / deterministic plumbing
-POC-1  Bounded arithmetic / contracts
-POC-2  State machine / behavioral invariants
-POC-3  Thermal motor protection / units, timing, safety, provenance
+POC-0   Hello / deterministic plumbing                       COMPLETE
+POC-1A  Bounded integer semantics                            COMPLETE
+POC-1B  Preservation stress tests / optimization             NEXT
+POC-2   State machine / behavioral invariants
+POC-3   Thermal motor protection / units, timing, safety
+A0      Adversarial AI semantic-resolution benchmark         PARALLEL
 ```
 
-AI semantic synthesis is intentionally deferred until the deterministic lower half is independently testable.
+AI semantic synthesis remains disconnected from the executable pipeline until the deterministic lower half and the independent semantic-resolution risk are better characterized.
 
 ## Key documents
 
 ```text
 docs/architecture.md
+docs/phase1-plan.md
 rfcs/0001-spec2exec-architecture.md
 rfcs/0002-specification-model.md
 rfcs/0003-specir.md
 rfcs/0004-verification-model.md
 rfcs/0005-trust-intent-fidelity-and-specification-acceptance.md
 rfcs/0006-semantic-preservation-and-evidence-model.md
-docs/phase1-plan.md
+rfcs/0007-bounded-integer-semantics.md
+research/a0-semantic-resolution/README.md
 ```
 
 ## License
