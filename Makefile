@@ -15,7 +15,15 @@ POC1B_SPECIR := examples/optimization-preservation/safe_add_sub.specir.json
 POC1B_BUILD_DIR := build/poc1b
 POC1B := prototypes/poc1b/spec2exec_poc1b.py
 
-.PHONY: verify lower build run poc0 poc1 poc1b poc1-verify test test-poc0 test-poc1 test-poc1b clean
+POC1C_SPECIFICATION := examples/optimization-preservation/specification.json
+POC1C_SPECIR := examples/native-rv32i/safe_add_sub.specir.json
+POC1C_BUILD_DIR := build/poc1c
+POC1C := prototypes/poc1c/run.py
+POC1C_TARGET_PROFILE := rv32i-baremetal
+POC1C_HARNESS := tests/poc1c/runtime/safe_add_sub_harness.s
+POC1C_LINKER := tests/poc1c/runtime/rv32i_virt.ld
+
+.PHONY: verify lower build run poc0 poc1 poc1b poc1c poc1-verify test test-poc0 test-poc1 test-poc1b test-poc1c clean
 
 verify:
 	$(PYTHON) $(POC0) verify $(POC0_SPECIR) --specification $(POC0_SPECIFICATION) --evidence $(POC0_BUILD_DIR)/verification.json
@@ -41,6 +49,14 @@ poc1:
 poc1b:
 	$(PYTHON) $(POC1B) $(POC1B_SPECIR) --specification $(POC1B_SPECIFICATION) --build-dir $(POC1B_BUILD_DIR)
 
+poc1c:
+	$(PYTHON) $(POC1C) all $(POC1C_SPECIR) \
+		--specification $(POC1C_SPECIFICATION) \
+		--target-profile $(POC1C_TARGET_PROFILE) \
+		--build-dir $(POC1C_BUILD_DIR) \
+		--harness $(POC1C_HARNESS) \
+		--linker-script $(POC1C_LINKER)
+
 test-poc0:
 	$(PYTHON) -m unittest discover -s tests/poc0 -p 'test_*.py' -v
 
@@ -50,7 +66,10 @@ test-poc1:
 test-poc1b:
 	$(PYTHON) -m unittest discover -s tests/poc1b -p 'test_*.py' -v
 
-test: test-poc0 test-poc1 test-poc1b
+test-poc1c:
+	$(PYTHON) -m unittest discover -s tests/poc1c -p 'test_*.py' -v
+
+test: test-poc0 test-poc1 test-poc1b test-poc1c
 
 clean:
 	rm -rf build
