@@ -2,7 +2,7 @@
 
 - **Status:** Accepted / Architecture Baseline
 - **Scope:** Primary executable-generation path
-- **Review status:** Hardened after independent formal/backend hostile review
+- **Review status:** Closure review complete; no architecture blockers
 
 ## Summary
 
@@ -40,15 +40,11 @@ Executable / Firmware
 
 Spec2Exec targets machine semantics directly. Native target code generation is therefore the primary path from verified SpecIR toward an executable artifact.
 
-The target code generator maps verified SpecIR semantics into target-specific instruction semantics and emits target assembly or an equivalent machine-oriented artifact.
-
 C and LLVM remain useful reference and comparison paths, but they are not required architectural intermediates.
 
 ### 2. No mandatory `Lowering` architecture stage
 
 The transformation from SpecIR to target instructions necessarily performs lowering in the compiler-theory sense, but `Lowering` is not a mandatory top-level architecture component.
-
-The top-level boundary remains intentionally simple:
 
 ```text
 Verified SpecIR
@@ -70,11 +66,11 @@ ABI argument / return locations
 labels / symbolic branch targets
 ```
 
-For POC-scale backends this state may remain an internal, small, testable code-generator data structure rather than a named IR stage.
+For POC-scale backends this state may remain an internal, small, testable data structure rather than a named IR stage.
 
-A backend should promote that bookkeeping into an explicit TargetIR/MachineIR-style representation when one or more of the following become general requirements:
+A backend should promote that bookkeeping into an explicit TargetIR/MachineIR-style representation when one or more become general requirements:
 
-- live values routinely exceed the available physical registers;
+- live values routinely exceed available physical registers;
 - spill/reload placement requires non-local reasoning;
 - multi-block control-flow graphs with merge points are supported;
 - loops require cross-block liveness reasoning;
@@ -116,11 +112,31 @@ Executable / Firmware
 
 SpecIR remains machine-independent. ISA, ABI, register, calling-convention, stack-frame, instruction-selection, legalization, relocation-facing, and assembly-dialect concerns begin at the target boundary.
 
-### 4. Backend roles
+### 4. Target Profile and Platform Profile
+
+Target-specific information is selected after SpecIR verification rather than embedded into SpecIR.
+
+A **Target Profile** identifies the processor architecture/ISA, enabled architectural extensions, ABI subset, assembly dialect, object model, and other machine-level assumptions needed by Target Code Generation.
+
+A separate optional **Platform Profile** carries SoC/board details below the ISA level, such as memory layout, startup/image conventions, and linker layout.
+
+```text
+SpecIR semantics
+      ≠
+Target Profile
+      ≠
+Platform Profile
+```
+
+Changing target or platform profile must not silently change the accepted machine-independent meaning of the same verified SpecIR.
+
+See `docs/target-profiles.md`.
+
+### 5. Backend roles and responsibilities
 
 ```text
 Native target backend
-    primary Spec2Exec executable-generation path
+    primary executable-generation path
 
 C backend
     bootstrap / reference / differential-validation path
@@ -131,77 +147,30 @@ LLVM backend
 
 A target does not need a C compiler to be a valid Spec2Exec target.
 
-### 5. Responsibility split
-
-#### Target Code Generator — Spec2Exec responsibility
-
-The target code generator owns, when required by the supported subset:
+The Target Code Generator owns, when required by the supported subset:
 
 - SpecIR operation → target instruction selection;
-- legalization when one SpecIR operation requires multiple target instructions;
-- immediate/constant legalization and materialization;
+- legalization and immediate/constant materialization;
 - register/value placement policy;
 - ABI argument and return-value placement;
 - caller/callee-save handling when calls are supported;
-- stack-frame and spill-slot construction when stack use is supported;
-- control-flow labels and branch selection when control flow is supported;
+- stack-frame/spill handling when stack use is supported;
+- control-flow labels and branch selection when supported;
 - syntactically valid target-assembly emission.
 
-A deliberately narrow POC may use fixed or greedy policies, but those policies must be explicit and must not be presented as general register allocation or general ABI support.
+A narrow POC may use fixed or greedy policies, but those policies must be explicit and must not be presented as general register allocation or general ABI support.
 
-#### Assembler — external target-toolchain responsibility
+The external assembler/object emitter owns assembly parsing, instruction encoding, directives, symbol/relocation creation, and object emission. The external linker owns symbol resolution, relocation application, section/memory placement, and final image construction.
 
-The assembler or equivalent object emitter owns:
-
-- assembly syntax parsing;
-- instruction encoding;
-- assembly directives;
-- symbol-table construction;
-- relocation-record generation;
-- target object-file emission.
-
-#### Linker — external target-toolchain responsibility
-
-The linker owns:
-
-- cross-object and cross-section symbol resolution;
-- relocation application;
-- section and memory placement;
-- entry-point/image construction;
-- final ELF/firmware image generation according to the selected target profile.
-
-#### Hard scope guardrail
-
-The Target Code Generator must not silently grow into an assembler or linker.
-
-Without a future explicit architecture decision it must not implement:
-
-```text
-raw opcode / instruction binary encoding
-ELF/object-file serialization
-relocation encoding/application
-cross-object symbol resolution
-linking
-```
+Without a future explicit architecture decision, the Target Code Generator must not implement raw instruction encoding, object-file serialization, relocation processing, cross-object symbol resolution, or linking.
 
 ### 6. Minimal target infrastructure and TCB
 
-A new executable target must ultimately define instruction semantics and encoding. Practical target support therefore requires enough information and tooling for:
-
-```text
-ISA semantics and instruction encoding
-ABI / calling convention when applicable
-memory / register conventions required by the target profile
-object and relocation model when object linking is used
-assembler or equivalent object emitter
-linker / image construction when required
-```
+Practical target support requires sufficient information/tooling for the target ISA semantics and encoding, ABI/calling convention when applicable, required memory/register conventions, object/relocation model when used, assembler/object emitter, and linker/image construction when required.
 
 A full high-level-language compiler is not an inherent prerequisite.
 
-For the primary native path, the assembler and linker are explicit downstream trusted or separately checked components unless Spec2Exec provides independent evidence for those boundaries.
-
-Spec2Exec must not let `Verified SpecIR` imply that assembler, linker, ABI, object-format, or hardware correctness has automatically been proven.
+For the primary native path, assembler and linker are explicit downstream trusted or separately checked components unless independent evidence is supplied for those boundaries.
 
 ### 7. Semantic-preservation and downstream evidence boundaries
 
@@ -215,26 +184,26 @@ SpecIR Observable Semantics
 Target ISA Observable Semantics
 ```
 
-The exact proof/checking mechanism is target-profile dependent. Evidence must remain model-scoped and identify the target assembly artifact to which it is bound.
+The exact mechanism is target-profile dependent. Evidence must remain model-scoped and identify the target assembly artifact to which it is bound.
 
-The native semantic-preservation claim terminates at Target Assembly unless assembler/linker transformations are separately validated.
+The native semantic-preservation claim terminates at Target Assembly unless downstream transformations are separately validated.
 
-Executable-level evidence is a distinct downstream claim and must identify its toolchain and artifact bindings. A future evidence chain may therefore distinguish concepts such as:
+The evidence model is refined as:
 
 ```text
-SpecIR → Target Assembly     semantic-preservation evidence
-Target Assembly → Object     assembly/toolchain evidence
-Object → Linked ELF          link/image-construction evidence
-ELF execution                emulator/runtime behavior evidence
+P3    SpecIR → Target Assembly
+P4-A  Target Assembly → Object
+P4-L  Object → Linked Executable
+P4-R  Linked Executable → Runtime Observation
 ```
 
-No single PASS may collapse these boundaries.
+No single PASS may collapse these boundaries. Runtime agreement does not discharge P3.
 
-## First native target profile — POC-1C
+See RFC 0006 for evidence classes and TCB requirements.
 
-Independent backend review converged on RV32I as the least incidental-complexity target for the first native experiment.
+## First Native Target Profile — POC-1C
 
-POC-1C therefore selects this experimental profile:
+POC-1C selects this experimental profile:
 
 ```text
 ISA:            RISC-V RV32I base integer
@@ -248,47 +217,74 @@ Assembly:       GNU RISC-V syntax
 Object model:   ELF32 RISC-V
 ```
 
-This is a POC target-profile decision, not a restriction embedded into SpecIR. Cortex-M/Thumb remains a strong later target for portability and embedded relevance.
+This is a POC Target Profile, not a restriction embedded into SpecIR.
 
-## POC-1C experimental split
+## POC-1C Experimental Split
 
-### POC-1C.A — Native Pipeline Proof
+### POC-1C.A — Native Pipeline Validation
 
-POC-1C.A answers one question only:
+POC-1C.A tests one architectural claim:
 
-> Can verified SpecIR produce correct native target assembly and an executable artifact without requiring C, LLVM IR, or another high-level-language compiler stage?
+> Can verified SpecIR generate native target assembly and an executable artifact without requiring C, LLVM IR, or another high-level-language compiler stage?
 
 It reuses the current bounded-arithmetic semantic core and begins with `safe_add_sub`-class straight-line arithmetic.
 
-Required properties:
+Initial target-operation whitelist:
 
 ```text
-Verified SpecIR
-      ↓
-RV32I Target Code Generator
-      ↓
-RV32I Assembly
-      ↓
-unmodified assembler
-      ↓
-ELF32 object
-      ↓
-unmodified linker
-      ↓
-RV32I ELF
-      ↓
-emulator / execution evidence
+add
+sub
 ```
 
-The code generator must use a minimal register-resource model rather than hard-coded per-example instruction templates. At minimum it should model argument registers, return register, and a temporary-register pool.
+`mul` is rejected because the POC-1C target profile disables the RISC-V M extension and does not introduce a runtime helper or software-emulation sequence. Any unsupported operation fails closed with an explicit target-generation error.
 
-POC-1C.A does not require a general register allocator, spilling, control flow, calls, loops, or a named TargetIR/MachineIR.
+The code generator must use a minimal register-resource model rather than hard-coded per-example instruction templates. It models argument locations, return location, a temporary-register pool, and acquire/release ownership for intermediates.
+
+Register exhaustion must fail explicitly. POC-1C.A must not silently reuse a live register or introduce an undeclared spill.
+
+The initial integer ABI subset is intentionally narrow:
+
+```text
+inputs  → a0, a1, ... as declared
+return  → a0
+return instruction → ret
+```
+
+No general RISC-V ABI claim is made.
+
+The primary native acceptance path does not require a C test harness. A C/LLVM path may still be used separately as a differential reference.
+
+POC-1C.A does not require a general register allocator, spilling, control flow, internal function calls, loops, pointers/heap/arrays, hardware-register semantics, optimization, or a named TargetIR/MachineIR.
+
+### POC-1C.A evidence and bookkeeping
+
+Each transformation boundary must carry its own evidence class. The initial plan is:
+
+```text
+SpecIR property verification
+    reuse existing model-scoped SpecIR evidence
+
+SpecIR → RV32I assembly
+    explicit P3 evidence; initial implementation may be TESTED
+    stronger evidence requires a stronger checking mechanism
+
+RV32I assembly → ELF32 object
+    TRUSTED; named assembler/version/invocation + exact artifact hashes
+
+ELF32 object → linked RV32I ELF
+    TRUSTED; named linker/version/invocation + exact artifact hashes
+
+RV32I ELF execution
+    TESTED; named emulator/runtime + declared test domain
+```
+
+The backend must also emit a machine-readable bookkeeping artifact containing at least target-profile identity, value→location mapping, ABI-fixed locations, temporary-register pool, high-water mark, and spill count.
+
+That artifact is backend decision evidence, not a mandatory TargetIR/MachineIR.
 
 ### POC-1C.B — Native Backend Stress
 
-After POC-1C.A passes, POC-1C.B should deliberately stress the assumptions that made the direct backend small.
-
-Planned stress classes are:
+After POC-1C.A passes, POC-1C.B deliberately stresses the assumptions that made the direct backend small:
 
 ```text
 B1  multiple live values / forced spill
@@ -296,23 +292,27 @@ B2  single branch + single merge
 B3  single non-recursive call
 ```
 
-POC-1C.B exists to measure when backend bookkeeping should be promoted into an explicit TargetIR/MachineIR-style representation.
+The experiment measures when backend bookkeeping should be promoted into an explicit TargetIR/MachineIR-style representation. It must not prejudge that result.
 
-The experiment must not prejudge that result. If the direct representation becomes fragile or non-local, promotion is the intended architectural response rather than a failure to preserve the top-level Spec2Exec pipeline.
+## Later Cross-Target Direction
+
+After the first native backend is validated, a later portability experiment should apply the same machine-independent SpecIR to a second ISA family.
+
+Planned order:
+
+```text
+POC-1C  RV32I
+POC-1D  Cortex-M3 / ARMv7-M
+later   Cortex-M4 / ARMv7E-M
+```
+
+Cortex-M3 is the preferred first ARM portability target. Cortex-M4 follows as a related ARMv7E-M Target Profile, with any FPU/float-ABI choices declared explicitly.
+
+SoC-specific configuration belongs to Platform Profiles rather than SpecIR.
 
 ## Relationship to POC-1A / POC-1B
 
-POC-1A and POC-1B intentionally used generated C to bootstrap and stress the deterministic preservation/evidence architecture. Those experiments remain valid within their recorded scope.
-
-Their role is now explicitly reference-oriented:
-
-```text
-SpecIR → generated C → CBMC / compiler → executable
-```
-
-is an experimental reference path, not the required final Spec2Exec architecture.
-
-The C experiments are valuable precisely because they exposed the additional semantic and trusted-computing-base burden introduced by a high-level source-language intermediary.
+POC-1A and POC-1B intentionally used generated C to bootstrap and stress the deterministic preservation/evidence architecture. Those experiments remain valid within their recorded scope as reference paths.
 
 ## Consequences
 
@@ -326,7 +326,7 @@ The architecture accepts that responsibility deliberately while keeping backend-
 - Target-specific semantics begin at the Target Code Generation boundary.
 - `Lowering` remains a transformation concept, not a mandatory architecture box.
 - A named TargetIR/MachineIR is optional; required machine-oriented bookkeeping must still be explicit and testable.
-- C, LLVM IR, TargetIR, or MachineIR must not become mandatory stages without an explicit future architecture decision.
-- Native backend evidence must distinguish semantic proof/checking from assembler, linker, ABI, object-format, emulator, and hardware assumptions.
+- Native backend evidence must distinguish semantic checking from assembler, linker, ABI, object-format, emulator, and hardware assumptions.
 - Target Code Generation must not reimplement instruction encoding, object writing, relocation processing, or linking without a separate architecture decision.
+- Unsupported target operations and resource exhaustion must fail closed.
 - A backend should reuse the lowest trustworthy target infrastructure available rather than require a larger compiler stack by default.
