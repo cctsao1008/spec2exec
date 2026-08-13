@@ -7,6 +7,7 @@
 - **Next architecture experiment:** POC-1C.A — Pico 2 Hazard3 / RV32I Native Pipeline Validation
 - **Following architecture stress experiment:** POC-1C.B — Hazard3 Native Backend Stress
 - **Later portability experiment:** POC-1D — Pico 2 Cortex-M33 Cross-Target Generation
+- **Later hosted portability experiment:** POC-1E — x86_64 Linux / Windows / macOS Matrix
 - **Next semantic experiment:** POC-2 — State Machine
 - **Parallel research:** A0 — Adversarial Semantic Resolution
 
@@ -142,6 +143,36 @@ The initial Cortex-M33 profile keeps floating-point, TrustZone/security-state be
 ```
 
 This deliberately changes CPU architecture while keeping the physical development platform largely constant. Target semantics remain in Target Profiles; RP2350/Pico 2 board and memory/image details remain in the Platform Profile.
+
+## POC-1E — x86_64 Hosted Platform Matrix
+
+After the first embedded cross-target result, POC-1E adds a third ISA family and separates ISA portability from hosted operating-system ABI/object portability.
+
+```text
+x86_64 / Linux    SysV AMD64 subset      ELF64
+x86_64 / Windows  Microsoft x64 subset   COFF + PE32+
+x86_64 / macOS    Darwin x86_64 subset   Mach-O
+```
+
+These are separate Target Profiles sharing the same x86_64 ISA. The ABI, object format, symbol/linker conventions, and executable environment remain explicit rather than being hidden behind `x86_64`.
+
+POC-1E initially reuses the same narrow arithmetic semantics and validates native generation and execution on each hosted environment before adding wider ISA features.
+
+```text
+                           same Verified SpecIR
+                                  │
+              ┌───────────────────┼───────────────────┐
+              ▼                   ▼                   ▼
+      Hazard3 / RV32I    Cortex-M33 / Armv8-M       x86_64
+              │                   │                   │
+              ▼                   ▼        ┌──────────┼──────────┐
+       RISC-V assembly        Arm assembly  ▼          ▼          ▼
+              │                   │       Linux     Windows     macOS
+              ▼                   ▼       ELF64     PE/COFF     Mach-O
+          Pico 2              Pico 2
+```
+
+This is representative architectural coverage, not a claim of complete ISA or operating-system coverage. A later AArch64/arm64 hosted profile may be added separately and is not part of initial POC-1E acceptance criteria.
 
 See `docs/target-profiles.md` and RFC 0009.
 
