@@ -121,7 +121,20 @@ class RV32ICodeGenerator:
 
     def compile_expr(self, expr: Any, preferred_dest: str | None = None) -> tuple[str, bool]:
         if isinstance(expr, str):
-            return self.args[expr], False
+            source = self.args[expr]
+            if preferred_dest is not None and source != preferred_dest:
+                # RV32I has no dedicated move instruction. Keep the target assembly
+                # inside the base ISA rather than relying on the `mv` pseudo-op.
+                self.lines.append(f"    add {preferred_dest}, {source}, zero")
+                self.locations[f"expr:{self.node}"] = {
+                    "kind": "copy",
+                    "op": "add-zero",
+                    "source": source,
+                    "location": preferred_dest,
+                }
+                self.node += 1
+                return preferred_dest, False
+            return source, False
         left, left_owned = self.compile_expr(expr["args"][0])
         right, right_owned = self.compile_expr(expr["args"][1])
         if preferred_dest is not None:
