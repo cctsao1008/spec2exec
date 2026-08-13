@@ -2,7 +2,8 @@
 
 - **Status:** Active
 - **Phase 0 architecture definition:** complete for the initial prototype baseline
-- **Current experiment:** POC-0 — Deterministic Hello Pipeline
+- **POC-0:** complete
+- **Next experiment:** POC-1 — Bounded Arithmetic
 
 ## Objective
 
@@ -30,9 +31,11 @@ If this path cannot be made clear, deterministic, inspectable, and traceable, ad
 
 ## POC-0 — Hello World
 
+**Status: Complete**
+
 Purpose: verify toolchain plumbing and the minimum evidence/traceability path.
 
-Current implementation path:
+Implemented path:
 
 ```text
 examples/hello/specification.json
@@ -153,24 +156,24 @@ Do not add timing, concurrency, hardware, ownership, or theorem-proving construc
 3. Define structural/semantic validation rules. **Done.**
 4. Implement deterministic loader/verifier. **Done.**
 5. Implement lowering to C. **Done.**
-6. Compile with host C toolchain and execute. **Validated locally before commit.**
+6. Compile with host C toolchain and execute. **Done.**
 7. Emit explicit verification evidence. **Done.**
 8. Add negative verification tests. **Done.**
-9. Reproduce the same path in CI. **Next.**
+9. Reproduce the same path in GitHub Actions CI. **Done — first run passed.**
 10. Only after the deterministic path is stable, consider direct LLVM IR/MLIR lowering and later AI semantic synthesis.
 
-## Exit criteria for POC-0
+## POC-0 exit criteria
 
-POC-0 is complete when:
+All initial POC-0 exit criteria are satisfied:
 
 - one accepted example specification exists;
 - one experimental SpecIR representation exists;
 - valid SpecIR deterministically passes validation;
 - intentionally invalid SpecIR deterministically fails;
 - lowering generates a buildable intermediate artifact;
-- an existing compiler produces a Linux ELF executable;
+- an existing compiler produces a Linux executable;
 - execution produces exactly the expected stdout and exit status;
-- the build is reproducible through the repository commands/CI;
+- the build is reproducible through repository commands and GitHub Actions CI;
 - verification evidence clearly states what was and was not verified.
 
-The local implementation satisfies all criteria except repository CI reproducibility, which is the next engineering task.
+The next Phase 1 task is POC-1, where SpecIR must begin carrying actual semantic contracts rather than only deterministic plumbing.
