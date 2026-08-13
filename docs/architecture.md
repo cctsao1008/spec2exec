@@ -1,158 +1,120 @@
 # Architecture
 
-## Reference pipeline
+## Primary pipeline
 
 ```text
-┌──────────────────────────────────────┐
-│ Human Intent                         │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Draft Specification                  │
-│ - behavior                           │
-│ - constraints                        │
-│ - interfaces                         │
-│ - timing / resources when applicable │
-│ - safety / invariants when applicable│
-│ - assumptions / unresolved semantics │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Semantic Resolution                  │
-│ - AI/LLM                             │
-│ - solvers / planners (optional)      │
-│ - ambiguity exposure                 │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Resolved Specification               │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Human / Domain Specification Gate    │
-│ - intent fidelity review             │
-│ - assumptions / unresolved review    │
-│ - acceptance authority               │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Accepted Specification               │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Semantic Synthesis                   │
-│ UNTRUSTED candidate generation       │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Candidate SpecIR                     │
-│ machine-oriented formal contract     │
-└──────────────────┬───────────────────┘
-                   ▼
-════════════ deterministic trust boundary ════════════
-                   ▼
-┌──────────────────────────────────────┐
-│ Deterministic Verification           │
-│ - schema / type / unit checks        │
-│ - invariants                         │
-│ - range / resource checks            │
-│ - control-flow / safety checks       │
-│ - timing checks where feasible       │
-└──────────────┬───────────────────────┘
-               │ FAIL → diagnostics → synthesis loop
-               ▼ PASS
-┌──────────────────────────────────────┐
-│ Lowering                             │
-│ SpecIR → MLIR / LLVM IR / C          │
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Conventional Compiler Infrastructure │
-│ optimization / codegen / ABI / object│
-└──────────────────┬───────────────────┘
-                   ▼
-┌──────────────────────────────────────┐
-│ Executable Artifact                  │
-│ ELF / firmware ELF / BIN / PE / etc. │
-└──────────────────────────────────────┘
+Human Intent
+    ↓
+Draft Specification
+    ↓
+Semantic Resolution
+    ↓
+Human / Domain Specification Gate
+    ↓
+Accepted Specification
+    ↓
+Semantic Synthesis
+    ↓
+Candidate SpecIR
+    ↓
+Deterministic Verification
+    ↓
+Verified SpecIR
+    ↓
+Target Code Generation
+    ↓
+Target Assembly
+    ↓
+Assembler
+    ↓
+Object
+    ↓
+Linker
+    ↓
+Executable / Firmware
 ```
 
-## Correctness is layered
+The primary Spec2Exec path targets machine semantics directly. C, Rust, LLVM IR, and similar representations are optional paths rather than mandatory architecture stages.
 
-Spec2Exec distinguishes three different questions:
+## Target boundary
 
-### Intent fidelity
-
-Does the accepted specification represent what the human/domain authority actually intends?
-
-This is primarily an acceptance and provenance problem. Downstream verification cannot generally prove it.
-
-### Specification / SpecIR correctness
-
-Is the formal representation well-formed, internally consistent, and compliant with the declared contracts?
-
-This is the primary deterministic verification domain.
-
-### Implementation conformance
-
-Does lowering and compilation preserve the verified SpecIR semantics into the executable artifact?
-
-This requires validated lowering, compiler evidence, tests, equivalence checks, or verified compilation as appropriate.
-
-## Boundary 1: Intent → Draft Specification
-
-Human intent may be incomplete and ambiguous. The system must preserve that fact instead of prematurely converting uncertainty into authoritative semantics.
-
-## Boundary 2: Draft → Accepted Specification
-
-Semantic resolution may propose missing structure, expose ambiguity, and derive candidates. Safety-critical or externally observable requirements must not be silently invented. Where intent fidelity matters, a human/domain authority accepts the resolved specification.
-
-## Boundary 3: Accepted Specification → Candidate SpecIR
-
-Semantic synthesis may be probabilistic and is treated as untrusted. The output must conform to a formal schema and explicit semantic rules before it can enter the checked domain.
-
-## Boundary 4: Candidate SpecIR → Verified-for-declared-properties SpecIR
-
-AI confidence is not evidence. Verification results must be deterministic and machine-checkable to the degree supported by the domain. A PASS only applies to named properties under named assumptions.
-
-## Boundary 5: Verified SpecIR → Executable
-
-Lowering should use mature compiler infrastructure wherever possible. Spec2Exec should not duplicate solved backend problems, but it must preserve traceability and distinguish validated transformations from merely trusted ones.
-
-## Feedback loops
+SpecIR remains machine-independent. ISA, ABI, registers, calling convention, instruction encoding, relocation, and object-format concerns begin at Target Code Generation.
 
 ```text
-semantic resolution → unresolved item → human/domain review
+MACHINE-INDEPENDENT
+Accepted Specification → SpecIR → Deterministic Verification → Verified SpecIR
 
-semantic synthesis → candidate SpecIR → verifier
-       ▲                              │
-       └──────── diagnostics ◄────────┘
+================ TARGET BOUNDARY ================
+
+TARGET-SPECIFIC
+Target Code Generation → Target Assembly → Assembler → Object → Linker → Executable
 ```
 
-## Uncertainty and evidence
+## No mandatory Lowering component
 
-The architecture must distinguish statuses such as declared, derived, assumed, unresolved, accepted, and verified. It must also distinguish evidence strength such as proven, checked, tested, measured, estimated, advisory, or unresolved.
+Lowering exists as a transformation concept, but it is not a required top-level architecture component. A target backend may internally introduce TargetIR, MachineIR, instruction selection, register allocation, stack-frame construction, or target-specific optimization when concrete implementation complexity justifies them.
 
-The exact vocabulary remains subject to RFC refinement.
+For a simple backend, the mapping may be direct:
+
+```text
+SpecIR operation
+    ↓
+Target code-generation rule
+    ↓
+Target assembly instruction sequence
+```
+
+## Backend roles
+
+```text
+Native target backend
+    primary executable-generation path
+
+C backend
+    bootstrap / reference / differential-validation path
+
+LLVM backend
+    optional optimization / code-generation / comparison path
+```
+
+POC-1A and POC-1B used the C path intentionally. Their evidence remains valid within its declared scope, but C is not a required stage of the final architecture.
+
+## Correctness boundaries
+
+Spec2Exec separates three questions:
+
+1. Intent fidelity.
+2. Specification / SpecIR correctness.
+3. Implementation conformance.
+
+For the native path, the long-term implementation-conformance obligation is:
+
+```text
+Accepted Preconditions
+    ⇒
+SpecIR Observable Semantics
+    =
+Target ISA Observable Semantics
+```
+
+Assembler, object emission, linking, ABI, and hardware behavior remain separate downstream evidence or trust boundaries.
 
 ## Traceability
-
-Every generated artifact should retain identifiers allowing runtime or compile-time findings to trace back toward:
 
 ```text
 Executable behavior
     ↑
-Lowered IR
+Object / linked artifact
     ↑
-SpecIR node
+Target assembly / target evidence
+    ↑
+Verified SpecIR
     ↑
 Accepted specification clause
     ↑
 Requirement / decision / assumption
-    ↑
-Authority / provenance
 ```
 
-## Fundamental limitation
+Traceability does not require one-to-one structural identity.
 
-Spec2Exec does not claim to solve the general intent problem or automatically prove specification completeness. Its architectural objective is to ensure that uncertainty, assumptions, and unverified semantics do not silently become indistinguishable from accepted and verified executable truth.
+See RFC 0009 for the native target-code-generation decision.
