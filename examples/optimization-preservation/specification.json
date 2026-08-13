@@ -1,1 +1,44 @@
-{}
+{
+  "specification_version": "spec2exec.specification/v0.1",
+  "artifact_id": "SPEC-OPT-001",
+  "acceptance": {
+    "status": "accepted-for-poc",
+    "authority_role": "project-owner"
+  },
+  "function": {
+    "id": "REQ-OPT-001",
+    "name": "safe_add_sub",
+    "inputs": [
+      {
+        "clause_id": "REQ-OPT-001-A",
+        "name": "a",
+        "type": "i32",
+        "range": {"min": -100, "max": 100}
+      },
+      {
+        "clause_id": "REQ-OPT-001-B",
+        "name": "b",
+        "type": "i32",
+        "range": {"min": -100, "max": 100}
+      }
+    ],
+    "output": {
+      "clause_id": "REQ-OPT-001-R",
+      "name": "result",
+      "type": "i32",
+      "range": {"min": -300, "max": 300}
+    },
+    "behavior": {
+      "clause_id": "REQ-OPT-001-BEH",
+      "expr": {"op": "-", "args": [{"op": "+", "args": ["a", "b"]}, "b"]}
+    },
+    "overflow_behavior": {
+      "clause_id": "REQ-OPT-001-OVF",
+      "mode": "forbidden"
+    },
+    "poc1b_contract": {
+      "clause_id": "REQ-OPT-001-EQ",
+      "expr": "a"
+    }
+  }
+}
