@@ -1,0 +1,61 @@
+{
+  "specir_version": "spec2exec.specir/v0.1",
+  "function": {
+    "id": "FN-SAFE-ADD-001",
+    "name": "safe_add",
+    "target": "host-c",
+    "trace": ["REQ-ARITH-001"],
+    "inputs": [
+      {
+        "id": "a",
+        "type": "i32",
+        "range": {"min": 0, "max": 100},
+        "trace": ["REQ-ARITH-001-A"]
+      },
+      {
+        "id": "b",
+        "type": "i32",
+        "range": {"min": 0, "max": 100},
+        "trace": ["REQ-ARITH-001-B"]
+      }
+    ],
+    "output": {
+      "id": "result",
+      "type": "i32",
+      "range": {"min": 0, "max": 200},
+      "trace": ["REQ-ARITH-001-R"]
+    },
+    "overflow_behavior": "forbidden",
+    "overflow_trace": ["REQ-ARITH-001-OVF"],
+    "preconditions": [
+      {
+        "id": "PRE-A-RANGE",
+        "trace": ["REQ-ARITH-001-A"],
+        "expr": {"op": "and", "args": [
+          {"op": ">=", "args": ["a", 0]},
+          {"op": "<=", "args": ["a", 100]}
+        ]}
+      },
+      {
+        "id": "PRE-B-RANGE",
+        "trace": ["REQ-ARITH-001-B"],
+        "expr": {"op": "and", "args": [
+          {"op": ">=", "args": ["b", 0]},
+          {"op": "<=", "args": ["b", 100]}
+        ]}
+      }
+    ],
+    "postconditions": [
+      {
+        "id": "POST-RESULT",
+        "trace": ["REQ-ARITH-001-BEH"],
+        "expr": {"op": "==", "args": ["result", {"op": "+", "args": ["a", "b"]}]}
+      }
+    ],
+    "body": {
+      "kind": "expr",
+      "expr": {"op": "+", "args": ["a", "b"]},
+      "trace": ["REQ-ARITH-001-BEH"]
+    }
+  }
+}
