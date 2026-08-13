@@ -1,0 +1,44 @@
+name: POC-1C RV32I Native
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "prototypes/poc1c/**"
+      - "examples/native-rv32i/**"
+      - "tests/poc1c/**"
+      - "Makefile"
+      - ".github/workflows/poc1c.yml"
+  pull_request:
+    paths:
+      - "prototypes/poc1c/**"
+      - "examples/native-rv32i/**"
+      - "tests/poc1c/**"
+      - "Makefile"
+      - ".github/workflows/poc1c.yml"
+
+jobs:
+  poc1c:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install RV32I binutils and emulator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils-riscv64-unknown-elf qemu-system-misc
+      - name: Unit tests
+        run: make test-poc1c
+      - name: Native pipeline
+        run: make poc1c
+      - name: Show evidence
+        run: |
+          cat build/poc1c/target-config.json
+          cat build/poc1c/backend-state.json
+          cat build/poc1c/evidence.json
+          sha256sum \
+            build/poc1c/target-config.json \
+            build/poc1c/safe_add_sub.s \
+            build/poc1c/safe_add_sub.o \
+            build/poc1c/safe_add_sub.elf \
+            build/poc1c/backend-state.json \
+            build/poc1c/evidence.json
