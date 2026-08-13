@@ -3,7 +3,8 @@
 - **Status:** Active
 - **Phase 0 architecture definition:** complete for the initial prototype baseline
 - **POC-0:** complete
-- **Current deterministic experiment:** POC-1A — Bounded Integer Semantics
+- **POC-1A:** complete
+- **Next deterministic experiment:** POC-1B — Preservation Stress Tests
 - **Parallel research track:** A0 — Adversarial Semantic Resolution Benchmark
 
 ## Objective
@@ -38,11 +39,9 @@ It did not establish nontrivial arithmetic semantics or lowering equivalence.
 
 ## POC-1A — Bounded Integer Semantics
 
-### Goal
+**Status: Complete**
 
-Introduce the first nontrivial SpecIR contracts while keeping the semantic surface deliberately small.
-
-The experimental core is:
+### Implemented semantic subset
 
 ```text
 i32 / u32
@@ -79,14 +78,14 @@ Behavior outside the accepted contract domain is not claimed to be verified by P
 
 ### P1 — Accepted Specification → SpecIR
 
-POC-1A must reject:
+POC-1A deterministically rejects:
 
 - an untraceable numeric constraint;
 - an accepted specification clause missing from SpecIR;
 - a projected range that differs from the accepted specification;
 - a behavior expression that differs from the accepted specification.
 
-Specification and SpecIR therefore remain different artifacts, but drift between their machine-comparable semantics is a deterministic verification failure.
+Specification and SpecIR therefore remain different artifacts, but drift between their machine-comparable semantics is a verification failure.
 
 ### P2 — SpecIR checks
 
@@ -112,31 +111,50 @@ SpecIR function semantics
 
 The validator extracts the exact emitted C return expression, parses it independently, translates the SpecIR and emitted-C expressions to SMT, and asks whether any accepted input makes their outputs differ.
 
-An UNSAT result supports a narrow `PROVEN` claim for function-output equivalence within the supported POC-1A expression subset and assumptions.
+The initial `safe_add` experiment produced:
 
-It does not prove the C compiler.
+```text
+P3.function_output_equivalence = PROVEN
+method = SMT translation validation
+scope = function contract boundary / return value
+```
+
+The claim is deliberately narrow and does not prove the C compiler.
 
 ### P4 — Executable behavior
 
-For the initial small input domain, the compiled shared-library function is invoked for every accepted input combination and compared with the SpecIR evaluator.
-
-Evidence is recorded as:
+The compiled `safe_add` shared-library function was invoked for every accepted input pair:
 
 ```text
-TESTED_EXHAUSTIVE
+a ∈ [0, 100]
+b ∈ [0, 100]
+101 × 101 = 10,201 cases
 ```
 
-Later larger domains may require weaker sampled evidence and must be labeled accordingly.
+The result was:
+
+```text
+P4.binary_behavior_over_declared_domain = TESTED_EXHAUSTIVE
+compiler optimization = -O2
+```
+
+### CI result
+
+The first POC-1A GitHub Actions run completed successfully. It installed the SMT solver, ran all seven unit/negative tests including a deliberately tampered generated-C expression, completed the end-to-end POC-1A pipeline, and emitted the evidence record.
 
 ### P3 granularity decision
 
-Traceability must not require one-to-one AST/node identity. Optimizations may fold or eliminate intermediate nodes. Semantic preservation is judged at a declared contract boundary such as function input/output or, in later POCs, a state-transition boundary.
+Traceability does not require one-to-one AST/node identity. Optimizations may fold or eliminate intermediate nodes. Semantic preservation is judged at a declared contract boundary such as function input/output or, in later POCs, a state-transition boundary.
 
 Provenance may therefore be many-to-many and is distinct from structural identity.
 
 See RFC 0007.
 
 ## A0 — Adversarial Semantic Resolution Benchmark
+
+### Status
+
+**Benchmark definition and scoring harness created; model baselines not yet run.**
 
 ### Goal
 
@@ -160,13 +178,23 @@ Initial metrics include:
 - resolved-case accuracy;
 - overall decision accuracy.
 
-No favorable threshold is selected in advance. Initial runs establish baselines and an error taxonomy.
+The initial benchmark contains 16 cases covering safety thresholds, timing, numeric bounds, recovery behavior, units, conflicting requirements, and hardware-register semantics.
+
+No favorable threshold is selected in advance. Initial model runs establish baselines and an error taxonomy.
 
 ## POC-1B — Preservation Stress Tests
 
-After the initial POC-1A path is stable, add deliberately transformed expressions to test whether translation validation survives legal algebraic rewrites without requiring node-for-node correspondence.
+POC-1B will deliberately transform expressions to test whether translation validation survives legal algebraic rewrites without requiring node-for-node correspondence.
 
-The objective is to test the distinction between traceability provenance and semantic equivalence before POC-2 introduces state.
+Example class:
+
+```text
+SpecIR expression graph
+        ↓ optimization / simplification
+semantically equivalent lowered expression
+```
+
+The objective is to test the distinction between traceability provenance and semantic equivalence before POC-2 introduces persistent state.
 
 ## POC-2 — State Machine
 
