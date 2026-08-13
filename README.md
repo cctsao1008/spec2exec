@@ -58,14 +58,14 @@ Not every ISA/OS pair is valid or useful. Each supported target configuration mu
 
 Validation hardware is deliberately separate from architecture coverage.
 
-The initial embedded validation platform is Raspberry Pi Pico 2 / RP2350 because the same SoC can execute with either of two CPU-core families:
+The planned embedded hardware validation platform is Raspberry Pi Pico 2 / RP2350 because the same SoC can execute with either of two CPU-core families:
 
 ```text
 RP2350 / Pico 2
 ├── Hazard3 RISC-V cores
-│   └── validate the RV32I bare-metal target path
+│   └── planned hardware validation of the RV32I bare-metal target path
 └── Arm Cortex-M33 cores
-    └── validate the Armv8-M Mainline bare-metal target path
+    └── planned hardware validation of the Armv8-M Mainline bare-metal target path
 ```
 
 Pico 2 is therefore a **validation platform**, not a Spec2Exec architecture target.
@@ -76,18 +76,39 @@ Pico 2 is therefore a **validation platform**, not a Spec2Exec architecture targ
 POC-0     COMPLETE
 POC-1A    COMPLETE
 POC-1B    COMPLETE
-POC-1C.A  NEXT-ARCH    RV32I bare-metal native validation
-POC-1C.B  FOLLOW-UP    RV32 backend stress
-POC-1D    PLANNED      Armv8-M Mainline bare-metal cross-target validation
-POC-1E    PLANNED      hosted ISA / OS expansion
+POC-1C.A  EMULATOR-PASS  RV32I bare-metal native pipeline
+          HW-PENDING     Hazard3 / RP2350 / Pico 2 physical validation
+POC-1C.B  NEXT-ARCH      RV32 backend stress
+POC-1D    PLANNED        Armv8-M Mainline bare-metal cross-target validation
+POC-1E    PLANNED        hosted ISA / OS expansion
 POC-2     NEXT-SEMANTIC
 POC-3     PLANNED
 A0        PARALLEL
 ```
 
-POC-1C validates the RV32I bare-metal path using the Hazard3 cores in RP2350/Pico 2. POC-1D validates the Armv8-M Mainline bare-metal path using the Cortex-M33 cores in the same RP2350/Pico 2 platform.
+POC-1C.A now has a working C-free native path in CI:
 
-POC-1E begins hosted portability with reusable ISA and Execution Profiles. Initial configurations are planned around x86_64/Linux, x86_64/Windows, AArch64/Linux, and AArch64/macOS, followed by AArch64/Windows and RV64/Linux when practical.
+```text
+machine-independent SpecIR
+    ↓
+RV32I code generation
+    ↓
+GNU assembler
+    ↓
+ELF32 object
+    ↓
+GNU linker
+    ↓
+RV32I ELF
+    ↓
+QEMU rv32 virt
+    ↓
+40,401 exhaustive runtime cases
+```
+
+The successful baseline records `P3` as `TESTED`, assembler/linker boundaries as `TRUSTED`, and runtime behavior as `TESTED_EXHAUSTIVE`; it does not claim a formally verified native compiler. See `docs/poc1c-results.md`.
+
+POC-1D will validate the Armv8-M Mainline bare-metal path using Cortex-M33 as the initial hardware core. POC-1E begins hosted portability with reusable ISA and Execution Profiles. Initial hosted configurations are planned around x86_64/Linux, x86_64/Windows, AArch64/Linux, and AArch64/macOS, followed by AArch64/Windows and RV64/Linux when practical.
 
 The intended long-term model is:
 
@@ -112,7 +133,7 @@ The intended long-term model is:
                       Executable / Firmware
 ```
 
-See `docs/target-profiles.md`, `docs/phase1-plan.md`, and `rfcs/0009-native-target-code-generation.md`.
+See `docs/target-profiles.md`, `docs/phase1-plan.md`, `docs/poc1c-results.md`, and `rfcs/0009-native-target-code-generation.md`.
 
 ## License
 
