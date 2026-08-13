@@ -28,4 +28,4 @@ jobs:
       - name: End-to-end POC-1A
         run: make poc1
       - name: Show evidence
-        run: cat build/poc1/evidence.json
+        run: cat build/poc1-v2/evidence.json
