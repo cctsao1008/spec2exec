@@ -32,13 +32,11 @@ C and LLVM remain optional reference/comparison paths. `Lowering` is a transform
 
 ## Target boundary
 
-SpecIR remains machine-independent. Target-specific ISA, ABI, register, calling-convention, legalization, assembly, object, loader, and runtime concerns begin at Target Code Generation or later target-toolchain boundaries.
-
-A concrete target configuration is composed from three dimensions:
+SpecIR remains machine-independent. A concrete architectural target is composed from:
 
 ```text
 ISA Profile
-    architecture / ISA / core profile / enabled features
+    architecture / ISA / enabled features
 
 Execution Profile
     OS or bare-metal environment
@@ -49,26 +47,24 @@ Execution Profile
 
 Platform Profile (optional)
     SoC / board / machine identity
-    processor mode
     memory map / startup / image layout
-    firmware packaging / signing where applicable
 ```
 
 ```text
 Target Configuration = ISA Profile + Execution Profile + optional Platform Profile
 ```
 
-This decomposition prevents one operating system, ABI, object format, or board from becoming an implicit property of an ISA or of SpecIR.
+A separate **Validation Binding** identifies the concrete CPU core, SoC, board, emulator, or host used to gather evidence for a target configuration.
 
-Not every ISA × OS combination is meaningful. A combination is valid only when its ISA, ABI, object/executable model, toolchain, runtime, and platform assumptions are defined.
+```text
+Target Configuration != Validation Binding
+```
 
-See `docs/target-profiles.md`.
+A CPU core is also not identical to an ISA. Hazard3 is a concrete RISC-V core used to validate an RV32I subset. Cortex-M33 is a concrete Arm core used to validate an Armv8-M Mainline target.
 
 ## Architecture coverage goal
 
-Spec2Exec is intended to be implementable across major CPU ISA families and major execution environments rather than being architecturally tied to a finite POC target list.
-
-Initial architecture families include:
+Current architecture families are:
 
 ```text
 ISA families
@@ -81,14 +77,12 @@ Execution environments
     Linux
     Windows
     macOS
-    Android
     bare metal
-    selected RTOS profiles
 ```
 
-Additional valid ISA/OS/platform combinations may be introduced without changing machine-independent SpecIR or the primary pipeline.
+Android and generic RTOS coverage are intentionally outside the current implementation roadmap. Additional environments may be introduced later only through explicit target decisions.
 
-This is an extensibility requirement, not a requirement to implement every Cartesian-product pair before the architecture is useful.
+The goal is extensibility across valid target configurations, not implementation of every ISA × OS Cartesian-product pair.
 
 ## Backend boundary
 
@@ -109,45 +103,39 @@ P4-R  Linked Executable → Runtime Observation
 
 No single PASS may collapse these boundaries. Runtime or hardware agreement does not discharge P3.
 
-## POC-1C — Pico 2 Hazard3 / RV32I subset
+## POC-1C — RV32I bare-metal native validation
 
-The first native backend uses the Hazard3 RISC-V cores in RP2350 on Raspberry Pi Pico 2 while deliberately constraining Spec2Exec code generation to the RV32I base-integer subset.
+Architectural target:
 
 ```text
-Hardware:       Raspberry Pi Pico 2 / RP2350
-Core:           Hazard3 RISC-V
-ISA subset:     RV32I
+ISA:            RISC-V RV32I
 M/C/A/F/D:      OFF
-Hazard3 custom: outside initial semantics
 Execution:      bare metal
 ABI subset:     integer arguments / integer return only
 Assembly:       GNU RISC-V syntax
 Object model:   ELF32 RISC-V
 ```
 
-The physical core may implement additional capabilities; they are not automatically part of the Spec2Exec ISA Profile.
+Initial validation binding:
 
-POC-1C.A initially supports `add` and `sub`. Unsupported operations, including `mul` under this profile, fail closed. Register exhaustion also fails closed. The minimal ABI subset uses `a0`, `a1`, ... for integer inputs, `a0` for the return value, and `ret` for return.
+```text
+CPU core:       Hazard3 RISC-V
+SoC:            RP2350
+Board:          Raspberry Pi Pico 2
+```
 
-The backend emits machine-readable bookkeeping evidence for target configuration, value locations, ABI-fixed locations, temporary-register pool, high-water mark, and spill count.
+The physical Hazard3 core may implement more capabilities than the selected RV32I subset. Those capabilities are not automatically part of the Spec2Exec target semantics.
+
+POC-1C.A initially supports `add` and `sub`. Unsupported operations, including `mul` under this profile, fail closed. Register exhaustion also fails closed. The backend emits machine-readable bookkeeping evidence for target configuration, value locations, ABI-fixed locations, temporary-register pool, high-water mark, and spill count.
 
 POC-1C.B later stresses spilling, branch/merge handling, and one non-recursive call.
 
-## POC-1D — Pico 2 Cortex-M33 cross-target validation
+## POC-1D — Armv8-M Mainline bare-metal cross-target validation
 
-POC-1D uses the same RP2350/Pico 2 platform switched to its Arm Cortex-M33 cores.
-
-```text
-POC-1C  Pico 2 / RP2350 / Hazard3 RISC-V / RV32I subset
-POC-1D  Pico 2 / RP2350 / Cortex-M33 / Armv8-M Mainline
-```
-
-Initial POC-1D target configuration:
+Architectural target:
 
 ```text
-Core:           Arm Cortex-M33
 ISA/profile:    Armv8-M Mainline
-Endianness:     little
 Execution:      bare metal
 ABI subset:     AAPCS integer subset
 Floating point: outside initial semantics
@@ -156,11 +144,17 @@ Assembly:       GNU Arm syntax
 Object model:   ELF32 Arm
 ```
 
-The CPU architecture changes while the physical development platform remains largely constant.
+Initial validation binding:
+
+```text
+CPU core:       Arm Cortex-M33
+SoC:            RP2350
+Board:          Raspberry Pi Pico 2
+```
+
+Using the same RP2350/Pico 2 platform is a validation strategy that reduces unrelated hardware variation while changing CPU architecture. Pico 2 is not an architectural target.
 
 ## POC-1E — Hosted ISA / OS expansion
-
-POC-1E begins hosted target validation using composable ISA and Execution Profiles rather than tying a desktop OS to one ISA.
 
 Initial validation configurations:
 
@@ -171,28 +165,20 @@ AArch64 + Linux
 AArch64 + macOS
 ```
 
-Follow-on valid configurations should include, when practical:
+Follow-on valid configurations, when practical:
 
 ```text
 AArch64 + Windows
-AArch64 + Android
 RV64 + Linux
 ```
 
-Hosted portability therefore tests two independent questions:
-
-```text
-same SpecIR across different ISA families
-same ISA family across different execution environments
-```
-
-The purpose is not to build all hosted backends at once. The purpose is to ensure the architecture does not contain assumptions that prevent major ISA or operating-system families from being implemented.
+Hosted portability tests both the same SpecIR across different ISA families and the same ISA family across different execution environments.
 
 ## Guardrails
 
-- SpecIR must not absorb ISA-, OS-, ABI-, object-format-, or board-specific details.
-- ISA Profile, Execution Profile, and Platform Profile remain explicit target dimensions.
+- SpecIR must not absorb ISA-, OS-, ABI-, object-format-, CPU-core-, or board-specific details.
+- ISA Profile, Execution Profile, Platform Profile, and Validation Binding remain distinct concepts.
 - A named TargetIR/MachineIR remains optional; machine bookkeeping must stay explicit and testable.
 - Unsupported operations, incompatible target-profile combinations, and resource exhaustion fail closed.
-- Native evidence must distinguish semantic checking from assembler, linker, ABI, emulator, operating-system, loader/runtime, signing/packaging, and hardware assumptions.
+- Native evidence must distinguish semantic checking from assembler, linker, ABI, emulator, operating-system, loader/runtime, platform, and hardware assumptions.
 - Reuse mature assembler/linker and platform tooling rather than reimplementing it inside Target Code Generation.
