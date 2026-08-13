@@ -12,6 +12,7 @@ import subprocess
 from typing import Any
 
 from backend import Poc1CError, expect, validate_codegen_specir, validate_target_config, RV32ICodeGenerator
+from target_profiles import RV32I_BAREMETAL
 
 ROOT = Path(__file__).resolve().parents[2]
 V2_PATH = ROOT / "prototypes" / "poc1" / "spec2exec_poc1_v2.py"
@@ -39,6 +40,12 @@ def tool_version(tool: str) -> str:
     return proc.stdout.splitlines()[0].strip()
 
 
+def resolve_target_profile(name: str) -> dict[str, Any]:
+    profiles = {"rv32i-baremetal": RV32I_BAREMETAL}
+    expect(name in profiles, "E_TARGET_PROFILE", f"unknown target profile {name!r}")
+    return validate_target_config(copy.deepcopy(profiles[name]))
+
+
 def verify_machine_independent_specir(spec_doc: Any, ir_doc: Any) -> dict[str, Any]:
     expect(isinstance(ir_doc, dict) and isinstance(ir_doc.get("function"), dict),
            "E_SPECIR", "SpecIR function must be an object")
@@ -54,10 +61,10 @@ def verify_machine_independent_specir(spec_doc: Any, ir_doc: Any) -> dict[str, A
     return verified
 
 
-def generate(specification_path: Path, specir_path: Path, target_path: Path,
+def generate(specification_path: Path, specir_path: Path, target_profile: str,
              build_dir: Path) -> dict[str, Path]:
     spec_doc, specir = load_json(specification_path), load_json(specir_path)
-    target = validate_target_config(load_json(target_path))
+    target = resolve_target_profile(target_profile)
     verified = verify_machine_independent_specir(spec_doc, specir)
     fn = validate_codegen_specir(specir)
     asm, state = RV32ICodeGenerator(fn, target).generate()
@@ -65,14 +72,17 @@ def generate(specification_path: Path, specir_path: Path, target_path: Path,
     build_dir.mkdir(parents=True, exist_ok=True)
     asm_path = build_dir / f"{fn['name']}.s"
     state_path = build_dir / "backend-state.json"
+    target_path = build_dir / "target-config.json"
     evidence_path = build_dir / "evidence.json"
     asm_path.write_text(asm, encoding="utf-8")
     write_json(state_path, state)
+    write_json(target_path, target)
 
     evidence = {
         "schema": "spec2exec.evidence/v0.1",
         "poc": "POC-1C.A",
         "subject": fn["name"],
+        "target_profile": target_profile,
         "claims": verified["evidence"] + [{
             "id": "P3.specir_to_rv32i_assembly",
             "status": "TESTED",
@@ -98,13 +108,13 @@ def generate(specification_path: Path, specir_path: Path, target_path: Path,
         },
     }
     write_json(evidence_path, evidence)
-    return {"asm": asm_path, "state": state_path, "evidence": evidence_path}
+    return {"asm": asm_path, "state": state_path, "target": target_path, "evidence": evidence_path}
 
 
-def build(specification_path: Path, specir_path: Path, target_path: Path,
+def build(specification_path: Path, specir_path: Path, target_profile: str,
           build_dir: Path, harness_path: Path, linker_script: Path,
           assembler: str, linker: str) -> dict[str, Path]:
-    paths = generate(specification_path, specir_path, target_path, build_dir)
+    paths = generate(specification_path, specir_path, target_profile, build_dir)
     fn = validate_codegen_specir(load_json(specir_path))
     obj = build_dir / f"{fn['name']}.o"
     harness_obj = build_dir / "runtime-harness.o"
