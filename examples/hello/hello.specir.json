@@ -1,0 +1,18 @@
+{
+  "specir_version": "spec2exec.specir/v0",
+  "program": {
+    "id": "program.hello",
+    "name": "hello",
+    "target": "host-c",
+    "trace": ["REQ-HELLO-001"],
+    "operations": [
+      {
+        "id": "op.stdout.hello",
+        "kind": "stdout.write",
+        "text": "Hello, world!\n",
+        "trace": ["REQ-HELLO-001"]
+      }
+    ],
+    "exit_status": 0
+  }
+}

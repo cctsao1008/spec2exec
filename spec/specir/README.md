@@ -1,43 +1,36 @@
 # SpecIR
 
-This directory contains the evolving normative and experimental definition of **SpecIR**, the formal machine-oriented representation between semantic synthesis and deterministic verification/lowering.
-
-No syntax is frozen yet.
+This directory tracks the normative direction for the Spec2Exec intermediate representation.
 
 ## Current status
 
-RFC 0003 defines the architectural role and design constraints. Phase 1 will introduce a deliberately minimal **experimental** subset for the deterministic Hello World pipeline.
+**Experimental SpecIR v0** is now instantiated by POC-0. It is intentionally tiny and must not be treated as a stable language or public compatibility contract.
 
-The experimental subset is a test vehicle, not a stable language specification.
-
-## Design boundary
-
-SpecIR must be:
+The first machine-readable schema is:
 
 ```text
-machine-oriented
-formally structured
-human-inspectable
-machine-authored by default
-optimized for synthesis → verification → lowering
+spec/schemas/specir-v0.schema.json
 ```
 
-It must not evolve into a mandatory manually authored general-purpose source language.
-
-## Phase 1 rule
-
-The first experimental SpecIR may be manually constructed only as a test fixture so the deterministic lower half can be tested without AI:
+The POC-0 instance is:
 
 ```text
-Accepted Specification
-      ↓
-Manually Constructed Candidate SpecIR
-      ↓
-Verifier
-      ↓
-Lowering
-      ↓
-Executable
+examples/hello/hello.specir.json
 ```
 
-See `docs/phase1-plan.md` and RFC 0005 before introducing AI semantic synthesis.
+## v0 semantic scope
+
+SpecIR v0 currently models only:
+
+- one program;
+- a program identifier and name;
+- a host-C lowering target;
+- ordered `stdout.write` operations;
+- process exit status;
+- traceability identifiers.
+
+It intentionally excludes timing, concurrency, hardware, units, ownership, arbitrary functions, state machines, and theorem-proving constructs.
+
+## Design rule
+
+SpecIR may have formal syntax and semantics, but it is not intended to become the mandatory human-authored general-purpose source language. It is optimized for synthesis, verification, traceability, and lowering.

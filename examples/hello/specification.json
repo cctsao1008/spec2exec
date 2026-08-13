@@ -1,0 +1,13 @@
+{
+  "specification_version": "spec2exec.specification/v0",
+  "requirement_id": "REQ-HELLO-001",
+  "title": "Hello World observable behavior",
+  "behavior": {
+    "stdout": "Hello, world!\n",
+    "exit_status": 0
+  },
+  "acceptance": {
+    "status": "accepted-for-poc",
+    "authority_role": "project maintainer"
+  }
+}

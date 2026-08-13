@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec2exec.example/schema/specir-v0.schema.json",
+  "title": "Spec2Exec Experimental SpecIR v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specir_version", "program"],
+  "properties": {
+    "specir_version": {
+      "const": "spec2exec.specir/v0"
+    },
+    "program": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "target", "trace", "operations", "exit_status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "target": {"const": "host-c"},
+        "trace": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "text", "trace"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "kind": {"const": "stdout.write"},
+              "text": {"type": "string"},
+              "trace": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        },
+        "exit_status": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      }
+    }
+  }
+}

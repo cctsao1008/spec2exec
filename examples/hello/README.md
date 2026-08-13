@@ -1,55 +1,48 @@
 # Hello Example — POC-0
 
-The first Spec2Exec proof of concept validates deterministic toolchain plumbing. It intentionally does **not** use AI semantic synthesis.
+This example is the first deterministic Spec2Exec pipeline experiment.
 
-## Accepted behavior
+## Authoritative example artifacts
 
 ```text
-program.name = "hello"
-target = "linux-x86_64"
-stdout = "Hello, world!\n"
-exit_status = 0
+specification.json   accepted POC specification
+hello.specir.json    manually constructed experimental SpecIR v0
 ```
 
-For POC-0, this small example specification is treated as the accepted source of truth.
+The accepted behavior is:
 
-## Experimental pipeline
+```text
+stdout: "Hello, world!\n"
+exit status: 0
+```
+
+The prototype checks that the SpecIR trace references the accepted requirement and that the SpecIR stdout/exit behavior matches the accepted specification.
+
+## Pipeline
 
 ```text
 Accepted Specification
   ↓
-Manually Constructed Candidate SpecIR
+SpecIR v0
   ↓
-Loader / Parser
+POC-0 Verifier
   ↓
-Deterministic Verifier
+Generated C
   ↓
-C or LLVM IR lowering
+Host C Toolchain
   ↓
-Existing toolchain
+Executable
   ↓
-Linux ELF executable
-  ↓
-Runtime output / exit-status check
+Runtime Output Check
 ```
 
-Manual construction of Candidate SpecIR is allowed only as a Phase 1 test fixture. It is not the intended long-term Spec2Exec development interface.
+## Run
 
-## POC-0 verifies
+From the repository root:
 
-- deterministic SpecIR loading;
-- structural / semantic checks defined by the minimal subset;
-- lowering mechanics;
-- host compiler integration;
-- reproducible runtime behavior;
-- traceability from generated artifact toward the accepted example requirement.
+```bash
+make test
+make poc0
+```
 
-## POC-0 does not verify
-
-- AI semantic synthesis quality;
-- specification completeness;
-- general intent fidelity;
-- timing, concurrency, safety, hardware, or control semantics;
-- the broader claim that specification-centric development scales better than programming-language-centric development.
-
-Those questions belong to later experiments.
+POC-0 validates toolchain plumbing and a minimal evidence model. It does not prove the general Spec2Exec thesis, general specification completeness, lowering equivalence, or compiler correctness.

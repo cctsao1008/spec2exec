@@ -1,4 +1,8 @@
-# Phase 1 Plan — Minimal SpecIR and Deterministic Hello Pipeline
+# Phase 1 Plan — Minimal SpecIR and Deterministic Pipeline
+
+- **Status:** Active
+- **Phase 0 architecture definition:** complete for the initial prototype baseline
+- **Current experiment:** POC-0 — Deterministic Hello Pipeline
 
 ## Objective
 
@@ -26,26 +30,24 @@ If this path cannot be made clear, deterministic, inspectable, and traceable, ad
 
 ## POC-0 — Hello World
 
-Purpose: verify toolchain plumbing only.
+Purpose: verify toolchain plumbing and the minimum evidence/traceability path.
 
-Required path:
+Current implementation path:
 
 ```text
-accepted hello specification
+examples/hello/specification.json
       ↓
-experimental SpecIR document
+examples/hello/hello.specir.json
       ↓
-loader / parser
+prototypes/poc0/spec2exec_poc0.py
       ↓
-schema + semantic verifier
+verification + C lowering
       ↓
-C or LLVM IR lowering
+host C compiler
       ↓
-system compiler
+build/poc0/hello
       ↓
-Linux ELF executable
-      ↓
-runtime output check
+runtime stdout / exit-status check
 ```
 
 Expected externally observable behavior:
@@ -56,6 +58,27 @@ exit status: 0
 ```
 
 POC-0 does **not** validate the broader Spec2Exec thesis. It validates only the deterministic mechanics needed for later experiments.
+
+## POC-0 evidence boundary
+
+The initial prototype CHECKS:
+
+- supported SpecIR v0 structure;
+- operation identifiers and operation kind;
+- traceability scope;
+- exit-status range;
+- accepted requirement trace linkage;
+- accepted specification ↔ SpecIR stdout linkage;
+- accepted specification ↔ SpecIR exit-status linkage;
+- runtime stdout and exit status during the experiment.
+
+It does NOT currently prove:
+
+- human intent fidelity;
+- general specification completeness;
+- lowering semantic equivalence;
+- host C compiler correctness;
+- machine-code semantic equivalence.
 
 ## POC-1 — Bounded Arithmetic
 
@@ -111,29 +134,30 @@ The exact requirements must be explicitly accepted before being treated as autho
 - No LLM or AI is required in POC-0 through the initial verifier/lowering path.
 - Candidate SpecIR may be manually constructed as a test fixture.
 - Manual SpecIR construction is not the intended long-term development interface.
-- Generated C, if used, is a lowering artifact and not the source of truth.
+- Generated C is a lowering artifact and not the source of truth.
 - A verifier PASS must identify which properties were checked.
 - Unsupported properties must remain explicit.
 - Traceability identifiers must survive into generated artifacts where practical.
+- Semantic-preservation evidence follows RFC 0006.
 
 ## Experimental SpecIR scope
 
-The first SpecIR subset should be deliberately small. POC-0 needs only enough semantics to represent a program with ordered operations, stdout output, process exit, and traceability identifiers.
+The first SpecIR subset is deliberately small. POC-0 represents only a program with ordered stdout operations, process exit status, and traceability identifiers.
 
 Do not add timing, concurrency, hardware, ownership, or theorem-proving constructs until a POC requires them.
 
-## Suggested implementation order
+## POC-0 implementation sequence
 
-1. Define an experimental SpecIR document for Hello World.
-2. Define deterministic structural validation rules.
-3. Implement a loader and verifier.
-4. Implement lowering to C as the simplest backend bridge.
-5. Compile with the host C toolchain to ELF.
-6. Execute and check stdout / exit status.
-7. Preserve traceability metadata in generated comments or sidecar evidence.
-8. Add negative tests that must be rejected by the verifier.
-9. Only after the deterministic path is stable, evaluate direct LLVM IR or MLIR lowering.
-10. Introduce AI semantic synthesis later as an untrusted producer of the same candidate SpecIR.
+1. Define accepted Hello specification. **Done.**
+2. Define experimental SpecIR v0 document. **Done.**
+3. Define structural/semantic validation rules. **Done.**
+4. Implement deterministic loader/verifier. **Done.**
+5. Implement lowering to C. **Done.**
+6. Compile with host C toolchain and execute. **Validated locally before commit.**
+7. Emit explicit verification evidence. **Done.**
+8. Add negative verification tests. **Done.**
+9. Reproduce the same path in CI. **Next.**
+10. Only after the deterministic path is stable, consider direct LLVM IR/MLIR lowering and later AI semantic synthesis.
 
 ## Exit criteria for POC-0
 
@@ -144,7 +168,9 @@ POC-0 is complete when:
 - valid SpecIR deterministically passes validation;
 - intentionally invalid SpecIR deterministically fails;
 - lowering generates a buildable intermediate artifact;
-- the existing compiler produces a Linux ELF executable;
+- an existing compiler produces a Linux ELF executable;
 - execution produces exactly the expected stdout and exit status;
-- the build can be reproduced from the accepted specification and SpecIR test fixture;
+- the build is reproducible through the repository commands/CI;
 - verification evidence clearly states what was and was not verified.
+
+The local implementation satisfies all criteria except repository CI reproducibility, which is the next engineering task.
