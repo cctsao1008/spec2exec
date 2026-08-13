@@ -7,7 +7,7 @@
 - **Next architecture experiment:** POC-1C.A — Pico 2 Hazard3 / RV32I Native Pipeline Validation
 - **Following architecture stress experiment:** POC-1C.B — Hazard3 Native Backend Stress
 - **Later portability experiment:** POC-1D — Pico 2 Cortex-M33 Cross-Target Generation
-- **Later hosted portability experiment:** POC-1E — x86_64 Linux / Windows / macOS Matrix
+- **Later hosted portability experiment:** POC-1E — Hosted ISA / OS Expansion
 - **Next semantic experiment:** POC-2 — State Machine
 - **Parallel research:** A0 — Adversarial Semantic Resolution
 
@@ -36,6 +36,8 @@ Executable / Firmware
 ```
 
 C and LLVM remain optional reference/comparison paths.
+
+Target implementation is decomposed into compatible ISA, Execution, and optional Platform Profiles. The long-term goal is implementation coverage across major CPU ISA families and operating-system/execution environments without changing machine-independent SpecIR.
 
 ## POC-1C Target Profile — Pico 2 Hazard3 / RV32I subset
 
@@ -127,52 +129,50 @@ POC-1D  Pico 2 / RP2350 / Cortex-M33 / Armv8-M Mainline
 
 The initial Cortex-M33 profile keeps floating-point, TrustZone/security-state behavior, DSP-specific operations, and other target-specific features outside the experiment unless explicitly enabled later.
 
-```text
-                     same Verified SpecIR
-                            │
-                 ┌──────────┴──────────┐
-                 ▼                     ▼
-       Hazard3 / RV32I        Cortex-M33 / Armv8-M
-                 │                     │
-                 ▼                     ▼
-          RISC-V assembly          Arm assembly
-                 │                     │
-                 └──────────┬──────────┘
-                            ▼
-                    same RP2350 / Pico 2
-```
+This deliberately changes CPU architecture while keeping the physical development platform largely constant.
 
-This deliberately changes CPU architecture while keeping the physical development platform largely constant. Target semantics remain in Target Profiles; RP2350/Pico 2 board and memory/image details remain in the Platform Profile.
+## POC-1E — Hosted ISA / OS Expansion
 
-## POC-1E — x86_64 Hosted Platform Matrix
+POC-1E begins hosted portability validation. It must not model a desktop operating system as being inseparable from one ISA. Instead, hosted targets are combinations of ISA and execution environment.
 
-After the first embedded cross-target result, POC-1E adds a third ISA family and separates ISA portability from hosted operating-system ABI/object portability.
+Initial validation set:
 
 ```text
-x86_64 / Linux    SysV AMD64 subset      ELF64
-x86_64 / Windows  Microsoft x64 subset   COFF + PE32+
-x86_64 / macOS    Darwin x86_64 subset   Mach-O
+x86_64 + Linux
+x86_64 + Windows
+AArch64 + Linux
+AArch64 + macOS
 ```
 
-These are separate Target Profiles sharing the same x86_64 ISA. The ABI, object format, symbol/linker conventions, and executable environment remain explicit rather than being hidden behind `x86_64`.
-
-POC-1E initially reuses the same narrow arithmetic semantics and validates native generation and execution on each hosted environment before adding wider ISA features.
+Follow-on valid combinations should include, when practical:
 
 ```text
-                           same Verified SpecIR
-                                  │
-              ┌───────────────────┼───────────────────┐
-              ▼                   ▼                   ▼
-      Hazard3 / RV32I    Cortex-M33 / Armv8-M       x86_64
-              │                   │                   │
-              ▼                   ▼        ┌──────────┼──────────┐
-       RISC-V assembly        Arm assembly  ▼          ▼          ▼
-              │                   │       Linux     Windows     macOS
-              ▼                   ▼       ELF64     PE/COFF     Mach-O
-          Pico 2              Pico 2
+AArch64 + Windows
+AArch64 + Android
+RV64 + Linux
 ```
 
-This is representative architectural coverage, not a claim of complete ISA or operating-system coverage. A later AArch64/arm64 hosted profile may be added separately and is not part of initial POC-1E acceptance criteria.
+The broader architecture coverage goal is:
+
+```text
+ISA families
+    x86_64
+    AArch64 / Arm64
+    RISC-V RV32 / RV64
+    Arm M-profile
+
+Execution environments
+    Linux
+    Windows
+    macOS
+    Android
+    bare metal
+    selected RTOS profiles
+```
+
+This is not a requirement to implement every ISA × OS Cartesian-product pair. A target is supported only when a valid ISA/ABI/object/runtime combination exists and its assumptions are explicit.
+
+The same machine-independent SpecIR should remain reusable across all supported configurations.
 
 See `docs/target-profiles.md` and RFC 0009.
 
