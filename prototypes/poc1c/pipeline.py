@@ -4,22 +4,25 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import importlib.util
 import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from typing import Any
 
 from backend import Poc1CError, expect, validate_codegen_specir, validate_target_config, RV32ICodeGenerator
 from target_profiles import RV32I_BAREMETAL
+import verification as verifier
 
 ROOT = Path(__file__).resolve().parents[2]
-V2_PATH = ROOT / "prototypes" / "poc1" / "spec2exec_poc1_v2.py"
-_v2_spec = importlib.util.spec_from_file_location("spec2exec_poc1_v2", V2_PATH)
-v2 = importlib.util.module_from_spec(_v2_spec)
-assert _v2_spec and _v2_spec.loader
-_v2_spec.loader.exec_module(v2)
+POC1C_SOURCE_FILES = [
+    ROOT / "prototypes" / "poc1c" / "backend.py",
+    ROOT / "prototypes" / "poc1c" / "pipeline.py",
+    ROOT / "prototypes" / "poc1c" / "target_profiles.py",
+    ROOT / "prototypes" / "poc1c" / "verification.py",
+    ROOT / "Makefile",
+]
 
 
 def load_json(path: Path) -> Any:
@@ -35,9 +38,23 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def rel(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(ROOT.resolve()))
+    except ValueError:
+        return str(path)
+
+
 def tool_version(tool: str) -> str:
     proc = subprocess.run([tool, "--version"], text=True, capture_output=True, check=True)
     return proc.stdout.splitlines()[0].strip()
+
+
+def source_revision() -> str:
+    proc = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    return proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else "UNAVAILABLE"
 
 
 def resolve_target_profile(name: str) -> dict[str, Any]:
@@ -46,19 +63,127 @@ def resolve_target_profile(name: str) -> dict[str, Any]:
     return validate_target_config(copy.deepcopy(profiles[name]))
 
 
+def resolve_gnu_toolchain_binding(target: dict[str, Any]) -> dict[str, list[str]]:
+    """Translate a validated target configuration into GNU binutils options.
+
+    The target profile is the source of truth. Tool flags are not independently
+    hardcoded at the call site, and unsupported profile combinations fail closed.
+    """
+    isa = target["isa_profile"]
+    exe = target["execution_profile"]
+    key = (
+        isa["architecture"],
+        isa["isa"],
+        tuple(isa["extensions"]),
+        exe["environment"],
+        exe["abi"],
+        exe["object_model"],
+    )
+    bindings = {
+        ("riscv", "rv32i", (), "bare-metal", "ilp32-integer-subset", "elf32-riscv"): {
+            "assembler_flags": ["-march=rv32i", "-mabi=ilp32"],
+            "linker_flags": ["-m", "elf32lriscv"],
+        }
+    }
+    expect(key in bindings, "E_TARGET_PROFILE", f"no GNU toolchain binding for target {key!r}")
+    return copy.deepcopy(bindings[key])
+
+
 def verify_machine_independent_specir(spec_doc: Any, ir_doc: Any) -> dict[str, Any]:
-    expect(isinstance(ir_doc, dict) and isinstance(ir_doc.get("function"), dict),
-           "E_SPECIR", "SpecIR function must be an object")
-    expect("target" not in ir_doc["function"], "E_SPECIR_TARGET_LEAK",
-           "machine-independent SpecIR must not contain function.target")
-    compat = copy.deepcopy(ir_doc)
-    compat["function"]["target"] = "host-c"
     try:
-        verified = v2.verify_specir(compat, v2.verify_specification(spec_doc))
-    except v2.VerificationError as exc:
+        spec_info = verifier.verify_specification(spec_doc)
+        return verifier.verify_specir(ir_doc, spec_info)
+    except verifier.VerificationError as exc:
         raise Poc1CError(str(exc)) from exc
-    verified["function"] = ir_doc["function"]
-    return verified
+
+
+def normalized_verifier_claims(verified: dict[str, Any], specification_path: Path,
+                               specir_path: Path) -> list[dict[str, Any]]:
+    binding = {
+        "specification_sha256": sha256(specification_path),
+        "specir_sha256": sha256(specir_path),
+    }
+    result = []
+    for claim in verified["evidence"]:
+        item = dict(claim)
+        item["producer"] = "poc1c-target-neutral-verifier"
+        item["assumptions"] = ["bounded integer model; declared input ranges are preconditions"]
+        item["subject_binding"] = dict(binding)
+        result.append(item)
+    return result
+
+
+def expected_case_count(ranges: dict[str, tuple[int, int]]) -> int:
+    cases = 1
+    for lo, hi in ranges.values():
+        cases *= hi - lo + 1
+    return cases
+
+
+def split_lui_addi(value: int) -> tuple[int, int]:
+    upper = (value + 0x800) >> 12
+    lower = value - (upper << 12)
+    expect(-2048 <= lower <= 2047, "E_P4_DOMAIN", "internal LUI/ADDI split is invalid")
+    return upper, lower
+
+
+def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
+                             verified: dict[str, Any]) -> dict[str, Any]:
+    """Mechanically bind the hand-written harness to the verified domain/oracle.
+
+    POC-1C.A intentionally keeps an assembly-only harness. Until the harness is
+    generated, any change in the accepted domain must either match these encoded
+    bounds or fail closed before TESTED_EXHAUSTIVE can be emitted.
+    """
+    text = harness_path.read_text(encoding="utf-8")
+    inputs = verified["function"]["inputs"]
+    expect(len(inputs) == 2 and [item["id"] for item in inputs] == ["a", "b"],
+           "E_P4_DOMAIN", "POC-1C.A runtime harness supports exactly inputs a,b")
+    ranges = verified["input_ranges"]
+    a_lo, a_hi = ranges["a"]
+    b_lo, b_hi = ranges["b"]
+
+    required_bounds = [
+        f"addi s0, zero, {a_lo}",
+        f"addi s1, zero, {b_lo}",
+        f"addi t0, zero, {b_hi + 1}",
+        f"addi t0, zero, {a_hi + 1}",
+    ]
+    for instruction in required_bounds:
+        expect(instruction in text, "E_P4_DOMAIN",
+               f"runtime harness is not bound to verified domain: missing {instruction!r}")
+
+    cases = expected_case_count(ranges)
+    upper, lower = split_lui_addi(cases)
+    expect(f"lui t2, 0x{upper:x}" in text and f"addi t2, t2, {lower}" in text,
+           "E_P4_DOMAIN", "runtime harness case-count check does not match verified domain")
+
+    contract = spec_doc.get("function", {}).get("poc1b_contract", {})
+    expect(contract.get("expr") == "a", "E_P4_ORACLE",
+           "POC-1C.A harness currently supports the accepted result == a contract only")
+    expect("bne a0, s0, .L_fail" in text, "E_P4_ORACLE",
+           "runtime harness oracle does not implement result == a")
+
+    return {
+        "input_ranges": {name: [lo, hi] for name, (lo, hi) in ranges.items()},
+        "expected_cases": cases,
+        "oracle": "result == a",
+        "oracle_kind": "accepted-contract-observation",
+    }
+
+
+def base_artifacts(specification_path: Path, specir_path: Path, target_path: Path,
+                   asm_path: Path, state_path: Path) -> dict[str, str]:
+    artifacts = {
+        rel(specification_path): sha256(specification_path),
+        rel(specir_path): sha256(specir_path),
+        rel(target_path): sha256(target_path),
+        rel(asm_path): sha256(asm_path),
+        rel(state_path): sha256(state_path),
+    }
+    for path in POC1C_SOURCE_FILES:
+        artifacts[rel(path)] = sha256(path)
+    return artifacts
 
 
 def generate(specification_path: Path, specir_path: Path, target_profile: str,
@@ -83,10 +208,24 @@ def generate(specification_path: Path, specir_path: Path, target_profile: str,
         "poc": "POC-1C.A",
         "subject": fn["name"],
         "target_profile": target_profile,
-        "claims": verified["evidence"] + [{
+        "source_revision": source_revision(),
+        "claims": normalized_verifier_claims(verified, specification_path, specir_path) + [{
             "id": "P3.specir_to_rv32i_assembly",
             "status": "TESTED",
-            "scope": "deterministic add/sub RV32I code-generation rules; not a formal equivalence proof",
+            "producer": "rv32i-direct-v0.1",
+            "scope": "POC-1C.A accepted add/sub expression subset; semantic preservation is not formally proven",
+            "semantic_model": {
+                "model": "fixed-width-bitvector-v1",
+                "width": 32,
+                "type": verified["type"],
+                "overflow_behavior": "forbidden within declared input ranges",
+            },
+            "target_model": {
+                "isa": "rv32i",
+                "xlen": 32,
+                "integer_width_binding": "i32/u32 storage width equals XLEN for this POC",
+            },
+            "assumptions": ["P1/P2 declared-range obligations hold"],
             "subject_binding": {
                 "specir_sha256": sha256(specir_path),
                 "target_config_sha256": sha256(target_path),
@@ -94,18 +233,12 @@ def generate(specification_path: Path, specir_path: Path, target_profile: str,
                 "backend_state_sha256": sha256(state_path),
             },
             "tcb": [
-                "Python runtime",
+                f"Python runtime {sys.version.split()[0]}",
                 "POC-1C.A target generator",
-                "POC-1A P1/P2 verifier compatibility path",
+                "POC-1C target-neutral P1/P2 verifier",
             ],
         }],
-        "artifacts": {
-            str(specification_path): sha256(specification_path),
-            str(specir_path): sha256(specir_path),
-            str(target_path): sha256(target_path),
-            str(asm_path): sha256(asm_path),
-            str(state_path): sha256(state_path),
-        },
+        "artifacts": base_artifacts(specification_path, specir_path, target_path, asm_path, state_path),
     }
     write_json(evidence_path, evidence)
     return {"asm": asm_path, "state": state_path, "target": target_path, "evidence": evidence_path}
@@ -115,7 +248,13 @@ def build(specification_path: Path, specir_path: Path, target_profile: str,
           build_dir: Path, harness_path: Path, linker_script: Path,
           assembler: str, linker: str) -> dict[str, Path]:
     paths = generate(specification_path, specir_path, target_profile, build_dir)
-    fn = validate_codegen_specir(load_json(specir_path))
+    spec_doc, specir = load_json(specification_path), load_json(specir_path)
+    verified = verify_machine_independent_specir(spec_doc, specir)
+    fn = validate_codegen_specir(specir)
+    target = resolve_target_profile(target_profile)
+    toolchain = resolve_gnu_toolchain_binding(target)
+    runtime_validation = validate_runtime_harness(harness_path, spec_doc, verified)
+
     obj = build_dir / f"{fn['name']}.o"
     harness_obj = build_dir / "runtime-harness.o"
     elf = build_dir / f"{fn['name']}.elf"
@@ -124,42 +263,64 @@ def build(specification_path: Path, specir_path: Path, target_profile: str,
     expect(as_path is not None, "E_TOOLCHAIN", f"assembler not found: {assembler}")
     expect(ld_path is not None, "E_TOOLCHAIN", f"linker not found: {linker}")
 
-    as_generated = [as_path, "-march=rv32i", "-mabi=ilp32", str(paths["asm"]), "-o", str(obj)]
-    as_harness = [as_path, "-march=rv32i", "-mabi=ilp32", str(harness_path), "-o", str(harness_obj)]
-    link_cmd = [ld_path, "-m", "elf32lriscv", "-T", str(linker_script),
+    as_generated = [as_path, *toolchain["assembler_flags"], str(paths["asm"]), "-o", str(obj)]
+    as_harness = [as_path, *toolchain["assembler_flags"], str(harness_path), "-o", str(harness_obj)]
+    link_cmd = [ld_path, *toolchain["linker_flags"], "-T", str(linker_script),
                 str(harness_obj), str(obj), "-o", str(elf)]
     subprocess.run(as_generated, check=True)
     subprocess.run(as_harness, check=True)
     subprocess.run(link_cmd, check=True)
 
     evidence = load_json(paths["evidence"])
+    evidence["runtime_validation"] = runtime_validation
+    evidence["toolchain_binding"] = toolchain
     evidence["claims"].extend([
         {
             "id": "P4-A.assembly_to_object",
             "status": "TRUSTED",
+            "producer": "GNU assembler",
+            "assumptions": ["assembler correctly implements declared RV32I/ILP32 options"],
             "tool": {"path": as_path, "version": tool_version(as_path)},
             "invocation": as_generated,
             "subject_binding": {
                 "assembly_sha256": sha256(paths["asm"]),
                 "object_sha256": sha256(obj),
+                "target_config_sha256": sha256(paths["target"]),
+            },
+        },
+        {
+            "id": "P4-H.harness_assembly",
+            "status": "TRUSTED",
+            "producer": "GNU assembler",
+            "assumptions": ["runtime harness source implements the mechanically checked domain/oracle"],
+            "tool": {"path": as_path, "version": tool_version(as_path)},
+            "invocation": as_harness,
+            "subject_binding": {
+                "harness_source_sha256": sha256(harness_path),
+                "harness_object_sha256": sha256(harness_obj),
             },
         },
         {
             "id": "P4-L.object_to_linked_elf",
             "status": "TRUSTED",
+            "producer": "GNU linker",
+            "assumptions": ["linker and linker script correctly realize the declared ELF32 layout"],
             "tool": {"path": ld_path, "version": tool_version(ld_path)},
             "invocation": link_cmd,
             "subject_binding": {
                 "generated_object_sha256": sha256(obj),
                 "harness_object_sha256": sha256(harness_obj),
+                "linker_script_sha256": sha256(linker_script),
                 "linked_elf_sha256": sha256(elf),
             },
         },
     ])
     evidence["artifacts"].update({
-        str(obj): sha256(obj),
-        str(harness_obj): sha256(harness_obj),
-        str(elf): sha256(elf),
+        rel(harness_path): sha256(harness_path),
+        rel(linker_script): sha256(linker_script),
+        rel(obj): sha256(obj),
+        rel(harness_obj): sha256(harness_obj),
+        rel(elf): sha256(elf),
     })
     write_json(paths["evidence"], evidence)
     return {**paths, "object": obj, "harness_object": harness_obj, "elf": elf}
@@ -169,18 +330,41 @@ def run_qemu(elf: Path, evidence_path: Path, qemu: str) -> None:
     qemu_path = shutil.which(qemu)
     expect(qemu_path is not None, "E_TOOLCHAIN", f"emulator not found: {qemu}")
     command = [qemu_path, "-machine", "virt", "-nographic", "-bios", "none", "-kernel", str(elf)]
-    proc = subprocess.run(command, timeout=10)
-    expect(proc.returncode == 0, "E_RUNTIME", f"QEMU returned {proc.returncode}")
+    proc = subprocess.run(command, timeout=10, text=True, capture_output=True)
+    detail = (proc.stderr or proc.stdout or "").strip()
+    expect(proc.returncode == 0, "E_RUNTIME",
+           f"QEMU returned {proc.returncode}" + (f": {detail[-500:]}" if detail else ""))
 
     evidence = load_json(evidence_path)
+    runtime_validation = evidence["runtime_validation"]
     evidence["claims"].append({
         "id": "P4-R.linked_elf_runtime",
         "status": "TESTED_EXHAUSTIVE",
-        "scope": "safe_add_sub a,b in [-100,100], 40,401 input pairs, assembly-only harness",
+        "producer": "POC-1C assembly runtime harness under QEMU",
+        "scope": {
+            "kind": "accepted-contract-observation",
+            "input_ranges": runtime_validation["input_ranges"],
+            "expected_cases": runtime_validation["expected_cases"],
+            "oracle": runtime_validation["oracle"],
+        },
+        "assumptions": [
+            "QEMU rv32 virt models the exercised RV32I behavior correctly",
+            "SiFive test finisher maps PASS to exit 0 and FAIL to non-zero exit",
+            "runtime harness case-count assertion completes before PASS",
+        ],
         "tool": {"path": qemu_path, "version": tool_version(qemu_path)},
         "invocation": command,
-        "subject_binding": {"linked_elf_sha256": sha256(elf)},
-        "cross_validates": ["P3.specir_to_rv32i_assembly"],
-        "notes": "Runtime agreement does not discharge the P3 preservation obligation.",
+        "subject_binding": {
+            "linked_elf_sha256": sha256(elf),
+            "harness_source_sha256": evidence["artifacts"]["tests/poc1c/runtime/safe_add_sub_harness.s"],
+            "linker_script_sha256": evidence["artifacts"]["tests/poc1c/runtime/rv32i_virt.ld"],
+        },
+        "tcb": [
+            "QEMU rv32 virt machine model",
+            "QEMU SiFive test finisher protocol at 0x100000",
+            "POC-1C assembly runtime harness",
+            "POC-1C linker script",
+        ],
+        "notes": "This is exhaustive contract observation over the declared domain, not a structural comparison of the generated instruction sequence and not a formal P3 proof.",
     })
     write_json(evidence_path, evidence)
