@@ -1,238 +1,103 @@
 # Phase 1 Plan — Minimal SpecIR and Deterministic Pipeline
 
 - **Status:** Active
-- **Phase 0 architecture definition:** complete for the initial prototype baseline
 - **POC-0:** complete
-- **POC-1A:** complete
-- **Next deterministic experiment:** POC-1B — Preservation Stress Tests
-- **Parallel research track:** A0 — Adversarial Semantic Resolution Benchmark
+- **POC-1A:** complete and evidence-hardened
+- **POC-1B:** complete for the initial host-C experiment
+- **Next deterministic experiment:** POC-2 — State Machine
+- **Parallel research:** A0 — Adversarial Semantic Resolution
 
 ## Objective
 
-Phase 1 tests the lower half of the Spec2Exec architecture without connecting AI to executable generation.
+Phase 1 tests the deterministic lower half without connecting AI to executable generation.
 
 ```text
 Accepted Specification
       ↓
-Candidate SpecIR
+SpecIR
       ↓
 Deterministic Verification
       ↓
-Semantic-Preservation Evidence
+Preservation Evidence
       ↓
-Lowering
-      ↓
-Existing Compiler Backend
+Lowering / Compiler
       ↓
 Executable
 ```
 
-AI semantic resolution is studied independently in A0 so the upper-half risk can be measured without contaminating the deterministic implementation experiments.
-
-## POC-0 — Hello World
-
-**Status: Complete**
-
-POC-0 established repository plumbing, accepted-specification linkage, a tiny SpecIR representation, deterministic verification, C lowering, executable generation, runtime checks, negative tests, and CI reproduction.
-
-It did not establish nontrivial arithmetic semantics or lowering equivalence.
-
 ## POC-1A — Bounded Integer Semantics
 
-**Status: Complete**
+POC-1A uses `i32/u32`, straight-line `+ - *`, ranges, pre/postconditions, traceability, and `overflow_behavior = forbidden`.
 
-### Implemented semantic subset
-
-```text
-i32 / u32
-+ - *
-comparisons / booleans in contracts
-input/output ranges
-preconditions
-postconditions
-overflow_behavior = forbidden
-straight-line, side-effect-free body
-traceability
-```
-
-Explicitly deferred:
+The hardened implementation distinguishes:
 
 ```text
-float
-/ and %
-loops / recursion
-pointers / memory aliasing
-arrays / structs
-mutable local state
-implicit casts
-concurrency
-timing
-hardware I/O
+P2.no_signed_overflow_ub
+P2.no_unsigned_wraparound
 ```
 
-### Contract-domain rule
-
-POC-1A semantic claims apply only to inputs satisfying the accepted preconditions. Runtime enforcement of violated preconditions is a later experiment.
-
-Behavior outside the accepted contract domain is not claimed to be verified by POC-1A.
-
-### P1 — Accepted Specification → SpecIR
-
-POC-1A deterministically rejects:
-
-- an untraceable numeric constraint;
-- an accepted specification clause missing from SpecIR;
-- a projected range that differs from the accepted specification;
-- a behavior expression that differs from the accepted specification.
-
-Specification and SpecIR therefore remain different artifacts, but drift between their machine-comparable semantics is a verification failure.
-
-### P2 — SpecIR checks
-
-POC-1A checks:
-
-- fixed-width integer types;
-- range validity within the declared machine type;
-- canonical precondition projection;
-- canonical output/postcondition projection;
-- static exclusion of arithmetic overflow over the accepted input domain;
-- output-range containment;
-- traceability coverage.
-
-### P3 — Translation validation
-
-POC-1A uses boundary-level semantic equivalence rather than AST-node identity.
+P3-A now uses a model-scoped 32-bit bit-vector claim instead of the earlier bare `PROVEN` wording:
 
 ```text
-SpecIR function semantics
-          ↓
-   emitted C function
+P3A.restricted_emitted_expression_equivalence = SOLVER_PROVEN
+semantic_model = fixed-width-bitvector-v1
 ```
 
-The validator extracts the exact emitted C return expression, parses it independently, translates the SpecIR and emitted-C expressions to SMT, and asks whether any accepted input makes their outputs differ.
-
-The initial `safe_add` experiment produced:
+Its recorded obligations are:
 
 ```text
-P3.function_output_equivalence = PROVEN
-method = SMT translation validation
-scope = function contract boundary / return value
+Q0 domain_non_vacuous       SAT
+Q1 no_overflow_or_wrap      UNSAT
+Q2 encoder_cross_check      UNSAT
+Q3 result_equivalence       UNSAT
+Q4 harness_sensitivity      SAT
 ```
 
-The claim is deliberately narrow and does not prove the C compiler.
+P2 interval analysis and P3-A bit-vector safety cross-validate each other. Generated C uses type-aware integer literals and exact SpecIR/C hashes bind evidence to the compiled source.
 
-### P4 — Executable behavior
+For `safe_add`, P4 still executes all 10,201 accepted input pairs and records `TESTED_EXHAUSTIVE`.
 
-The compiled `safe_add` shared-library function was invoked for every accepted input pair:
+## POC-1B — C Semantic and Optimization Preservation
+
+POC-1B adds an independent C-aware path using CBMC.
 
 ```text
-a ∈ [0, 100]
-b ∈ [0, 100]
-101 × 101 = 10,201 cases
+function: safe_add_sub
+body:     (a + b) - b
+a,b:      i32 [-100,100]
+overflow: forbidden
+contract: result == a
 ```
 
-The result was:
+The first successful CI run recorded:
 
 ```text
-P4.binary_behavior_over_declared_domain = TESTED_EXHAUSTIVE
-compiler optimization = -O2
+P3-A BitVec model             SOLVER_PROVEN
+P3-B generated-C contract     MODEL_CHECKED
+Clang -O0 add/sub count       2
+Clang -O2 add/sub count       0
+P4 exhaustive cases           40,401
+POC-1B result                 PASS
 ```
 
-### CI result
+The optimization observation has no semantic proof status by itself. It demonstrates that the original add/sub structure disappeared while contract-level evidence and exhaustive behavior checks remained available.
 
-The first POC-1A GitHub Actions run completed successfully. It installed the SMT solver, ran all seven unit/negative tests including a deliberately tampered generated-C expression, completed the end-to-end POC-1A pipeline, and emitted the evidence record.
+This supports only a narrow result: for the current straight-line bounded-integer example, traceability does not require one-to-one node identity.
 
-### P3 granularity decision
+POC-1B does not claim compiler correctness, machine-code equivalence, target ABI correctness, or hardware semantics. See RFC 0008.
 
-Traceability does not require one-to-one AST/node identity. Optimizations may fold or eliminate intermediate nodes. Semantic preservation is judged at a declared contract boundary such as function input/output or, in later POCs, a state-transition boundary.
+## A0 — Semantic Resolution
 
-Provenance may therefore be many-to-many and is distinct from structural identity.
-
-See RFC 0007.
-
-## A0 — Adversarial Semantic Resolution Benchmark
-
-### Status
-
-**Benchmark definition and scoring harness created; model baselines not yet run.**
-
-### Goal
-
-Measure whether an AI semantic-resolution system can expose missing, ambiguous, and conflicting requirements instead of inventing plausible executable values.
-
-A0 is intentionally disconnected from the executable pipeline.
-
-Initial decisions:
-
-```text
-RESOLVED
-UNRESOLVED
-CONFLICT
-```
-
-Initial metrics include:
-
-- unsafe resolution rate;
-- unresolved recall;
-- conflict recall;
-- resolved-case accuracy;
-- overall decision accuracy.
-
-The initial benchmark contains 16 cases covering safety thresholds, timing, numeric bounds, recovery behavior, units, conflicting requirements, and hardware-register semantics.
-
-No favorable threshold is selected in advance. Initial model runs establish baselines and an error taxonomy.
-
-## POC-1B — Preservation Stress Tests
-
-POC-1B will deliberately transform expressions to test whether translation validation survives legal algebraic rewrites without requiring node-for-node correspondence.
-
-Example class:
-
-```text
-SpecIR expression graph
-        ↓ optimization / simplification
-semantically equivalent lowered expression
-```
-
-The objective is to test the distinction between traceability provenance and semantic equivalence before POC-2 introduces persistent state.
+A0 remains independent from executable generation. The benchmark/scoring harness exists; model baselines have not yet been run.
 
 ## POC-2 — State Machine
 
-Purpose: introduce persistent behavioral state and test whether preservation evidence still scales.
-
-Planned measurements include:
-
-- state/transition semantics;
-- invalid-transition rejection;
-- state invariants;
-- translation-validation solver time versus state-space size;
-- amount of human-supplied invariant information required;
-- SpecIR maintenance burden and architecture drift indicators.
+POC-2 should introduce persistent finite-state behavior and measure transition correctness, invariant burden, solver scaling, evidence coverage, and SpecIR maintenance cost without simultaneously adding timing or hardware semantics.
 
 ## POC-3 — Thermal Motor Protection
 
-Purpose: first domain-significant embedded/control example.
-
-Candidate capabilities:
-
-- physical quantity semantics;
-- thresholds and timing;
-- safe output values;
-- fault states;
-- recovery behavior;
-- unresolved requirement handling;
-- provenance and specification acceptance.
-
-POC-3 should also provide a controlled comparison against a source-centric implementation with explicit contracts/tests to test whether Spec2Exec provides enough additional traceability, verification coverage, or change-propagation value to justify its extra machinery.
+POC-3 remains the first domain-significant embedded/control experiment, adding physical quantities, timing, fault/recovery behavior, provenance, and unresolved-requirement handling.
 
 ## Falsification orientation
 
-The project should treat these as warning classes rather than move the goalposts indefinitely:
-
-1. specification/semantic-resolution burden does not decrease enough to justify the architecture;
-2. semantic-preservation evidence becomes disproportionately expensive as state/control complexity increases;
-3. SpecIR drifts into a mandatory human-authored programming language;
-4. verified/checked evidence coverage declines while `TRUSTED`, `ASSUMED`, and `UNRESOLVED` dominate real examples;
-5. source-centric workflows with existing contract/formal tools match or exceed Spec2Exec on relevant engineering outcomes.
-
-Metrics should emphasize engineering effort, defect detection, traceability coverage, verification coverage, change propagation, retargeting, and maintenance burden rather than raw line counts alone.
+The project should continue measuring engineering effort, defect detection, traceability, verification coverage, change propagation, and maintenance burden. A technically working pipeline is not sufficient evidence of value if its specification/verifier complexity outweighs the benefits.
