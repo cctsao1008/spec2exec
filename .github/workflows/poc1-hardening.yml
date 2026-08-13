@@ -8,9 +8,11 @@ on:
       - 'examples/optimization-preservation/**'
       - 'prototypes/poc1/**'
       - 'prototypes/poc1b/**'
+      - 'tests/poc1/**'
       - 'tests/poc1b/**'
       - 'rfcs/0007-bounded-integer-semantics.md'
       - 'rfcs/0008-c-semantic-and-optimization-preservation.md'
+      - 'Makefile'
       - '.github/workflows/poc1-hardening.yml'
   workflow_dispatch:
 
@@ -34,22 +36,17 @@ jobs:
           sudo apt-get install -y /tmp/cbmc.deb
           cbmc --version
 
+      - name: POC-1A v2 regression tests
+        run: make test-poc1
+
       - name: POC-1B unit tests
-        run: python -m unittest discover -s tests/poc1b -p 'test_*.py' -v
+        run: make test-poc1b
 
       - name: Run hardened POC-1A
-        run: |
-          python prototypes/poc1/spec2exec_poc1_v2.py all \
-            examples/bounded-arithmetic/safe_add.specir.json \
-            --specification examples/bounded-arithmetic/specification.json \
-            --build-dir build/poc1-v2
+        run: make poc1
 
       - name: Run POC-1B
-        run: |
-          python prototypes/poc1b/spec2exec_poc1b.py \
-            examples/optimization-preservation/safe_add_sub.specir.json \
-            --specification examples/optimization-preservation/specification.json \
-            --build-dir build/poc1b
+        run: make poc1b
 
       - name: Show evidence
         run: |
