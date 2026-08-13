@@ -1,0 +1,31 @@
+name: POC-1A
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'examples/bounded-arithmetic/**'
+      - 'prototypes/poc1/**'
+      - 'tests/poc1/**'
+      - 'spec/schemas/specir-v0.1.schema.json'
+      - 'rfcs/0007-bounded-integer-semantics.md'
+      - '.github/workflows/poc1.yml'
+      - 'Makefile'
+  workflow_dispatch:
+
+jobs:
+  bounded-arithmetic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install P3 solver
+        run: python -m pip install 'z3-solver==4.13.0.0'
+      - name: Unit and negative tests
+        run: make test-poc1
+      - name: End-to-end POC-1A
+        run: make poc1
+      - name: Show evidence
+        run: cat build/poc1/evidence.json
