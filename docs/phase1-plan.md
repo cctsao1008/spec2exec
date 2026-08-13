@@ -4,7 +4,8 @@
 - **POC-0:** complete
 - **POC-1A:** complete and evidence-hardened
 - **POC-1B:** complete for the initial host-C reference experiment
-- **Next architecture experiment:** POC-1C — First Native Target Backend
+- **Next architecture experiment:** POC-1C.A — RV32I Native Pipeline Proof
+- **Following architecture stress experiment:** POC-1C.B — Native Backend Stress
 - **Next semantic experiment:** POC-2 — State Machine
 - **Parallel research:** A0 — Adversarial Semantic Resolution
 
@@ -12,7 +13,7 @@
 
 Phase 1 tests the deterministic lower half without connecting AI to executable generation.
 
-Following RFC 0009, the primary architecture is now:
+Following RFC 0009, the primary architecture is:
 
 ```text
 Accepted Specification
@@ -93,41 +94,128 @@ POC-1B result                 PASS
 
 This remains valid reference-path evidence. It does not make generated C a mandatory final architecture stage. See RFC 0008 and RFC 0009.
 
-## POC-1C — First Native Target Backend
+## POC-1C target profile
 
-POC-1C should prove that the architecture can bypass a high-level-language compiler and generate target assembly directly from verified SpecIR.
+The first native target is intentionally chosen to minimize incidental ISA complexity:
 
-Minimal objective:
+```text
+ISA:            RISC-V RV32I base integer
+M extension:    OFF
+C extension:    OFF
+A extension:    OFF
+F/D extensions: OFF
+Privileged ISA: outside the semantic target
+ABI subset:     integer arguments / integer return only
+Assembly:       GNU RISC-V syntax
+Object model:   ELF32 RISC-V
+```
+
+The target choice is experiment-specific and must not leak into machine-independent SpecIR.
+
+## POC-1C.A — RV32I Native Pipeline Proof
+
+POC-1C.A proves the architectural point before adding backend stress complexity:
 
 ```text
 Verified SpecIR
       ↓
-Target Code Generator
+RV32I Target Code Generator
       ↓
-Target Assembly
+RV32I Target Assembly
       ↓
-Existing Assembler
+Existing Unmodified Assembler
       ↓
-Object
+ELF32 Object
       ↓
-Linker
+Existing Unmodified Linker
       ↓
-Executable / Firmware Artifact
+RV32I ELF
+      ↓
+Emulator / Runtime Evidence
 ```
 
-POC-1C should remain intentionally small. The first backend should reuse the current bounded-arithmetic semantic core and should not introduce state, timing, memory aliasing, or hardware-register semantics at the same time.
+Initial semantic scope reuses the bounded-arithmetic core and begins with `safe_add_sub`-class straight-line integer expressions.
 
-Required evidence should distinguish:
+The code generator must not be a per-example assembly template. It must include a minimal resource model such as:
+
+```text
+argument register locations
+return register location
+temporary register pool
+acquire / release ownership for intermediate values
+```
+
+POC-1C.A explicitly does not require:
+
+```text
+general register allocation
+spill/reload
+branches / CFG
+function calls
+loops / recursion
+pointers / heap / arrays
+hardware registers / interrupts
+TargetIR / MachineIR as a named stage
+optimization
+```
+
+### POC-1C.A evidence goals
+
+Evidence should keep transformation boundaries separate:
 
 ```text
 SpecIR semantic verification
-target-code-generation preservation evidence
-assembler/object artifact identity
-linker/image construction evidence
-runtime or emulator behavior when practical
+SpecIR → RV32I assembly preservation evidence
+assembly artifact identity
+assembly → object toolchain evidence
+object → ELF linker evidence
+ELF emulator/runtime behavior evidence
 ```
 
-The target ISA/profile remains an explicit selection decision rather than an assumption baked into SpecIR.
+Assembler and linker assumptions must be explicit; executable behavior must not inherit a Target-Assembly proof automatically.
+
+### POC-1C.A go criteria
+
+Proceed to backend stress only if:
+
+- valid bounded-arithmetic SpecIR emits RV32I assembly with no hand-edited intermediate artifacts;
+- code generation uses a generic temporary-register resource model rather than example-name hardcoding;
+- the unmodified assembler accepts the emitted assembly;
+- the unmodified linker produces the target ELF;
+- runtime/emulator results agree with SpecIR semantics over the declared test domain;
+- artifact hashes bind the verified SpecIR, emitted assembly, object, and linked ELF where practical;
+- no object writer, instruction encoder, relocation engine, or linker logic is introduced into the Target Code Generator.
+
+## POC-1C.B — Native Backend Stress
+
+POC-1C.B deliberately attacks the direct backend after the minimal architecture path works.
+
+Planned stress sequence:
+
+```text
+B1  multiple live values / forced spill
+B2  single branch + single merge
+B3  single non-recursive function call
+```
+
+These cases test the first backend failure cliffs identified by hostile review: value-location pressure, cross-block consistency, and ABI/stack handling.
+
+POC-1C.B may use deliberately simple fixed or greedy policies. The goal is not to build a general compiler backend; the goal is to determine when internal bookkeeping becomes too complex to remain local.
+
+### TargetIR / MachineIR escalation rule
+
+A named TargetIR/MachineIR remains optional until evidence shows it is useful. Promotion should be considered when one or more become general backend requirements:
+
+```text
+live values routinely exceed physical registers
+spill/reload requires non-local reasoning
+multi-block CFGs with merges become supported
+loops require cross-block liveness
+multiple call sites require persistent ABI-aware value placement
+backend state becomes difficult to test as local tables/rules
+```
+
+POC-1C.B must report that pressure rather than hiding an ad hoc IR inside increasingly fragile code-generation logic.
 
 ## A0 — Semantic Resolution
 
@@ -135,9 +223,16 @@ A0 remains independent from executable generation. The benchmark/scoring harness
 
 ## POC-2 — State Machine
 
-POC-2 remains the next semantic-complexity experiment. It should introduce persistent finite-state behavior and measure transition correctness, invariant burden, solver scaling, evidence coverage, and SpecIR maintenance cost without simultaneously adding timing or hardware semantics.
+POC-2 remains the next semantic-complexity experiment. It introduces persistent finite-state behavior and measures transition correctness, invariant burden, solver scaling, evidence coverage, and SpecIR maintenance cost without simultaneously adding timing or hardware semantics.
 
-POC-1C and POC-2 answer different questions: POC-1C validates the native target architecture; POC-2 validates behavioral-state semantics.
+POC-1C and POC-2 answer different questions:
+
+```text
+POC-1C  validates the native target architecture
+POC-2   validates behavioral-state semantics
+```
+
+A named MachineIR must not be introduced merely because POC-2 contains state; it should be introduced when backend control-flow/liveness complexity actually triggers the RFC 0009 escalation criteria.
 
 ## POC-3 — Thermal Motor Protection
 
