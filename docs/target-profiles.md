@@ -17,14 +17,14 @@ Verified SpecIR
       │      assembly dialect
       │      object model
       │
-      └── Platform Profile (optional)
-             SoC / board identity
+      └── Platform Profile
+             bare-metal SoC / board, or hosted OS environment
              processor mode / architecture selection
-             memory map
-             Flash / RAM placement
-             startup / image conventions
-             linker layout
+             memory / image / loader conventions
+             linker layout or executable format
 ```
+
+A single ISA may therefore have multiple Target Profiles when the ABI or object model differs across execution environments.
 
 ## Target Profile
 
@@ -103,32 +103,118 @@ Associated validation platform:
 
 Floating-point, TrustZone/security-state behavior, DSP-specific operations, and other Cortex-M33/RP2350 architectural features are outside the initial POC-1D semantic scope unless explicitly added later.
 
-## Why use the same Pico 2 platform
+## POC-1E — x86_64 hosted platform matrix
 
-RP2350 can execute using either its Cortex-M33 pair or its Hazard3 RISC-V pair. This creates a useful portability experiment:
+POC-1E extends the same machine-independent SpecIR to the x86_64 ISA and deliberately treats the operating-system ABI/object environment as part of the target boundary rather than assuming that `x86_64` alone uniquely identifies executable semantics.
+
+The first hosted matrix is:
 
 ```text
-                     same Verified SpecIR
-                            │
-                 ┌──────────┴──────────┐
-                 ▼                     ▼
-        Hazard3 / RV32I       Cortex-M33 / Armv8-M
-                 │                     │
-                 ▼                     ▼
-          RISC-V assembly          Arm assembly
-                 │                     │
-                 └──────────┬──────────┘
-                            ▼
-                    same RP2350 / Pico 2
+x86_64 + Linux
+x86_64 + Windows
+x86_64 + macOS
 ```
 
-The experiment therefore changes the processor architecture while holding the physical development platform largely constant.
+These are separate Target Profiles sharing the same ISA.
+
+### x86_64 / Linux
+
+```json
+{
+  "architecture": "x86",
+  "isa": "x86_64",
+  "abi": "sysv-amd64-integer-subset",
+  "assembly_dialect": "gnu-x86-64",
+  "object_model": "elf64-x86-64"
+}
+```
+
+Associated hosted Platform Profile:
+
+```json
+{
+  "execution_environment": "hosted",
+  "os": "linux",
+  "architecture": "x86_64"
+}
+```
+
+### x86_64 / Windows
+
+```json
+{
+  "architecture": "x86",
+  "isa": "x86_64",
+  "abi": "microsoft-x64-integer-subset",
+  "assembly_dialect": "toolchain-selected-x86-64",
+  "object_model": "coff-x86-64",
+  "executable_model": "pe32+"
+}
+```
+
+Associated hosted Platform Profile:
+
+```json
+{
+  "execution_environment": "hosted",
+  "os": "windows",
+  "architecture": "x86_64"
+}
+```
+
+### x86_64 / macOS
+
+```json
+{
+  "architecture": "x86",
+  "isa": "x86_64",
+  "abi": "darwin-x86_64-integer-subset",
+  "assembly_dialect": "darwin-x86-64",
+  "object_model": "mach-o-x86-64"
+}
+```
+
+Associated hosted Platform Profile:
+
+```json
+{
+  "execution_environment": "hosted",
+  "os": "macos",
+  "architecture": "x86_64"
+}
+```
+
+The macOS profile is intentionally named separately rather than being collapsed into the Linux SysV profile: calling convention, symbol naming, object format, linker behavior, and executable conventions are target-environment concerns and must remain explicit.
+
+POC-1E should begin with the same narrow arithmetic subset used by the earlier native experiments. The goal is not to build a complete x86 compiler backend; it is to test whether the same SpecIR semantics survive a third ISA family and multiple hosted ABI/object environments.
+
+A later AArch64/arm64 hosted profile may be added independently. It is not required to begin POC-1E and must not be silently conflated with x86_64 macOS.
+
+## Cross-target validation model
+
+The planned architecture matrix is:
+
+```text
+                           same Verified SpecIR
+                                  │
+              ┌───────────────────┼───────────────────┐
+              ▼                   ▼                   ▼
+      Hazard3 / RV32I    Cortex-M33 / Armv8-M       x86_64
+              │                   │                   │
+              ▼                   ▼        ┌──────────┼──────────┐
+       RISC-V assembly        Arm assembly  ▼          ▼          ▼
+              │                   │       Linux     Windows     macOS
+              ▼                   ▼       ELF64     PE/COFF     Mach-O
+          Pico 2              Pico 2
+```
+
+This provides representative architectural coverage rather than claiming complete ISA or operating-system coverage.
 
 ## Platform Profile
 
-A Platform Profile is optional and captures SoC/board details that are not intrinsic to the CPU ISA.
+A Platform Profile captures execution-environment details that are not intrinsic to the ISA itself.
 
-Conceptual fields may include:
+For bare-metal systems, conceptual fields may include:
 
 ```text
 soc
@@ -141,18 +227,26 @@ startup / vector-table policy
 firmware image format
 ```
 
-The RP2350/Pico 2 platform profile can be shared by both native target experiments while selecting a different processor mode and Target Profile.
+For hosted systems, conceptual fields may include:
+
+```text
+execution_environment
+os
+architecture
+loader / executable environment
+runtime assumptions
+```
+
+The RP2350/Pico 2 platform profile can be shared by both embedded native target experiments while selecting a different processor mode and Target Profile. Hosted x86_64 experiments instead select Linux, Windows, or macOS Platform Profiles with matching ABI/object Target Profiles.
 
 ## Architectural rule
 
 ```text
 SpecIR semantics
-      ≠
+      !=
 Target Profile
-      ≠
+      !=
 Platform Profile
 ```
 
 Changing the target or platform profile must not silently change the accepted machine-independent semantics of the same verified SpecIR.
-
-The planned cross-target experiment therefore uses the same verified SpecIR first with the Pico 2 Hazard3/RV32I target and then with the Pico 2 Cortex-M33/Armv8-M Mainline target while keeping target-specific semantics below the Target Code Generation boundary.
