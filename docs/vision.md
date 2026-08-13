@@ -4,9 +4,9 @@
 
 Modern software development assumes that programming-language source code is the primary bridge between human intent and executable software. AI changes that assumption.
 
-Programming languages historically solve several human problems: expressing algorithms, managing complexity, constraining mistakes, enabling reuse, and making machine behavior understandable. Once a program has been lowered to a particular ISA, the CPU no longer knows whether the behavior originated in C, Rust, Go, assembly, or another source language.
+Programming languages historically solve several human problems: expressing algorithms, managing complexity, constraining mistakes, enabling reuse, and making machine behavior understandable. Once a program has become target machine code, the processor no longer knows whether the behavior originated in C, Rust, assembly, or another source representation.
 
-Spec2Exec asks whether source code must remain the primary human-facing artifact when an AI system can perform semantic synthesis.
+Spec2Exec asks whether source code must remain the primary human-facing artifact when semantic synthesis and deterministic verification can operate on a specification-oriented formal representation.
 
 ## The proposed shift
 
@@ -21,29 +21,49 @@ Toward:
 ```text
 Intent
   ↓
-Specification
-  ↓
-Semantic Synthesis
+Accepted Specification
   ↓
 SpecIR
   ↓
 Deterministic Verification
   ↓
-Lowering
+Verified SpecIR
   ↓
-Executable
+Target Code Generation
+  ↓
+Target Assembly
+  ↓
+Assembler
+  ↓
+Object
+  ↓
+Linker
+  ↓
+Executable / Firmware
 ```
+
+C, LLVM IR, and other programming/compiler representations may remain useful as reference, interoperability, debugging, or comparison paths, but they are not mandatory stages of the primary architecture.
+
+## Machine independence
+
+SpecIR remains machine-independent. Target-specific semantics enter through a selected Target Profile after verification.
+
+This makes a long-term cross-target experiment possible:
+
+```text
+same Verified SpecIR
+        │
+        ├── RV32I target
+        └── Cortex-M target
+```
+
+SoC/board-specific layout remains a separate Platform Profile rather than part of SpecIR.
 
 ## Long-term hypothesis
 
 Programming languages may remain important, but their role may change from the mandatory primary interface for humans to one of several implementation, interoperability, debugging, or legacy representations.
 
-The source of truth may move from source code toward:
-
-- specifications;
-- formal semantic representations;
-- verification evidence;
-- traceability metadata.
+The source of truth may move from source code toward accepted specifications, formal semantic representations, verification evidence, and traceability metadata.
 
 ## Success criterion
 
