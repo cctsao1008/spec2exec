@@ -42,12 +42,24 @@ See `rfcs/0009-native-target-code-generation.md` for the architecture decision.
 POC-0   COMPLETE
 POC-1A  COMPLETE
 POC-1B  COMPLETE
-POC-2   NEXT
+POC-1C  NEXT-ARCH
+POC-2   NEXT-SEMANTIC
 POC-3   PLANNED
 A0      PARALLEL
 ```
 
-POC-1A and POC-1B remain valid reference-path experiments using generated C. Their evidence is scoped to those experiments and does not make C a required final architecture stage.
+POC-1A and POC-1B remain valid C-based reference-path experiments. POC-1C will test the first native target assembly backend while reusing the bounded-arithmetic semantic core.
+
+The first target ISA/profile remains an explicit selection decision and is not built into SpecIR.
+
+## Key documents
+
+```text
+docs/architecture.md
+docs/phase1-plan.md
+rfcs/0001-spec2exec-architecture.md
+rfcs/0009-native-target-code-generation.md
+```
 
 ## License
 
