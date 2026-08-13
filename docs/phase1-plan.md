@@ -3,22 +3,21 @@
 - **Status:** Active
 - **Phase 0 architecture definition:** complete for the initial prototype baseline
 - **POC-0:** complete
-- **Next experiment:** POC-1 — Bounded Arithmetic
+- **Current deterministic experiment:** POC-1A — Bounded Integer Semantics
+- **Parallel research track:** A0 — Adversarial Semantic Resolution Benchmark
 
 ## Objective
 
-Phase 1 tests the lower half of the Spec2Exec architecture **without AI**.
-
-The goal is not to demonstrate intelligent synthesis. The goal is to establish that a small formal SpecIR can be loaded, deterministically checked, lowered through an existing compiler toolchain, and traced back to an accepted specification.
-
-## Hypothesis under test
+Phase 1 tests the lower half of the Spec2Exec architecture without connecting AI to executable generation.
 
 ```text
 Accepted Specification
       ↓
-Manually Constructed Candidate SpecIR
+Candidate SpecIR
       ↓
 Deterministic Verification
+      ↓
+Semantic-Preservation Evidence
       ↓
 Lowering
       ↓
@@ -27,153 +26,185 @@ Existing Compiler Backend
 Executable
 ```
 
-If this path cannot be made clear, deterministic, inspectable, and traceable, adding AI would only hide architectural problems.
+AI semantic resolution is studied independently in A0 so the upper-half risk can be measured without contaminating the deterministic implementation experiments.
 
 ## POC-0 — Hello World
 
 **Status: Complete**
 
-Purpose: verify toolchain plumbing and the minimum evidence/traceability path.
+POC-0 established repository plumbing, accepted-specification linkage, a tiny SpecIR representation, deterministic verification, C lowering, executable generation, runtime checks, negative tests, and CI reproduction.
 
-Implemented path:
+It did not establish nontrivial arithmetic semantics or lowering equivalence.
 
-```text
-examples/hello/specification.json
-      ↓
-examples/hello/hello.specir.json
-      ↓
-prototypes/poc0/spec2exec_poc0.py
-      ↓
-verification + C lowering
-      ↓
-host C compiler
-      ↓
-build/poc0/hello
-      ↓
-runtime stdout / exit-status check
-```
+## POC-1A — Bounded Integer Semantics
 
-Expected externally observable behavior:
+### Goal
+
+Introduce the first nontrivial SpecIR contracts while keeping the semantic surface deliberately small.
+
+The experimental core is:
 
 ```text
-stdout: "Hello, world!\n"
-exit status: 0
+i32 / u32
++ - *
+comparisons / booleans in contracts
+input/output ranges
+preconditions
+postconditions
+overflow_behavior = forbidden
+straight-line, side-effect-free body
+traceability
 ```
 
-POC-0 does **not** validate the broader Spec2Exec thesis. It validates only the deterministic mechanics needed for later experiments.
+Explicitly deferred:
 
-## POC-0 evidence boundary
+```text
+float
+/ and %
+loops / recursion
+pointers / memory aliasing
+arrays / structs
+mutable local state
+implicit casts
+concurrency
+timing
+hardware I/O
+```
 
-The initial prototype CHECKS:
+### Contract-domain rule
 
-- supported SpecIR v0 structure;
-- operation identifiers and operation kind;
-- traceability scope;
-- exit-status range;
-- accepted requirement trace linkage;
-- accepted specification ↔ SpecIR stdout linkage;
-- accepted specification ↔ SpecIR exit-status linkage;
-- runtime stdout and exit status during the experiment.
+POC-1A semantic claims apply only to inputs satisfying the accepted preconditions. Runtime enforcement of violated preconditions is a later experiment.
 
-It does NOT currently prove:
+Behavior outside the accepted contract domain is not claimed to be verified by POC-1A.
 
-- human intent fidelity;
-- general specification completeness;
-- lowering semantic equivalence;
-- host C compiler correctness;
-- machine-code semantic equivalence.
+### P1 — Accepted Specification → SpecIR
 
-## POC-1 — Bounded Arithmetic
+POC-1A must reject:
 
-Purpose: introduce actual semantic contracts.
+- an untraceable numeric constraint;
+- an accepted specification clause missing from SpecIR;
+- a projected range that differs from the accepted specification;
+- a behavior expression that differs from the accepted specification.
 
-Candidate capabilities:
+Specification and SpecIR therefore remain different artifacts, but drift between their machine-comparable semantics is a deterministic verification failure.
 
-- scalar types;
-- function inputs / outputs;
-- preconditions;
-- postconditions;
-- bounded ranges;
-- deterministic rejection of invalid examples.
+### P2 — SpecIR checks
+
+POC-1A checks:
+
+- fixed-width integer types;
+- range validity within the declared machine type;
+- canonical precondition projection;
+- canonical output/postcondition projection;
+- static exclusion of arithmetic overflow over the accepted input domain;
+- output-range containment;
+- traceability coverage.
+
+### P3 — Translation validation
+
+POC-1A uses boundary-level semantic equivalence rather than AST-node identity.
+
+```text
+SpecIR function semantics
+          ↓
+   emitted C function
+```
+
+The validator extracts the exact emitted C return expression, parses it independently, translates the SpecIR and emitted-C expressions to SMT, and asks whether any accepted input makes their outputs differ.
+
+An UNSAT result supports a narrow `PROVEN` claim for function-output equivalence within the supported POC-1A expression subset and assumptions.
+
+It does not prove the C compiler.
+
+### P4 — Executable behavior
+
+For the initial small input domain, the compiled shared-library function is invoked for every accepted input combination and compared with the SpecIR evaluator.
+
+Evidence is recorded as:
+
+```text
+TESTED_EXHAUSTIVE
+```
+
+Later larger domains may require weaker sampled evidence and must be labeled accordingly.
+
+### P3 granularity decision
+
+Traceability must not require one-to-one AST/node identity. Optimizations may fold or eliminate intermediate nodes. Semantic preservation is judged at a declared contract boundary such as function input/output or, in later POCs, a state-transition boundary.
+
+Provenance may therefore be many-to-many and is distinct from structural identity.
+
+See RFC 0007.
+
+## A0 — Adversarial Semantic Resolution Benchmark
+
+### Goal
+
+Measure whether an AI semantic-resolution system can expose missing, ambiguous, and conflicting requirements instead of inventing plausible executable values.
+
+A0 is intentionally disconnected from the executable pipeline.
+
+Initial decisions:
+
+```text
+RESOLVED
+UNRESOLVED
+CONFLICT
+```
+
+Initial metrics include:
+
+- unsafe resolution rate;
+- unresolved recall;
+- conflict recall;
+- resolved-case accuracy;
+- overall decision accuracy.
+
+No favorable threshold is selected in advance. Initial runs establish baselines and an error taxonomy.
+
+## POC-1B — Preservation Stress Tests
+
+After the initial POC-1A path is stable, add deliberately transformed expressions to test whether translation validation survives legal algebraic rewrites without requiring node-for-node correspondence.
+
+The objective is to test the distinction between traceability provenance and semantic equivalence before POC-2 introduces state.
 
 ## POC-2 — State Machine
 
-Purpose: introduce behavioral state semantics.
+Purpose: introduce persistent behavioral state and test whether preservation evidence still scales.
 
-Candidate capabilities:
+Planned measurements include:
 
-- named states;
-- events;
-- guarded transitions;
+- state/transition semantics;
 - invalid-transition rejection;
-- state invariants.
+- state invariants;
+- translation-validation solver time versus state-space size;
+- amount of human-supplied invariant information required;
+- SpecIR maintenance burden and architecture drift indicators.
 
 ## POC-3 — Thermal Motor Protection
 
-Purpose: first example that exercises domain semantics beyond ordinary generated source code.
+Purpose: first domain-significant embedded/control example.
 
 Candidate capabilities:
 
-- physical units;
-- thresholds;
-- timing duration;
-- safe output value;
-- fault state;
+- physical quantity semantics;
+- thresholds and timing;
+- safe output values;
+- fault states;
+- recovery behavior;
 - unresolved requirement handling;
 - provenance and specification acceptance.
 
-Example behaviors may include:
+POC-3 should also provide a controlled comparison against a source-centric implementation with explicit contracts/tests to test whether Spec2Exec provides enough additional traceability, verification coverage, or change-propagation value to justify its extra machinery.
 
-```text
-temperature >= 90 degC for 100 ms → MOTOR_OFF
-sensor invalid for 3 samples       → MOTOR_OFF
-MOTOR_OFF                          → manual reset required
-```
+## Falsification orientation
 
-The exact requirements must be explicitly accepted before being treated as authoritative example semantics.
+The project should treat these as warning classes rather than move the goalposts indefinitely:
 
-## Phase 1 architecture constraints
+1. specification/semantic-resolution burden does not decrease enough to justify the architecture;
+2. semantic-preservation evidence becomes disproportionately expensive as state/control complexity increases;
+3. SpecIR drifts into a mandatory human-authored programming language;
+4. verified/checked evidence coverage declines while `TRUSTED`, `ASSUMED`, and `UNRESOLVED` dominate real examples;
+5. source-centric workflows with existing contract/formal tools match or exceed Spec2Exec on relevant engineering outcomes.
 
-- No LLM or AI is required in POC-0 through the initial verifier/lowering path.
-- Candidate SpecIR may be manually constructed as a test fixture.
-- Manual SpecIR construction is not the intended long-term development interface.
-- Generated C is a lowering artifact and not the source of truth.
-- A verifier PASS must identify which properties were checked.
-- Unsupported properties must remain explicit.
-- Traceability identifiers must survive into generated artifacts where practical.
-- Semantic-preservation evidence follows RFC 0006.
-
-## Experimental SpecIR scope
-
-The first SpecIR subset is deliberately small. POC-0 represents only a program with ordered stdout operations, process exit status, and traceability identifiers.
-
-Do not add timing, concurrency, hardware, ownership, or theorem-proving constructs until a POC requires them.
-
-## POC-0 implementation sequence
-
-1. Define accepted Hello specification. **Done.**
-2. Define experimental SpecIR v0 document. **Done.**
-3. Define structural/semantic validation rules. **Done.**
-4. Implement deterministic loader/verifier. **Done.**
-5. Implement lowering to C. **Done.**
-6. Compile with host C toolchain and execute. **Done.**
-7. Emit explicit verification evidence. **Done.**
-8. Add negative verification tests. **Done.**
-9. Reproduce the same path in GitHub Actions CI. **Done — first run passed.**
-10. Only after the deterministic path is stable, consider direct LLVM IR/MLIR lowering and later AI semantic synthesis.
-
-## POC-0 exit criteria
-
-All initial POC-0 exit criteria are satisfied:
-
-- one accepted example specification exists;
-- one experimental SpecIR representation exists;
-- valid SpecIR deterministically passes validation;
-- intentionally invalid SpecIR deterministically fails;
-- lowering generates a buildable intermediate artifact;
-- an existing compiler produces a Linux executable;
-- execution produces exactly the expected stdout and exit status;
-- the build is reproducible through repository commands and GitHub Actions CI;
-- verification evidence clearly states what was and was not verified.
-
-The next Phase 1 task is POC-1, where SpecIR must begin carrying actual semantic contracts rather than only deterministic plumbing.
+Metrics should emphasize engineering effort, defect detection, traceability coverage, verification coverage, change propagation, retargeting, and maintenance burden rather than raw line counts alone.
