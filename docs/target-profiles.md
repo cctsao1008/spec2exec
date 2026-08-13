@@ -4,7 +4,7 @@
 
 SpecIR remains machine-independent. Spec2Exec is intended to be implementable across major CPU ISA families and major operating-system/execution environments without changing machine-independent SpecIR semantics.
 
-The architecture separates the executable target from the hardware used to validate it.
+The architecture separates the executable target from the hardware or emulator used to validate it.
 
 ```text
 Verified SpecIR
@@ -22,7 +22,7 @@ Verified SpecIR
       │      executable / loader conventions
       │
       └── Platform Profile (optional)
-             SoC / board / machine identity
+             SoC / board / machine identity when platform semantics matter
              memory map
              startup / vector-table policy
              linker layout
@@ -35,15 +35,15 @@ A concrete architectural target is the compatible composition:
 Target Configuration = ISA Profile + Execution Profile + optional Platform Profile
 ```
 
-A **Validation Binding** records the concrete CPU core, SoC, board, emulator, or host used to validate that target configuration. Validation hardware is evidence infrastructure, not automatically part of the target semantics.
+A **Validation Binding** records the concrete CPU core, SoC, board, emulator, or host used to produce evidence for that target configuration. Validation infrastructure is not automatically part of the target semantics.
 
 ```text
 Target Configuration
-      ≠
+      !=
 Validation Binding
 ```
 
-A CPU core implementation is also not identical to an ISA. For example, Hazard3 is a concrete RISC-V core used to validate an RV32I subset, while Cortex-M33 is a concrete Arm core used to validate an Armv8-M Mainline target profile.
+A CPU core implementation is also not identical to an ISA. Hazard3 is a concrete RISC-V core planned for physical validation of an RV32I subset, while Cortex-M33 is a concrete Arm core planned for physical validation of an Armv8-M Mainline target.
 
 ## Architecture coverage goal
 
@@ -84,7 +84,7 @@ Platform restrictions such as code signing, entitlements, secure boot, firmware 
 
 ## POC-1C — RV32I bare-metal target
 
-POC-1C is architecturally defined by its ISA and execution environment, not by Pico 2.
+POC-1C is architecturally defined by its ISA and execution environment, not by Pico 2 or QEMU.
 
 ```json
 {
@@ -102,10 +102,25 @@ POC-1C is architecturally defined by its ISA and execution environment, not by P
 }
 ```
 
-Initial validation binding:
+### Completed emulator validation binding
+
+POC-1C.A currently has completed CI/runtime evidence using:
 
 ```json
 {
+  "validation_kind": "emulator",
+  "emulator": "qemu-system-riscv32",
+  "machine": "virt"
+}
+```
+
+This binding validates the RV32I native pipeline through assembly, object generation, linking, and runtime behavior. It does not claim physical Hazard3/RP2350 execution.
+
+### Planned physical validation binding
+
+```json
+{
+  "validation_kind": "hardware",
   "cpu_core": "hazard3",
   "soc": "rp2350",
   "board": "raspberry-pi-pico-2",
@@ -113,11 +128,11 @@ Initial validation binding:
 }
 ```
 
-The physical Hazard3 core may implement capabilities beyond the selected RV32I subset. Those capabilities are outside POC-1C semantics unless explicitly enabled by a later target decision.
+The physical Hazard3 core may implement capabilities beyond the selected RV32I subset. Those capabilities remain outside POC-1C semantics unless explicitly enabled by a later target decision.
 
 ## POC-1D — Armv8-M Mainline bare-metal target
 
-POC-1D is the second embedded ISA target and reuses the same physical validation platform only to reduce unrelated hardware variation.
+POC-1D is the second embedded ISA target. Its planned use of the same physical board is only a validation choice intended to reduce unrelated hardware variation.
 
 ```json
 {
@@ -136,10 +151,11 @@ POC-1D is the second embedded ISA target and reuses the same physical validation
 }
 ```
 
-Initial validation binding:
+Planned physical validation binding:
 
 ```json
 {
+  "validation_kind": "hardware",
   "cpu_core": "cortex-m33",
   "soc": "rp2350",
   "board": "raspberry-pi-pico-2",
@@ -151,7 +167,7 @@ Floating-point, TrustZone/security-state behavior, DSP-specific operations, and 
 
 ## Why Pico 2 is useful but not architectural
 
-RP2350/Pico 2 is useful because one physical platform exposes both validation cores:
+RP2350/Pico 2 is useful because one physical platform exposes both planned validation cores:
 
 ```text
                   Target architecture coverage
@@ -167,7 +183,7 @@ RP2350/Pico 2 is useful because one physical platform exposes both validation co
                   validation platform
 ```
 
-This allows cross-ISA hardware validation while holding the SoC/board largely constant. Replacing Pico 2 with another compatible validation platform must not require changing machine-independent SpecIR or redefining the architectural target.
+This can provide cross-ISA hardware validation while holding the SoC/board largely constant. Replacing Pico 2 with another compatible validation platform must not require changing machine-independent SpecIR or redefining the architectural target.
 
 ## POC-1E — Hosted target expansion
 
