@@ -60,7 +60,7 @@ A separate **Validation Binding** identifies the concrete CPU core, SoC, board, 
 Target Configuration != Validation Binding
 ```
 
-A CPU core is also not identical to an ISA. Hazard3 is a concrete RISC-V core used to validate an RV32I subset. Cortex-M33 is a concrete Arm core used to validate an Armv8-M Mainline target.
+A CPU core is also not identical to an ISA. Hazard3 is a concrete RISC-V core planned for physical validation of an RV32I subset. Cortex-M33 is a concrete Arm core planned for physical validation of an Armv8-M Mainline target.
 
 ## Architecture coverage goal
 
@@ -116,19 +116,66 @@ Assembly:       GNU RISC-V syntax
 Object model:   ELF32 RISC-V
 ```
 
-Initial validation binding:
+### POC-1C.A implementation status
+
+The initial native/emulator baseline is complete. The completed validation binding is:
 
 ```text
-CPU core:       Hazard3 RISC-V
-SoC:            RP2350
-Board:          Raspberry Pi Pico 2
+Validation kind: emulator
+Emulator:        qemu-system-riscv32
+Machine:         virt
 ```
 
-The physical Hazard3 core may implement more capabilities than the selected RV32I subset. Those capabilities are not automatically part of the Spec2Exec target semantics.
+The working pipeline is:
 
-POC-1C.A initially supports `add` and `sub`. Unsupported operations, including `mul` under this profile, fail closed. Register exhaustion also fails closed. The backend emits machine-readable bookkeeping evidence for target configuration, value locations, ABI-fixed locations, temporary-register pool, high-water mark, and spill count.
+```text
+machine-independent SpecIR
+    ↓
+RV32I target code generation
+    ↓
+GNU assembler
+    ↓
+ELF32 object
+    ↓
+GNU linker
+    ↓
+RV32I ELF
+    ↓
+QEMU rv32 virt
+    ↓
+40,401 exhaustive runtime cases
+```
 
-POC-1C.B later stresses spilling, branch/merge handling, and one non-recursive call.
+POC-1C.A supports `add` and `sub`. Unsupported operations, including `mul` under this profile, fail closed. Unsupported ABI shapes, machine-specific target fields in SpecIR, and temporary-register exhaustion also fail closed. The backend emits machine-readable bookkeeping evidence for target configuration, value locations, ABI-fixed locations, temporary-register pool, high-water mark, and spill count.
+
+Evidence strength remains boundary-specific:
+
+```text
+P1/P2  CHECKED
+P3     TESTED
+P4-A   TRUSTED
+P4-L   TRUSTED
+P4-R   TESTED_EXHAUSTIVE
+```
+
+This implementation result does not upgrade P3 to a formal proof.
+
+Planned physical validation binding:
+
+```text
+Validation kind: hardware
+CPU core:        Hazard3 RISC-V
+SoC:             RP2350
+Board:           Raspberry Pi Pico 2
+```
+
+The physical Hazard3 core may implement more capabilities than the selected RV32I subset. Those capabilities are not automatically part of the Spec2Exec target semantics. Physical Hazard3/RP2350 execution is not yet part of the completed POC-1C.A evidence set.
+
+See `docs/poc1c-results.md` for the concrete CI result, tool versions, and artifact hashes.
+
+### POC-1C.B — backend complexity
+
+POC-1C.B next stresses spilling, branch/merge handling, and one non-recursive call to determine when local backend bookkeeping should be promoted into an explicit TargetIR/MachineIR-style representation.
 
 ## POC-1D — Armv8-M Mainline bare-metal cross-target validation
 
@@ -144,7 +191,7 @@ Assembly:       GNU Arm syntax
 Object model:   ELF32 Arm
 ```
 
-Initial validation binding:
+Planned physical validation binding:
 
 ```text
 CPU core:       Arm Cortex-M33
