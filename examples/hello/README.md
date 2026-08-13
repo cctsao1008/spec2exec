@@ -1,8 +1,8 @@
-# Hello Example
+# Hello Example — POC-0
 
-The first Spec2Exec proof of concept should generate a Linux executable from a minimal specification without requiring a human-authored general-purpose source program as the source of truth.
+The first Spec2Exec proof of concept validates deterministic toolchain plumbing. It intentionally does **not** use AI semantic synthesis.
 
-Conceptual specification:
+## Accepted behavior
 
 ```text
 program.name = "hello"
@@ -11,18 +11,45 @@ stdout = "Hello, world!\n"
 exit_status = 0
 ```
 
-Expected pipeline:
+For POC-0, this small example specification is treated as the accepted source of truth.
+
+## Experimental pipeline
 
 ```text
-Specification
+Accepted Specification
   ↓
-SpecIR
+Manually Constructed Candidate SpecIR
   ↓
-Verifier
+Loader / Parser
+  ↓
+Deterministic Verifier
   ↓
 C or LLVM IR lowering
   ↓
 Existing toolchain
   ↓
-ELF executable
+Linux ELF executable
+  ↓
+Runtime output / exit-status check
 ```
+
+Manual construction of Candidate SpecIR is allowed only as a Phase 1 test fixture. It is not the intended long-term Spec2Exec development interface.
+
+## POC-0 verifies
+
+- deterministic SpecIR loading;
+- structural / semantic checks defined by the minimal subset;
+- lowering mechanics;
+- host compiler integration;
+- reproducible runtime behavior;
+- traceability from generated artifact toward the accepted example requirement.
+
+## POC-0 does not verify
+
+- AI semantic synthesis quality;
+- specification completeness;
+- general intent fidelity;
+- timing, concurrency, safety, hardware, or control semantics;
+- the broader claim that specification-centric development scales better than programming-language-centric development.
+
+Those questions belong to later experiments.
