@@ -34,7 +34,9 @@ C and LLVM remain optional reference/comparison paths. `Lowering` is a transform
 
 SpecIR remains machine-independent. Target-specific ISA, ABI, register, calling-convention, legalization, and assembly concerns begin at Target Code Generation.
 
-A Target Profile selects architecture/ISA, core/profile, enabled semantic subset/extensions, ABI subset, assembly dialect, and object model. An optional Platform Profile carries SoC/board details, processor mode, memory map, startup/image conventions, and linker layout.
+A Target Profile selects architecture/ISA, core/profile, enabled semantic subset/extensions, ABI subset, assembly dialect, and object model. A Platform Profile carries execution-environment details: bare-metal SoC/board and processor mode, or hosted operating-system and loader/runtime context.
+
+A single ISA may therefore require multiple Target Profiles when ABI or object-format semantics differ across execution environments.
 
 ```text
 SpecIR semantics != Target Profile != Platform Profile
@@ -104,29 +106,46 @@ Assembly:       GNU Arm syntax
 Object model:   ELF32 Arm
 ```
 
-The intended portability experiment is:
+The CPU architecture changes while the physical development platform remains largely constant. RP2350/Pico 2 board details stay in the Platform Profile rather than SpecIR.
+
+## POC-1E — x86_64 hosted platform matrix
+
+POC-1E adds x86_64 as a third representative ISA family and explicitly validates that hosted operating-system conventions are part of the target boundary rather than hidden behind the ISA name.
+
+Initial matrix:
 
 ```text
-                     same Verified SpecIR
-                            │
-                 ┌──────────┴──────────┐
-                 ▼                     ▼
-       Hazard3 / RV32I        Cortex-M33 / Armv8-M
-                 │                     │
-                 ▼                     ▼
-          RISC-V assembly          Arm assembly
-                 │                     │
-                 └──────────┬──────────┘
-                            ▼
-                    same RP2350 / Pico 2
+x86_64 / Linux    SysV AMD64 integer subset      ELF64
+x86_64 / Windows  Microsoft x64 integer subset   COFF + PE32+
+x86_64 / macOS    Darwin x86_64 integer subset   Mach-O
 ```
 
-The CPU architecture changes while the physical development platform remains largely constant. RP2350/Pico 2 board details stay in the Platform Profile rather than SpecIR.
+These profiles share the x86_64 ISA but are not interchangeable: ABI, object-format, symbol, linker, loader, and executable-environment assumptions remain explicit.
+
+POC-1E should begin with the same narrow straight-line arithmetic semantics used for the first native validation experiments. Its purpose is to test cross-ISA and cross-hosted-platform preservation, not to implement a general x86 optimizer or complete platform runtime.
+
+The representative architecture matrix becomes:
+
+```text
+                           same Verified SpecIR
+                                  │
+              ┌───────────────────┼───────────────────┐
+              ▼                   ▼                   ▼
+      Hazard3 / RV32I    Cortex-M33 / Armv8-M       x86_64
+              │                   │                   │
+              ▼                   ▼        ┌──────────┼──────────┐
+       RISC-V assembly        Arm assembly  ▼          ▼          ▼
+              │                   │       Linux     Windows     macOS
+              ▼                   ▼       ELF64     PE/COFF     Mach-O
+          Pico 2              Pico 2
+```
+
+This is representative architectural coverage rather than complete ISA or OS coverage. A later AArch64/arm64 hosted target may be introduced independently and must not be conflated with x86_64 macOS.
 
 ## Guardrails
 
 - SpecIR must not absorb ISA-specific details.
 - A named TargetIR/MachineIR remains optional; machine bookkeeping must stay explicit and testable.
 - Unsupported operations and resource exhaustion fail closed.
-- Native evidence must distinguish semantic checking from assembler, linker, ABI, emulator, and hardware assumptions.
+- Native evidence must distinguish semantic checking from assembler, linker, ABI, emulator, operating-system, loader/runtime, and hardware assumptions.
 - Reuse mature assembler/linker infrastructure rather than reimplementing it inside Target Code Generation.
