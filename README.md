@@ -20,7 +20,7 @@ Compiler
 Executable
 ```
 
-Spec2Exec explores a specification-centric model:
+Spec2Exec investigates a specification-centric model:
 
 ```text
 Human Intent
@@ -46,48 +46,48 @@ Compiler Backend
 Executable
 ```
 
-The central question is not whether AI can generate code. It already can. The question is whether manually authored programming-language source code must remain the primary interface between human intent and executable software.
+The question is not whether AI can generate code. The question is whether manually authored programming-language source must remain the primary interface between human intent and executable software.
 
-Spec2Exec does **not** claim that this question has already been answered. The project exists to test the hypothesis with explicit semantics, working prototypes, verification evidence, and end-to-end examples.
+Spec2Exec does **not** claim that this has already been proven. The project exists to test the hypothesis through explicit semantics, working prototypes, evidence, and end-to-end examples.
 
-## Three correctness boundaries
+## Correctness boundaries
 
-Spec2Exec separates three questions that must not be conflated:
+Spec2Exec separates three questions:
 
-1. **Intent fidelity** — does the accepted specification represent what the human/domain authority actually intends?
+1. **Intent fidelity** — does the accepted specification represent what the human/domain authority intends?
 2. **Specification / SpecIR correctness** — is the formal representation internally consistent and compliant with declared contracts?
-3. **Implementation conformance** — does the executable preserve the verified SpecIR semantics through lowering and compilation?
+3. **Implementation conformance** — does the executable preserve the relevant SpecIR semantics through lowering and compilation?
 
-A deterministic verifier can establish only the properties it actually checks. It cannot generally prove that an incorrect specification matches human intent.
+No verifier PASS is allowed to silently collapse these into one claim.
 
 ## Architectural principles
 
-1. **Specification first** — specifications, not generated source code, are the primary engineering artifact.
-2. **Explicit specification acceptance** — intent fidelity requires accountable human/domain review where the domain requires it.
-3. **Semantic preservation** — engineering meaning must survive synthesis and lowering.
-4. **AI for synthesis, not authority** — semantic synthesis is untrusted candidate generation; deterministic mechanisms verify named properties.
-5. **Explicit uncertainty** — assumptions, unresolved semantics, derived facts, accepted requirements, and verified properties must remain distinguishable.
-6. **Explicit contracts** — timing, units, ranges, safety, resources, interfaces, and invariants should be first-class when the domain requires them.
-7. **Backend reuse** — reuse LLVM/MLIR and other mature compiler infrastructure instead of rebuilding machine-code backends.
-8. **Traceability** — requirement → accepted specification → SpecIR → verification evidence → executable behavior should remain traceable.
-9. **Reproducibility** — verified intermediate artifacts should support deterministic builds.
+1. **Specification first** — accepted specifications, not generated source code, are the primary engineering artifact.
+2. **Explicit specification acceptance** — intent fidelity requires accountable human/domain acceptance where appropriate.
+3. **Semantic preservation** — each transformation boundary must identify what semantics it claims to preserve.
+4. **AI for synthesis, not authority** — semantic synthesis is untrusted candidate generation.
+5. **Explicit uncertainty and evidence** — assumptions, unresolved semantics, accepted requirements, checked properties, and trusted components remain distinguishable.
+6. **Explicit contracts** — timing, units, ranges, safety, resources, interfaces, and invariants become first-class when a domain requires them.
+7. **Backend reuse** — reuse mature compiler infrastructure instead of rebuilding machine-code backends.
+8. **Traceability** — requirement → accepted specification → SpecIR → evidence → executable behavior should remain traceable.
+9. **Reproducibility** — verified/intermediate artifacts should support deterministic, repeatable builds where practical.
 10. **Human inspectability** — SpecIR is machine-oriented, but the system must remain reviewable and debuggable.
 
 ## What Spec2Exec is not
 
 - Not an LLM wrapper that emits C/C++/Rust source.
-- Not a new human-authored general-purpose programming language.
+- Not a new mandatory human-authored general-purpose programming language.
 - Not an attempt to replace LLVM, GCC, linkers, ABIs, loaders, or ISAs.
 - Not a claim that programming languages will disappear.
 - Not a claim that AI can automatically determine human intent.
 - Not a claim that general specification completeness can be automatically proven.
-- Not a system in which AI output is accepted without explicit acceptance or deterministic validation appropriate to the property.
+- Not a claim that every transformation is already formally verified.
 
 ## SpecIR
 
 SpecIR is a **formal, machine-oriented intermediate representation** between semantic synthesis and deterministic verification/lowering.
 
-It may have formal syntax and semantics; that is necessary for deterministic processing. The design constraint is different: SpecIR must not become the mandatory manually authored general-purpose source language.
+It may have formal syntax and semantics. The design constraint is that it must not become the mandatory manually authored general-purpose source language.
 
 ```text
 General-purpose source language
@@ -97,106 +97,77 @@ SpecIR
     optimized for synthesis → verification → lowering
 ```
 
-## Trust model
+## Trust and evidence model
+
+**Semantic synthesis is untrusted.** Human/domain authorities accept intent-bearing specifications. Deterministic systems verify only the formal properties they actually support. Lowering and compiler stages carry separate semantic-preservation obligations.
+
+Evidence is property-oriented rather than a single undifferentiated PASS. See RFC 0005 and RFC 0006.
+
+## Project status
+
+**Phase 1 — Minimal SpecIR and Deterministic Pipeline**
+
+Phase 0 established the initial architecture, trust boundaries, specification model, SpecIR direction, verification model, and semantic-preservation/evidence model.
+
+POC-0 now provides the first working deterministic path without AI:
 
 ```text
-Accepted Specification
+Accepted Hello Specification
     ↓
-Semantic Synthesis
-    ↓
-Candidate SpecIR
-
-──── deterministic trust boundary ────
-
-Verification
-    ↓
-Verified-for-declared-properties SpecIR
-    ↓
-Lowering
-    ↓
-Executable
-```
-
-**Semantic synthesis is untrusted.** A verifier PASS applies only to named properties under named assumptions.
-
-## Repository status
-
-**Phase 0 — Architecture Definition**
-
-The project is intentionally architecture-first. The current work defines the contracts between specification, human/domain acceptance, semantic synthesis, SpecIR, verification, lowering, and executable generation before implementing the first compiler prototype.
-
-## Repository layout
-
-```text
-spec2exec/
-├── README.md
-├── CONTRIBUTING.md
-├── docs/
-│   ├── vision.md
-│   ├── architecture.md
-│   ├── terminology.md
-│   ├── design-principles.md
-│   ├── non-goals.md
-│   └── research-landscape.md
-├── rfcs/
-│   ├── 0001-spec2exec-architecture.md
-│   ├── 0002-specification-model.md
-│   ├── 0003-specir.md
-│   ├── 0004-verification-model.md
-│   └── 0005-trust-intent-fidelity-and-specification-acceptance.md
-├── spec/
-│   ├── specir/
-│   └── schemas/
-├── examples/
-│   ├── hello/
-│   └── embedded-control/
-├── prototypes/
-└── tests/
-```
-
-## Phase 1 proof-of-concept direction
-
-The first implementation deliberately excludes AI so that the deterministic lower half can be tested independently:
-
-```text
-Manually Constructed Minimal SpecIR
-    ↓
-Parser / Loader
+Experimental SpecIR v0
     ↓
 Deterministic Verifier
     ↓
-C or LLVM IR Lowering
+C Lowering
     ↓
-Existing Compiler Backend
+Host C Compiler
     ↓
-Linux ELF Executable
+Executable
+    ↓
+Runtime Check
 ```
 
-AI semantic synthesis is introduced only after this path is independently testable.
+## Run POC-0
 
-The initial examples should progress from:
+Requirements:
 
-1. **Hello World** — toolchain plumbing only.
-2. **Bounded arithmetic** — types, ranges, pre/postconditions.
-3. **State machine** — states and invalid transition rejection.
-4. **Thermal motor protection** — units, thresholds, timing, fail-safe behavior, provenance, and unresolved requirements.
-5. **Timing-aware embedded model** — timing/resource contracts.
-6. **Embedded/control-system example** — broader system integration.
+- Python 3
+- `make`
+- a host C compiler available as `cc`, `gcc`, or `clang`
 
-## Research stance
+From the repository root:
 
-The project treats the following as open questions rather than settled claims:
+```bash
+make test
+make poc0
+```
 
-- Can specification complexity remain lower than equivalent implementation complexity?
-- Can SpecIR remain machine-oriented without becoming another mandatory human programming language?
-- Can uncertainty and provenance be preserved well enough to prevent AI-derived assumptions from becoming executable truth?
-- Can deterministic verification provide useful guarantees without making the specification model impractically restrictive?
-- Can requirement-to-runtime traceability remain usable at realistic system scale?
+POC-0 currently uses only the Python standard library and the host C toolchain.
 
-## Name
+## Current POC sequence
 
-**Spec2Exec** is the project name. The earlier shorthand **S2E** is intentionally not used because it collides with the established S²E selective symbolic execution project.
+```text
+POC-0  Hello / deterministic plumbing
+POC-1  Bounded arithmetic / contracts
+POC-2  State machine / behavioral invariants
+POC-3  Thermal motor protection / units, timing, safety, provenance
+```
+
+AI semantic synthesis is intentionally deferred until the deterministic lower half is independently testable.
+
+## Key documents
+
+```text
+docs/architecture.md
+rfcs/0001-spec2exec-architecture.md
+rfcs/0002-specification-model.md
+rfcs/0003-specir.md
+rfcs/0004-verification-model.md
+rfcs/0005-trust-intent-fidelity-and-specification-acceptance.md
+rfcs/0006-semantic-preservation-and-evidence-model.md
+docs/phase1-plan.md
+```
 
 ## License
 
-License selection is intentionally pending. It should be chosen explicitly before the first public code release.
+License selection remains intentionally pending before a public code release is declared stable or reusable.
