@@ -11,13 +11,15 @@ Verified SpecIR
       │
       ├── Target Profile
       │      CPU architecture / ISA
-      │      enabled ISA extensions
+      │      core/profile where relevant
+      │      enabled ISA subset/extensions
       │      ABI / calling-convention subset
       │      assembly dialect
       │      object model
       │
       └── Platform Profile (optional)
              SoC / board identity
+             processor mode / architecture selection
              memory map
              Flash / RAM placement
              startup / image conventions
@@ -44,12 +46,15 @@ object_model
 
 The exact serialization is intentionally not frozen yet.
 
-### POC-1C — RV32I
+## POC-1C — Raspberry Pi Pico 2 Hazard3 / RV32I subset
+
+POC-1C uses the Hazard3 RISC-V cores in RP2350 as the first hardware-validation target while intentionally constraining Spec2Exec code generation to the RV32I base-integer subset.
 
 ```json
 {
   "architecture": "riscv",
   "isa": "rv32i",
+  "core": "hazard3",
   "extensions": [],
   "abi": "ilp32-integer-subset",
   "assembly_dialect": "gnu-riscv",
@@ -57,39 +62,67 @@ The exact serialization is intentionally not frozen yet.
 }
 ```
 
-POC-1C keeps M/C/A/F/D extensions disabled.
+The physical Hazard3 core may implement capabilities beyond this profile. POC-1C deliberately keeps M/C/A/F/D and other optional/custom extensions outside the accepted target semantics unless a later architecture decision explicitly enables them.
 
-### Later ARM target — Cortex-M3
+Associated validation platform:
+
+```json
+{
+  "soc": "rp2350",
+  "board": "raspberry-pi-pico-2",
+  "processor_mode": "hazard3-riscv"
+}
+```
+
+## POC-1D — Raspberry Pi Pico 2 Cortex-M33 / Armv8-M Mainline
+
+POC-1D uses the same RP2350/Pico 2 platform in Arm mode, allowing cross-target validation without changing the board or SoC.
 
 ```json
 {
   "architecture": "arm",
-  "isa": "armv7-m",
-  "core": "cortex-m3",
+  "isa": "armv8-m.main",
+  "core": "cortex-m33",
   "endianness": "little",
   "abi": "aapcs-integer-subset",
-  "fpu": "none",
+  "floating_point_profile": "excluded-from-poc",
   "assembly_dialect": "gnu-arm",
   "object_model": "elf32-arm"
 }
 ```
 
-### Later ARM target — Cortex-M4
+Associated validation platform:
 
 ```json
 {
-  "architecture": "arm",
-  "isa": "armv7e-m",
-  "core": "cortex-m4",
-  "endianness": "little",
-  "abi": "aapcs-integer-subset",
-  "fpu": "none-or-explicit-profile",
-  "assembly_dialect": "gnu-arm",
-  "object_model": "elf32-arm"
+  "soc": "rp2350",
+  "board": "raspberry-pi-pico-2",
+  "processor_mode": "cortex-m33"
 }
 ```
 
-A Cortex-M4 profile with floating-point support must explicitly declare the selected FPU and floating-point ABI rather than treating all Cortex-M4 targets as identical.
+Floating-point, TrustZone/security-state behavior, DSP-specific operations, and other Cortex-M33/RP2350 architectural features are outside the initial POC-1D semantic scope unless explicitly added later.
+
+## Why use the same Pico 2 platform
+
+RP2350 can execute using either its Cortex-M33 pair or its Hazard3 RISC-V pair. This creates a useful portability experiment:
+
+```text
+                     same Verified SpecIR
+                            │
+                 ┌──────────┴──────────┐
+                 ▼                     ▼
+        Hazard3 / RV32I       Cortex-M33 / Armv8-M
+                 │                     │
+                 ▼                     ▼
+          RISC-V assembly          Arm assembly
+                 │                     │
+                 └──────────┬──────────┘
+                            ▼
+                    same RP2350 / Pico 2
+```
+
+The experiment therefore changes the processor architecture while holding the physical development platform largely constant.
 
 ## Platform Profile
 
@@ -100,6 +133,7 @@ Conceptual fields may include:
 ```text
 soc
 board
+processor_mode
 flash_origin / flash_size
 ram_origin / ram_size
 linker_script or linker-layout identity
@@ -107,7 +141,7 @@ startup / vector-table policy
 firmware image format
 ```
 
-For example, STM32F103 and another Cortex-M3 SoC may share the same ARMv7-M Target Profile while using different Platform Profiles for memory layout and startup conventions.
+The RP2350/Pico 2 platform profile can be shared by both native target experiments while selecting a different processor mode and Target Profile.
 
 ## Architectural rule
 
@@ -121,4 +155,4 @@ Platform Profile
 
 Changing the target or platform profile must not silently change the accepted machine-independent semantics of the same verified SpecIR.
 
-This separation is intended to make cross-target experiments meaningful: the same verified SpecIR can later be generated for RV32I and Cortex-M3/M4 while target-specific semantics remain below the Target Code Generation boundary.
+The planned cross-target experiment therefore uses the same verified SpecIR first with the Pico 2 Hazard3/RV32I target and then with the Pico 2 Cortex-M33/Armv8-M Mainline target while keeping target-specific semantics below the Target Code Generation boundary.
