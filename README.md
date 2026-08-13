@@ -30,7 +30,31 @@ Linker
 Executable / Firmware
 ```
 
-Native target code generation is the primary path. C and LLVM remain optional reference/comparison paths. Target-specific information is selected after SpecIR verification through Target Profiles; bare-metal board/SoC and hosted OS details belong to Platform Profiles.
+Native target code generation is the primary path. C and LLVM remain optional reference/comparison paths.
+
+SpecIR remains machine-independent. Concrete executable targets are composed from ISA, Execution, and optional Platform Profiles so support can expand across CPU architectures, operating systems, and bare-metal/RTOS environments without changing SpecIR semantics.
+
+## Target coverage goal
+
+Spec2Exec is intended to be implementable across major CPU ISA families and major execution environments rather than being tied to one development board, one ISA, or one operating system.
+
+```text
+ISA families
+    x86_64
+    AArch64 / Arm64
+    RISC-V RV32 / RV64
+    Arm M-profile
+
+Execution environments
+    Linux
+    Windows
+    macOS
+    Android
+    bare metal
+    selected RTOS profiles
+```
+
+Not every ISA/OS pair is valid or useful. Each supported target configuration must explicitly identify its ISA, ABI, object/executable model, runtime environment, and platform assumptions.
 
 ## Status
 
@@ -41,7 +65,7 @@ POC-1B    COMPLETE
 POC-1C.A  NEXT-ARCH    Pico 2 Hazard3 / RV32I native validation
 POC-1C.B  FOLLOW-UP    Hazard3 backend stress
 POC-1D    PLANNED      Pico 2 Cortex-M33 / Armv8-M cross-target validation
-POC-1E    PLANNED      x86_64 Linux / Windows / macOS hosted matrix
+POC-1E    PLANNED      hosted ISA / OS expansion
 POC-2     NEXT-SEMANTIC
 POC-3     PLANNED
 A0        PARALLEL
@@ -49,33 +73,32 @@ A0        PARALLEL
 
 POC-1C uses the Hazard3 RISC-V cores in RP2350 on Raspberry Pi Pico 2 while deliberately constraining generated semantics to the RV32I base-integer subset.
 
-POC-1D uses the same Raspberry Pi Pico 2 / RP2350 platform switched to its Arm Cortex-M33 cores. The initial Arm Target Profile is Armv8-M Mainline / Cortex-M33.
+POC-1D uses the same Raspberry Pi Pico 2 / RP2350 platform switched to its Arm Cortex-M33 cores. The initial Arm ISA profile is Armv8-M Mainline / Cortex-M33.
 
-POC-1E adds x86_64 as a third ISA family and explicitly treats hosted operating systems as distinct ABI/object environments:
+POC-1E begins hosted portability with reusable ISA and Execution Profiles rather than treating one OS as intrinsic to one CPU architecture. Initial configurations are planned around x86_64/Linux, x86_64/Windows, AArch64/Linux, and AArch64/macOS, followed by additional valid combinations such as AArch64/Windows, AArch64/Android, and RV64/Linux.
 
-```text
-x86_64 / Linux    SysV AMD64 subset      ELF64
-x86_64 / Windows  Microsoft x64 subset   COFF + PE32+
-x86_64 / macOS    Darwin x86_64 subset   Mach-O
-```
-
-The resulting representative validation matrix is:
+The intended long-term model is:
 
 ```text
-                           same Verified SpecIR
-                                  │
-              ┌───────────────────┼───────────────────┐
-              ▼                   ▼                   ▼
-      Hazard3 / RV32I    Cortex-M33 / Armv8-M       x86_64
-              │                   │                   │
-              ▼                   ▼        ┌──────────┼──────────┐
-       RISC-V assembly        Arm assembly  ▼          ▼          ▼
-              │                   │       Linux     Windows     macOS
-              ▼                   ▼       ELF64     PE/COFF     Mach-O
-          Pico 2              Pico 2
+                        same Verified SpecIR
+                                │
+                 ┌──────────────┼──────────────┐
+                 ▼              ▼              ▼
+              RISC-V           Arm           x86_64
+            RV32 / RV64   M-profile/AArch64     │
+                 │              │              │
+                 └──────────────┼──────────────┘
+                                ▼
+                      Execution Profiles
+                 Linux / Windows / macOS
+                 Android / bare metal / RTOS
+                                │
+                                ▼
+                     Platform / Toolchain
+                                │
+                                ▼
+                   Executable / Firmware
 ```
-
-This is representative architectural coverage rather than a claim of complete ISA or operating-system coverage. A later AArch64/arm64 hosted profile can be added separately without changing machine-independent SpecIR.
 
 See `docs/target-profiles.md`, `docs/phase1-plan.md`, and `rfcs/0009-native-target-code-generation.md`.
 
