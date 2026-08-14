@@ -1,40 +1,44 @@
 # POC-1C.A — RV32I Native Pipeline Validation Results
 
-- **Status:** Emulator baseline PASS after hostile implementation review hardening
+- **POC-1C.A status:** CLOSED / PASS for the emulator baseline
+- **POC-1C.B entry-hardening status:** COMPLETE
 - **Target configuration:** RV32I + bare metal
 - **Physical hardware validation:** pending
-- **Successful implementation commit:** `c0f7f66e4cb433a21cc6ba3cbef50dd0504c2976`
-- **GitHub Actions run:** `31730932788`
+- **Latest tested entry-hardening revision:** `65b346be4478b08a984d20b36cc47b901539371b`
+- **GitHub Actions run:** `31765577964`
+- **POC-1C tests in that run:** 28 / 28 PASS
 
-## What was validated
+## What is validated
 
-POC-1C.A exercises the native Spec2Exec executable-generation path without generated C, LLVM IR, or another high-level-language compiler stage:
+POC-1C exercises the native Spec2Exec executable-generation path without generated C, LLVM IR, or another high-level-language compiler stage in the primary path:
 
 ```text
 Accepted Specification
         ↓
-Machine-independent SpecIR
+Target-neutral deterministic verification
         ↓
-Target-neutral deterministic P1/P2 checks
+Machine-independent SpecIR
         ↓
 RV32I Target Code Generator
         ↓
 RV32I assembly
         ↓
-GNU assembler
+GNU assembler (-march=rv32i -mabi=ilp32)
         ↓
-ELF32 object
+Generated ELF32 RISC-V object
+        ↓
+Trusted bare-metal validation harness
         ↓
 GNU linker
         ↓
-RV32I ELF
+Validation ELF
         ↓
 QEMU rv32 virt
         ↓
-40,401-case exhaustive contract observation
+40,401-case exhaustive accepted-contract observation
 ```
 
-The native runtime harness is assembly-only. C remains available elsewhere in the project as a reference/comparison path, but POC-1C.A no longer routes its P1/P2 verification through the earlier host-C compatibility shim.
+The generated Spec2Exec target object remains RV32I-only. The trusted validation harness now uses **Zicsr only to install `mtvec` for an observable diagnostic trap path**; this does not widen the architectural semantics accepted by the Target Code Generator.
 
 ## Test subject
 
@@ -44,9 +48,12 @@ safe_add_sub(a, b) = (a + b) - b
 a,b ∈ [-100,100]
 overflow_behavior = forbidden
 accepted runtime contract: result == a
+contract trace: REQ-OPT-001-EQ
 ```
 
-The generated target code for the successful run is:
+The accepted contract is now a neutral `function.contract` specification clause. It is checked by P1, represented by a traced SpecIR postcondition, and consumed by P4-R only after target-neutral verification.
+
+The generated target code remains:
 
 ```asm
     .section .text
@@ -60,142 +67,181 @@ safe_add_sub:
     .size safe_add_sub, .-safe_add_sub
 ```
 
-Runtime validation observes the accepted contract. It does not require the final instruction sequence to preserve the syntactic structure of the SpecIR expression. A semantically equivalent optimized target program would still be valid under the declared preconditions.
+Runtime validation observes accepted semantics, not instruction-tree identity. A semantically equivalent target program may have a different instruction structure.
 
-## Backend bookkeeping
+## Backend invariants
 
-The generated backend-state evidence records:
+The direct backend records and enforces:
 
 ```text
-a      → a0
-b      → a1
-expr:0 → t0   add
-expr:1 → a0   sub
-result → a0
-
-temporary register pool = t0..t6
-high-water mark          = 1
-spill count              = 0
+arguments                    a0..a7
+return                       a0
+temporary register pool      t0..t6
+spill count                  0 for POC-1C.A
+callee-saved policy          forbidden without explicit save/restore
+preferred_dest policy        root-only
+temporary high-water mark    1 for safe_add_sub
 ```
 
-This is explicit backend decision evidence, not a mandatory MachineIR.
+Until explicit save/restore support exists, generated code fails closed if it touches `s0..s11`, `sp`, `gp`, or `tp`. This protects the runtime harness state carried in callee-saved registers. `preferred_dest` is also explicitly root-only so recursive placement cannot silently overwrite a still-live ABI argument.
 
 ## Hostile-review hardening
 
-Independent hostile reviews were used as implementation attacks rather than as automatic authorities. Findings were accepted only when confirmed against the current implementation or external tool semantics.
+The implementation-review cycle and closure re-review produced the following landed safeguards:
 
-The post-review baseline includes these corrections and hardening measures:
+- QEMU SiFive finisher FAIL encodes process exit code `1`, eliminating the original false-PASS channel;
+- negative controls require the exact expected failure status rather than merely any non-zero status;
+- runtime sensitivity is now recorded in `evidence.json` as `P4-R.sensitivity`;
+- two non-equivalent target-code mutations are assembled, linked, executed, and required to exit `1`;
+- an `ebreak` mutation exercises the installed synchronous-trap path and is also required to exit `1`;
+- the runtime case counter initializer, increment, expected-count materialization, and final assertion are mechanically bound before exhaustive evidence can be emitted;
+- harness matching strips comments, matches normalized instruction lines, and checks the required execution skeleton in order;
+- the accepted runtime contract is a verified specification clause rather than a POC-1B-specific side field;
+- P1/P2 are target-neutral and do not inject `target: host-c`;
+- Target Configuration mechanically selects generated-code assembler flags and linker mode;
+- assembly dialect is part of the target-to-toolchain binding key;
+- generated-code and harness assembler flags are distinct, preserving RV32I-only generated semantics while allowing Zicsr in trusted trap infrastructure;
+- source revision and `working_tree_clean` are recorded;
+- `run.py`, the POC-1C workflow, harness, linker script, backend/pipeline/verifier sources, target configuration, tools, invocations, and generated artifacts are evidence-bound;
+- real expression-tree register exhaustion is tested through the code generator;
+- root-symbol ABI return placement and unsigned-32 backend code-generation coverage are tested.
 
-- the QEMU SiFive finisher failure word now carries a non-zero process exit code;
-- two deliberately non-equivalent generated-assembly mutations are assembled, linked, executed, and required to fail the runtime oracle;
-- the runtime harness counts completed cases and cannot reach PASS unless all 40,401 expected cases complete;
-- the hand-written harness domain is mechanically checked against the verified SpecIR ranges before `TESTED_EXHAUSTIVE` may be emitted;
-- the runtime oracle is explicitly classified as an accepted-contract observation, not a structural comparison or formal P3 proof;
-- P1/P2 use a target-neutral POC-1C verifier with no injected `target: host-c` field;
-- GNU assembler/linker flags are selected through the validated Target Configuration binding rather than independently at call sites;
-- harness source, linker script, backend/pipeline/verifier sources, source revision, tools, versions, invocations, and generated artifacts are bound into the evidence record;
-- evidence claims now use a uniform record shape with `id`, `subject`, `property`, `status`, `assumptions`, `producer`, `source_revision`, `trace`, and `subject_binding`;
-- actual expression-tree register exhaustion is tested through code generation, not only by directly exhausting the RegisterPool;
-- root-symbol returns are position-independent and u32 code generation has explicit test coverage.
+## Bare-metal runtime infrastructure
 
-## CI tests
-
-The successful run executes 16 unit/integration tests and the full native pipeline. The tests cover:
+POC-1C.B entry hardening now provides the infrastructure required before forced spills:
 
 ```text
-normal code generation / bookkeeping                      PASS
-unsupported mul                                            REJECTED
-ninth integer argument                                     REJECTED
-machine-specific function.target leakage                   REJECTED
-raw temporary-pool exhaustion                              REJECTED
-real expression-tree register exhaustion                   REJECTED
-integer literal outside POC-1C.A                           REJECTED
-mixed integer input types                                  REJECTED
-non-binary arithmetic operation                            REJECTED
-non-expression body                                        REJECTED
-root-symbol result in a0 / another argument register       PASS
-u32 add/sub target-code generation                         PASS
-non-equivalent native assembly mutations                   DETECTED AS RUNTIME FAILURE
-target-neutral verifier accepts non-C native identifiers   PASS
-machine target leak at verification boundary               REJECTED
-no host-C target field required by P1/P2 verifier          PASS
+linker script
+    reserves 4096-byte aligned stack region
+    exports __stack_top
+
+_start
+    initializes sp
+    installs mtvec
+
+trap handler
+    uses the same SiFive test-finisher failure channel
+    exits QEMU with status 1
 ```
 
-The fail-closed policy includes:
+The trap path is dynamically tested with an `ebreak` probe. A bad spill or synchronous fault can therefore become an observable failure instead of an undifferentiated timeout.
+
+## CI coverage
+
+The successful entry-hardening run executes **28 tests** plus the full native pipeline. Coverage includes:
+
+```text
+normal code generation / bookkeeping                       PASS
+unsupported mul                                             REJECTED
+ninth integer argument                                      REJECTED
+machine-specific function.target leakage                    REJECTED
+raw temporary-pool exhaustion                               REJECTED
+real expression-tree register exhaustion                    REJECTED
+integer literal outside POC-1C.A                            REJECTED
+mixed integer input types                                   REJECTED
+non-binary arithmetic operation                             REJECTED
+non-expression body                                         REJECTED
+root-symbol ABI return placement                            PASS
+u32 backend code-generation                                 PASS
+callee-saved clobber attempt                                REJECTED
+non-root preferred_dest                                     REJECTED
+case-counter binding regressions                            PASS
+comment-only harness matches                                REJECTED
+assembly-dialect/toolchain mismatch                         REJECTED
+source/evidence binding regressions                         PASS
+neutral contract traceability                               PASS
+missing/mismatched contract representation                  REJECTED
+non-equivalent native assembly mutations                    EXIT 1
+synchronous trap probe                                      EXIT 1
+```
+
+CI sets `POC1C_REQUIRE_RUNTIME=1`, so runtime sensitivity tests cannot silently skip because the RV32I/QEMU tools are missing.
+
+## Fail-closed policy
 
 ```text
 unsupported operation       → E_TARGET_UNSUPPORTED_OPERATION
 unsupported literal         → E_TARGET_UNSUPPORTED_LITERAL
 unsupported ABI shape       → E_TARGET_ABI
 register exhaustion         → E_TARGET_OUT_OF_REGISTERS
+callee-saved ABI clobber    → E_BACKEND_ABI_CLOBBER
+backend placement violation → E_BACKEND_STATE
 machine detail in SpecIR    → E_SPECIR_TARGET_LEAK
-target/tool binding mismatch→ E_TARGET_PROFILE
+target/tool mismatch        → E_TARGET_PROFILE
 runtime-domain mismatch     → E_P4_DOMAIN
 runtime-oracle mismatch     → E_P4_ORACLE
 native runtime failure      → E_RUNTIME
 ```
-
-POC-1C.A does not silently spill, silently reuse live registers, emulate unsupported operations, or silently widen its target semantics.
 
 ## Evidence boundaries
 
 The result deliberately does not collapse the native pipeline into one PASS:
 
 ```text
-P1/P2  specification / SpecIR obligations       CHECKED
-P3     SpecIR → RV32I assembly                  TESTED
-P4-A   RV32I assembly → ELF32 object            TRUSTED
-P4-H   harness assembly → harness object        TRUSTED
-P4-L   objects + linker script → RV32I ELF      TRUSTED
-P4-R   linked ELF → accepted contract           TESTED_EXHAUSTIVE
+P1/P2             specification / SpecIR obligations       CHECKED
+P3                SpecIR → generated RV32I assembly        TESTED
+P4-A              generated assembly → generated object    TRUSTED
+P4-H              validation harness → harness object      TRUSTED
+P4-L              bound objects + linker script → ELF      TRUSTED
+P4-R              linked ELF → accepted contract           TESTED_EXHAUSTIVE
+P4-R.sensitivity  known-bad controls → failure channel     TESTED
 ```
 
-`P3` is not a formal equivalence proof. `P4-R` means that the linked executable satisfied the accepted `result == a` contract for every input pair in the mechanically bound `[-100,100] × [-100,100]` domain. It is not evidence that the generated assembly must have a particular instruction structure, and it does not discharge the P3 preservation obligation.
-
-The negative-control mutations demonstrate that the current runtime oracle has a functioning failure channel for known non-equivalent target-code changes.
+`P3` is not a formal equivalence proof. `P4-R` means the linked validation executable satisfied `result == a` for every input pair in the mechanically bound `[-100,100] × [-100,100]` domain. Runtime agreement does not prove compiler correctness or require structural identity between SpecIR and target instructions.
 
 ## Toolchain and target binding
 
 Successful CI environment:
 
 ```text
-GitHub runner OS       Ubuntu 24.04.4
-Python                 3.12.3
-GNU assembler          2.42 (2.42-1ubuntu1+6)
-GNU linker             2.42 (2.42-1ubuntu1+6)
-QEMU                    8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
+GitHub runner OS          Ubuntu 24.04.4
+Python                    3.12.3
+GNU assembler             2.42 (2.42-1ubuntu1+6)
+GNU linker                2.42 (2.42-1ubuntu1+6)
+QEMU                       8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
 ```
 
-The validated target configuration selects the current GNU binding:
+Validated bindings:
 
 ```text
-ISA Profile            riscv / rv32i / extensions=[]
-Execution Profile      bare-metal / ilp32-integer-subset / elf32-riscv
+Architectural target
+    ISA Profile           riscv / rv32i / extensions=[]
+    Execution Profile     bare-metal / ilp32-integer-subset / elf32-riscv
 
-assembler flags        -march=rv32i -mabi=ilp32
-linker flags           -m elf32lriscv
+Generated target object
+    assembler flags       -march=rv32i -mabi=ilp32
+
+Trusted validation harness
+    assembler flags       -march=rv32i_zicsr -mabi=ilp32
+    Zicsr purpose         mtvec installation only
+
+Linker
+    flags                 -m elf32lriscv
 ```
 
-Unsupported profile/toolchain combinations fail closed instead of silently reusing these flags.
-
-## Runtime-domain binding
-
-Before building the runtime evidence, the pipeline checks that the assembly harness encodes the verified input ranges and expected case count. For this baseline:
+## Runtime-domain and sensitivity binding
 
 ```text
-a range                 [-100,100]
-b range                 [-100,100]
-expected cases          40,401
-runtime oracle          result == a
-runtime oracle kind     accepted-contract-observation
-trace                    REQ-OPT-001-EQ
+a range                   [-100,100]
+b range                   [-100,100]
+expected cases            40,401
+runtime oracle            result == a
+runtime oracle kind       accepted-contract-observation
+contract trace            REQ-OPT-001-EQ
+failure status            1
 ```
 
-The harness also maintains a runtime case counter and verifies `40,401` before writing the PASS finisher value.
+Sensitivity observations from run `31765577964`:
 
-## Artifact bindings
+```text
+wrong-final-operation     exit 1
+wrong-first-operation     exit 1
+trap-path-ebreak          exit 1
+```
 
-Successful-run SHA-256 values:
+## Successful-run artifact bindings
+
+Key SHA-256 values from tested revision `65b346be4478b08a984d20b36cc47b901539371b`:
 
 ```text
 target-config.json
@@ -208,54 +254,29 @@ safe_add_sub.o
 027486b5efe99dfc21356d26620f9523316db0e32b1a5266396b96f62f799b7d
 
 safe_add_sub.elf
-fec6e6bbab3de0ef2e5cfa7b0f255458959d3c31a43f26bdc785988e11802029
+fb029132a30d8030128edf8f373978ee1643a220c448fc02d06fc95ad26fffc8
 
 backend-state.json
-10cc1a8d81019dfb565ffd272ce63d688b7c7c47eb18866e09e8ca8c1e9762ef
+62ea82ccd47f5d587866b9f2aac25cc7d934f4963df723e16fbfe702e15b377c
 
 evidence.json
-b4c990a7220d4960b6e6e763c8b1a69695698f7635d894cd60ac9d3bf864a03f
+7600bd471e949d961f9c0639f59bb5fd2408677c8197cbc98d0ad28be9921fa9
 ```
 
-Source / trusted-input bindings recorded by the evidence include:
-
-```text
-safe_add_sub.specir.json
-d45f6b02bf484fdd69de4c62473405487ab8e93b6f9f9f7beb64ec92dd5cabeb
-
-specification.json
-faedcfe74e01547fde7bca2ea46251f826579e5a55099b895b64b4ad80a2e7f8
-
-safe_add_sub_harness.s
-5f72f5d3b122c6074ff43c23c30a729945bf59fba92c46721d586a0f80331ce9
-
-rv32i_virt.ld
-4141dceea344361eb21d02baac48574e803f6c55288d105da896bdac39a6513b
-
-backend.py
-4bfa17476a76c4c374698ef47e6d55a5006765109190a7f029491bfcb301ea65
-
-pipeline.py
-ec2fd84d32560b2f33fb770f166c3613fd8f9a9de9a8e8ae36366c4d1ed49640
-
-verification.py
-13d3586aedc847bde223c7de9f44692b5f8f50e8177e700e46a4e637254a9fea
-```
-
-The evidence also records the exact source revision, assembler/linker/QEMU invocations, tool versions, harness object hash, linked ELF hash, and linker-script binding.
+Evidence also binds the accepted specification, SpecIR, harness source/object, linker script, backend, pipeline, `run.py`, target-profile module, verifier, Makefile, POC-1C workflow, exact tool versions/invocations, source revision, and working-tree cleanliness.
 
 ## Validation binding
 
-The current completed validation binding is:
+Completed validation binding:
 
 ```text
 validation kind: emulator
 emulator:        qemu-system-riscv32
 machine:         virt
-ISA:             RV32I
+architectural target: RV32I + bare metal
 ```
 
-The planned physical validation binding remains separate:
+Planned physical validation remains separate:
 
 ```text
 validation kind: hardware
@@ -264,30 +285,24 @@ SoC:             RP2350
 board:           Raspberry Pi Pico 2
 ```
 
-Pico 2 is validation hardware, not the architectural target. Physical Hazard3/RP2350 execution is not yet part of the completed evidence set.
+Pico 2 is validation hardware, not an architectural target. Physical Hazard3/RP2350 execution is not part of the completed evidence set.
 
-## Remaining deferred items
+## Remaining work
 
-The hostile-review repair pass does not claim that every future-backend problem has been solved. In particular:
+POC-1C.A remains closed. The POC-1C.B entry gate is complete, so B1 may now investigate multiple live values and forced spills.
+
+Non-blocking follow-ups remain:
 
 ```text
-POC-1C.B entry requirement
-    reserve and initialize a stack
-    install a minimal trap/failure path
-    then begin forced-spill / branch / call stress
-
-Future literal support
-    make immediate/constant legalization explicit
-    do not silently move that semantic responsibility into assembler pseudo-ops
-
-Optional defense-in-depth
-    add linked-image disassembly / ISA audit evidence
+end-to-end unsigned-32 validation
+register-pressure-aware expression ordering
+future constant/immediate legalization when literals enter scope
+physical Hazard3 / RP2350 validation
+optional linked-image disassembly / ISA audit
 ```
 
 ## Result
 
-POC-1C.A demonstrates a working **C-free executable-generation path** for the declared RV32I subset through native target assembly, conventional assembler/linker tooling, and exhaustive emulator-side accepted-contract observation over the declared domain.
+POC-1C.A demonstrates a working **C-free executable-generation path** for the declared RV32I subset through native target assembly and conventional assembler/linker tooling, with exhaustive emulator-side accepted-contract observation over the declared domain.
 
-The deterministic verification path for this POC is now target-neutral rather than host-C-dependent.
-
-The result does **not** claim a formally verified native compiler, a formally verified executable, or structural identity between SpecIR and target assembly. It is a working implementation baseline with explicit evidence strength, negative-control sensitivity, source/artifact bindings, and trusted-computing-base boundaries.
+The POC-1C.B entry-hardening pass adds explicit ABI guards, verified contract traceability, stronger harness integrity checks, source/evidence bindings, runtime sensitivity evidence, a valid bare-metal stack, and an observable trap path. These additions harden the experimental environment without upgrading P3 to a formal compiler-correctness proof.
