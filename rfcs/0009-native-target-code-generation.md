@@ -2,7 +2,7 @@
 
 - **Status:** Accepted / Architecture Baseline
 - **Scope:** Primary executable-generation path
-- **Review status:** Architecture closure complete; POC-1C.A hostile implementation review completed and hardened
+- **Review status:** Architecture closure complete; POC-1C.A closed after hostile implementation review; POC-1C.B entry hardening complete
 
 ## Primary path
 
@@ -95,11 +95,12 @@ Reusable backend structure should separate ISA-dependent instruction semantics f
 ## Evidence boundaries
 
 ```text
-P3    SpecIR → Target Assembly
-P4-A  Target Assembly → Object
-P4-H  Runtime Harness Assembly → Harness Object
-P4-L  Objects + Linker Script → Linked Executable
-P4-R  Linked Executable → Runtime Observation
+P3                SpecIR → Target Assembly
+P4-A              Target Assembly → Generated Object
+P4-H              Runtime Harness Assembly → Harness Object
+P4-L              Objects + Linker Script → Validation Executable
+P4-R              Validation Executable → Runtime Observation
+P4-R.sensitivity  Known-bad controls → Observable Failure
 ```
 
 No single PASS may collapse these boundaries. Runtime or hardware agreement does not discharge P3.
@@ -121,7 +122,7 @@ Object model:   ELF32 RISC-V
 
 ### POC-1C.A implementation status
 
-The hostile-review-hardened native/emulator baseline is complete. The completed validation binding is:
+POC-1C.A is **CLOSED / PASS** for the declared emulator baseline. The completed validation binding is:
 
 ```text
 Validation kind: emulator
@@ -129,7 +130,7 @@ Emulator:        qemu-system-riscv32
 Machine:         virt
 ```
 
-The working pipeline is:
+The validated generated-code path is:
 
 ```text
 Accepted Specification
@@ -140,33 +141,36 @@ machine-independent SpecIR
     ↓
 RV32I target code generation
     ↓
-GNU assembler
+GNU assembler (-march=rv32i -mabi=ilp32)
     ↓
-ELF32 object
+Generated ELF32 RISC-V object
+    ↓
+Trusted validation harness
     ↓
 GNU linker
     ↓
-RV32I ELF
+Validation ELF
     ↓
 QEMU rv32 virt
     ↓
 40,401 exhaustive accepted-contract observations
 ```
 
-POC-1C.A supports `add` and `sub`. Unsupported operations, including `mul` under this profile, fail closed. Unsupported ABI shapes, machine-specific target fields in SpecIR, unsupported literals, and temporary-register exhaustion also fail closed. Actual expression-tree exhaustion is tested through the backend rather than only by direct RegisterPool manipulation.
+POC-1C.A supports `add` and `sub`. Unsupported operations, ABI shapes, machine-specific fields, literals, temporary-register exhaustion, and backend-state violations fail closed. The backend emits machine-readable bookkeeping for value locations, ABI-fixed locations, temporary-register pressure, spill count, and explicit ABI/placement invariants.
 
-The backend emits machine-readable bookkeeping evidence for target configuration, value locations, ABI-fixed locations, temporary-register pool, high-water mark, and spill count.
+### Runtime evidence and trace hardening
 
-### Runtime evidence hardening
+The current runtime evidence includes these safeguards:
 
-The runtime evidence was hardened after hostile implementation review:
-
-- the SiFive test-finisher FAIL word carries a non-zero QEMU process exit code;
-- the harness counts completed executions and cannot reach PASS unless the expected case count is reached;
-- the harness range bounds and case count are mechanically checked against the verified SpecIR domain before exhaustive evidence may be emitted;
-- the runtime oracle is explicitly an accepted-contract observation (`result == a` for the current subject);
-- deliberately non-equivalent target-assembly mutations are assembled, linked, executed, and required to produce runtime failure;
-- runtime evidence does not claim structural comparison of the instruction sequence and does not upgrade P3 to a proof.
+- the SiFive test-finisher FAIL word produces QEMU exit code `1`;
+- negative controls require the exact expected failure status, not merely any non-zero result;
+- the harness cannot reach PASS without the mechanically bound case-counter initialization, per-case increment, and final expected-count assertion;
+- harness matching strips comments, normalizes instruction lines, and checks the required execution skeleton in order;
+- the accepted `result == a` contract is a neutral verified specification clause (`REQ-OPT-001-EQ`) and a traced SpecIR postcondition;
+- P4-R consumes that already-verified contract rather than an unverified side field;
+- two deliberately non-equivalent target-code mutations and one explicit trap probe are assembled, linked, executed, and required to exit `1`;
+- sensitivity results are first-class `P4-R.sensitivity` evidence;
+- runtime observation remains an accepted-contract observation and does not upgrade P3 to a proof.
 
 For the current subject:
 
@@ -174,40 +178,71 @@ For the current subject:
 input domain:       a,b ∈ [-100,100]
 expected cases:     40,401
 runtime contract:   result == a
+contract trace:     REQ-OPT-001-EQ
 runtime evidence:   TESTED_EXHAUSTIVE
 ```
 
 ### Target/profile binding hardening
 
-The validated Target Configuration now selects the GNU toolchain binding used by the pipeline:
+The validated Target Configuration selects the toolchain binding used by the pipeline, and `assembly_dialect` is part of that lookup key:
 
 ```text
-rv32i + bare-metal + ilp32-integer-subset + elf32-riscv
+rv32i + bare-metal + ilp32-integer-subset + gnu-riscv + elf32-riscv
     ↓
-GNU assembler: -march=rv32i -mabi=ilp32
-GNU linker:    -m elf32lriscv
+generated object assembler: -march=rv32i -mabi=ilp32
+linker:                     -m elf32lriscv
 ```
 
-Unsupported profile/toolchain combinations fail closed rather than silently reusing unrelated flags. The target profile is therefore a mechanical input to executable generation, not only descriptive metadata.
+Unsupported profile/toolchain combinations fail closed instead of silently reusing unrelated flags.
+
+### Validation-harness ISA boundary
+
+The bare-metal validation harness is trusted downstream infrastructure, not generated Spec2Exec target code. To make synchronous faults observable before forced-spill experiments, it installs `mtvec` and therefore uses Zicsr:
+
+```text
+Generated Spec2Exec target object
+    -march=rv32i -mabi=ilp32
+
+Trusted validation harness object
+    -march=rv32i_zicsr -mabi=ilp32
+    Zicsr use: mtvec installation only
+```
+
+This does **not** add Zicsr to the Spec2Exec architectural target accepted by the RV32I Target Code Generator. Evidence keeps P4-A (generated object) and P4-H (harness object) separate so this distinction remains auditable.
 
 ### Verification boundary hardening
 
-POC-1C.A no longer injects a synthetic `target: host-c` field or routes P1/P2 through the previous host-C compatibility path. It uses a POC-1C target-neutral verifier before the target boundary. C-specific identifier restrictions remain concerns of C reference/lowering paths, not native SpecIR semantics.
+POC-1C no longer injects a synthetic `target: host-c` field or routes P1/P2 through the previous host-C compatibility path. The target-neutral verifier checks specification/SpecIR linkage, ranges, behavior, overflow policy, and the accepted runtime contract before the target boundary.
+
+### Backend ABI and placement invariants
+
+For the current no-save/restore direct backend:
+
+```text
+argument registers      a0..a7
+return register         a0
+temporary registers     t0..t6
+callee-saved registers  forbidden until explicit save/restore exists
+preferred_dest          root-only
+```
+
+Generated use of `s0..s11`, `sp`, `gp`, or `tp` fails with `E_BACKEND_ABI_CLOBBER`. Non-root preferred destinations fail with `E_BACKEND_STATE`. These restrictions are deliberate entry safeguards, not permanent architecture rules; later backends may use callee-saved registers only with explicit ABI-preserving save/restore.
 
 ### Evidence-record hardening
 
 Evidence strength remains boundary-specific:
 
 ```text
-P1/P2  CHECKED
-P3     TESTED
-P4-A   TRUSTED
-P4-H   TRUSTED
-P4-L   TRUSTED
-P4-R   TESTED_EXHAUSTIVE
+P1/P2             CHECKED
+P3                TESTED
+P4-A              TRUSTED
+P4-H              TRUSTED
+P4-L              TRUSTED
+P4-R              TESTED_EXHAUSTIVE
+P4-R.sensitivity  TESTED
 ```
 
-Every current POC-1C evidence claim is normalized to carry the audit fields:
+Every current POC-1C evidence claim carries the normalized audit fields:
 
 ```text
 id
@@ -221,11 +256,33 @@ trace
 subject_binding
 ```
 
-The evidence artifact set binds the accepted specification, SpecIR, target configuration, generated assembly, backend state, target-generator sources, target-neutral verifier source, runtime harness source/object, linker script, generated object, linked ELF, source revision, and named external-tool versions/invocations.
+The evidence artifact set binds the accepted specification, SpecIR, target configuration, generated assembly, backend state, backend/pipeline/entrypoint/profile/verifier sources, runtime harness, linker script, Makefile, CI workflow, generated object, harness object, linked ELF, source revision, working-tree cleanliness, and named external-tool versions/invocations.
 
 `P3` remains TESTED, not formally proven. `P4-R` means exhaustive accepted-contract observation over the mechanically bound declared domain; it does not establish a compiler-correctness theorem.
 
-Planned physical validation binding:
+### POC-1C.B entry gate
+
+The entry hardening required before forced spills is now complete:
+
+```text
+stack region reserved                 COMPLETE
+sp initialized                        COMPLETE
+minimal mtvec trap path installed     COMPLETE
+trap failure observable as exit 1     COMPLETE
+trap path dynamically exercised       COMPLETE
+callee-saved clobber guard            COMPLETE
+root-only destination invariant       COMPLETE
+runtime harness integrity binding     COMPLETE
+runtime sensitivity evidence          COMPLETE
+contract traceability                 COMPLETE
+source/toolchain evidence hardening   COMPLETE
+```
+
+The bare-metal linker script reserves a 4096-byte aligned stack and exports `__stack_top`. The harness initializes `sp` before executing generated code. A deliberate `ebreak` mutation proves the synchronous trap path reaches the same expected exit-1 failure channel.
+
+POC-1C.B may therefore proceed to B1 multiple-live-value / forced-spill experiments. Spill support itself is **not** claimed complete by this entry work.
+
+Planned physical validation remains separate:
 
 ```text
 Validation kind: hardware
@@ -234,24 +291,9 @@ SoC:             RP2350
 Board:           Raspberry Pi Pico 2
 ```
 
-The physical Hazard3 core may implement more capabilities than the selected RV32I subset. Those capabilities are not automatically part of the Spec2Exec target semantics. Physical Hazard3/RP2350 execution is not yet part of the completed POC-1C.A evidence set.
+Physical Hazard3/RP2350 execution is not part of the completed emulator evidence set. Pico 2 remains validation hardware, not an architectural target.
 
-See `docs/poc1c-results.md` for the concrete CI result, tool versions, artifact hashes, runtime sensitivity checks, and evidence classifications.
-
-### POC-1C.B — backend complexity
-
-POC-1C.B next stresses spilling, branch/merge handling, and one non-recursive call to determine when local backend bookkeeping should be promoted into an explicit TargetIR/MachineIR-style representation.
-
-Before the forced-spill experiment begins, the bare-metal emulator harness must establish the runtime infrastructure needed to diagnose backend failures rather than confuse them with platform faults:
-
-```text
-reserve a stack region
-initialize sp
-install a minimal trap/failure path
-make trap failure observable through a non-zero runtime result
-```
-
-This is a POC-1C.B entry criterion, not a missing POC-1C.A semantic requirement, because POC-1C.A has `spill_count = 0` and does not require a stack.
+See `docs/poc1c-results.md` for the concrete CI result, tool versions, artifact hashes, runtime sensitivity observations, and evidence classifications.
 
 ## POC-1D — Armv8-M Mainline bare-metal cross-target validation
 
@@ -271,8 +313,8 @@ Planned physical validation binding:
 
 ```text
 CPU core:       Arm Cortex-M33
-SoC:            RP2350
-Board:          Raspberry Pi Pico 2
+SoC:             RP2350
+Board:           Raspberry Pi Pico 2
 ```
 
 Using the same RP2350/Pico 2 platform is a validation strategy that reduces unrelated hardware variation while changing CPU architecture. Pico 2 is not an architectural target.
@@ -301,8 +343,9 @@ Hosted portability tests both the same SpecIR across different ISA families and 
 
 - SpecIR must not absorb ISA-, OS-, ABI-, object-format-, CPU-core-, or board-specific details.
 - ISA Profile, Execution Profile, Platform Profile, and Validation Binding remain distinct concepts.
+- Generated-target semantics and trusted validation-harness capabilities must remain separately evidenced.
 - A named TargetIR/MachineIR remains optional; machine bookkeeping must stay explicit and testable.
-- Unsupported operations, incompatible target-profile combinations, resource exhaustion, runtime-domain mismatch, and runtime-oracle mismatch fail closed.
+- Unsupported operations, incompatible target-profile combinations, resource exhaustion, ABI-clobber risks, runtime-domain mismatch, and runtime-oracle mismatch fail closed.
 - Native evidence must distinguish semantic checking from assembler, linker, ABI, emulator, operating-system, loader/runtime, platform, and hardware assumptions.
 - Runtime contract observation does not imply structural preservation and does not discharge the P3 semantic-preservation obligation.
 - Reuse mature assembler/linker and platform tooling rather than reimplementing it inside Target Code Generation.
