@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 SPECIR_VERSION = "spec2exec.specir/v0.1"
@@ -10,6 +11,8 @@ SUPPORTED_TYPES = {"i32", "u32"}
 SUPPORTED_OPS = {"+": "add", "-": "sub"}
 ARG_REGS = [f"a{i}" for i in range(8)]
 TEMP_REGS = [f"t{i}" for i in range(7)]
+CALLEE_SAVED_REGS = {f"s{i}" for i in range(12)}
+FORBIDDEN_UNSAVED_REGS = CALLEE_SAVED_REGS | {"sp", "gp", "tp"}
 
 
 class Poc1CError(Exception):
@@ -87,6 +90,20 @@ def validate_codegen_specir(doc: Any) -> dict[str, Any]:
     return fn
 
 
+def validate_generated_register_policy(assembly: str) -> None:
+    """Fail closed if the no-save/restore backend touches preserved runtime state.
+
+    POC-1C.A has no stack frame or callee-save/restore support. The runtime
+    harness legitimately keeps state in RISC-V callee-saved registers across
+    the generated-function call, so generated code must not touch those
+    registers until explicit ABI-preserving support is introduced.
+    """
+    tokens = set(re.findall(r"\b(?:s(?:[0-9]|1[01])|sp|gp|tp)\b", assembly))
+    forbidden = sorted(tokens & FORBIDDEN_UNSAVED_REGS)
+    expect(not forbidden, "E_BACKEND_ABI_CLOBBER",
+           f"generated code touches registers requiring preservation: {forbidden}")
+
+
 class RegisterPool:
     def __init__(self) -> None:
         self.registers = list(TEMP_REGS)
@@ -119,7 +136,17 @@ class RV32ICodeGenerator:
         for name, reg in self.args.items():
             self.locations[f"input:{name}"] = {"kind": "abi-argument", "location": reg}
 
-    def compile_expr(self, expr: Any, preferred_dest: str | None = None) -> tuple[str, bool]:
+    def compile_expr(self, expr: Any, preferred_dest: str | None = None,
+                     *, is_root: bool = False) -> tuple[str, bool]:
+        """Compile one expression.
+
+        `preferred_dest` is intentionally root-only in the direct POC-1C.A
+        backend. Propagating it into recursive nodes can overwrite a still-live
+        ABI argument, so any future lowering that needs inner-node placement
+        must introduce an explicit, separately reviewed rule.
+        """
+        expect(preferred_dest is None or is_root, "E_BACKEND_STATE",
+               "preferred_dest is root-only in the POC-1C.A direct backend")
         if isinstance(expr, str):
             source = self.args[expr]
             if preferred_dest is not None and source != preferred_dest:
@@ -159,10 +186,12 @@ class RV32ICodeGenerator:
             "    .section .text", "    .option norvc",
             f"    .globl {name}", f"    .type {name}, @function", f"{name}:",
         ]
-        result, _ = self.compile_expr(self.fn["body"]["expr"], preferred_dest="a0")
+        result, _ = self.compile_expr(self.fn["body"]["expr"], preferred_dest="a0", is_root=True)
         expect(result == "a0", "E_BACKEND_STATE", "result must be in a0")
         self.lines += ["    ret", f"    .size {name}, .-{name}", ""]
         expect(not self.pool.in_use, "E_BACKEND_STATE", f"live temporaries remain: {self.pool.in_use}")
+        assembly = "\n".join(self.lines)
+        validate_generated_register_policy(assembly)
         self.locations["result"] = {"kind": "abi-return", "location": "a0"}
         state = {
             "schema": "spec2exec.backend-state/v0.1",
@@ -172,6 +201,9 @@ class RV32ICodeGenerator:
             "temporary_register_pool": self.pool.registers,
             "temporary_pool_high_water_mark": self.pool.high_water_mark,
             "spill_count": 0,
+            "callee_saved_policy": "forbidden-without-explicit-save-restore",
+            "forbidden_unsaved_registers": sorted(FORBIDDEN_UNSAVED_REGS),
+            "preferred_dest_policy": "root-only",
             "value_locations": self.locations,
         }
-        return "\n".join(self.lines), state
+        return assembly, state
