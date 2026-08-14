@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from pathlib import Path
-from pipeline import build, generate, run_qemu
+from pipeline import build, generate, run_qemu, run_runtime_sensitivity
 
 p = argparse.ArgumentParser()
 p.add_argument("mode", choices=["generate", "build", "all"])
@@ -25,3 +25,7 @@ else:
                   a.harness, a.linker_script, a.assembler, a.linker)
     if a.mode == "all":
         run_qemu(paths["elf"], paths["evidence"], a.qemu)
+        run_runtime_sensitivity(
+            paths["asm"], paths["evidence"], a.harness, a.linker_script,
+            a.assembler, a.linker, a.qemu,
+        )
