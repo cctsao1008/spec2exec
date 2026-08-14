@@ -16,7 +16,8 @@
       {"id": "PRE-B-RANGE", "trace": ["REQ-OPT-001-B"], "expr": {"op": "and", "args": [{"op": ">=", "args": ["b", -100]}, {"op": "<=", "args": ["b", 100]}]}}
     ],
     "postconditions": [
-      {"id": "POST-RESULT", "trace": ["REQ-OPT-001-BEH"], "expr": {"op": "==", "args": ["result", {"op": "-", "args": [{"op": "+", "args": ["a", "b"]}, "b"]}]}}
+      {"id": "POST-RESULT", "trace": ["REQ-OPT-001-BEH"], "expr": {"op": "==", "args": ["result", {"op": "-", "args": [{"op": "+", "args": ["a", "b"]}, "b"]}]}},
+      {"id": "POST-CONTRACT", "trace": ["REQ-OPT-001-EQ"], "expr": {"op": "==", "args": ["result", "a"]}}
     ],
     "body": {"kind": "expr", "expr": {"op": "-", "args": [{"op": "+", "args": ["a", "b"]}, "b"]}, "trace": ["REQ-OPT-001-BEH"]}
   }
