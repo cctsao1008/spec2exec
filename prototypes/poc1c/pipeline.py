@@ -20,9 +20,11 @@ ROOT = Path(__file__).resolve().parents[2]
 POC1C_SOURCE_FILES = [
     ROOT / "prototypes" / "poc1c" / "backend.py",
     ROOT / "prototypes" / "poc1c" / "pipeline.py",
+    ROOT / "prototypes" / "poc1c" / "run.py",
     ROOT / "prototypes" / "poc1c" / "target_profiles.py",
     ROOT / "prototypes" / "poc1c" / "verification.py",
     ROOT / "Makefile",
+    ROOT / ".github" / "workflows" / "poc1c.yml",
 ]
 
 CLAIM_PROPERTIES = {
@@ -72,6 +74,15 @@ def source_revision() -> str:
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=False
     )
     return proc.stdout.strip() if proc.returncode == 0 and proc.stdout.strip() else "UNAVAILABLE"
+
+
+def working_tree_clean() -> bool | None:
+    proc = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    if proc.returncode != 0:
+        return None
+    return not bool(proc.stdout.strip())
 
 
 def collect_trace_ids(fn: dict[str, Any]) -> list[str]:
@@ -134,10 +145,11 @@ def resolve_gnu_toolchain_binding(target: dict[str, Any]) -> dict[str, list[str]
         tuple(isa["extensions"]),
         exe["environment"],
         exe["abi"],
+        exe["assembly_dialect"],
         exe["object_model"],
     )
     bindings = {
-        ("riscv", "rv32i", (), "bare-metal", "ilp32-integer-subset", "elf32-riscv"): {
+        ("riscv", "rv32i", (), "bare-metal", "ilp32-integer-subset", "gnu-riscv", "elf32-riscv"): {
             "assembler_flags": ["-march=rv32i", "-mabi=ilp32"],
             "linker_flags": ["-m", "elf32lriscv"],
         }
@@ -184,38 +196,102 @@ def split_lui_addi(value: int) -> tuple[int, int]:
     return upper, lower
 
 
+def normalized_assembly_lines(path: Path) -> list[str]:
+    """Return comment-free normalized assembly program lines.
+
+    Directives are retained only when they are labels; instruction matching is
+    therefore based on complete normalized lines rather than raw substrings.
+    """
+    result: list[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        code = raw.split("#", 1)[0].strip()
+        if not code:
+            continue
+        result.append(" ".join(code.split()))
+    return result
+
+
+def instruction_lines(program_lines: list[str]) -> list[str]:
+    return [line for line in program_lines if not line.endswith(":") and not line.startswith(".")]
+
+
+def require_ordered_subsequence(program_lines: list[str], required: list[str]) -> None:
+    position = 0
+    for expected in required:
+        try:
+            position = program_lines.index(expected, position) + 1
+        except ValueError as exc:
+            raise Poc1CError(
+                f"E_P4_DOMAIN: runtime harness execution skeleton is missing or reordered at {expected!r}"
+            ) from exc
+
+
 def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
                              verified: dict[str, Any]) -> dict[str, Any]:
     """Mechanically bind the hand-written harness to the verified domain/oracle."""
-    text = harness_path.read_text(encoding="utf-8")
+    program = normalized_assembly_lines(harness_path)
+    instructions = instruction_lines(program)
+    counts = Counter(instructions)
     inputs = verified["function"]["inputs"]
     expect(len(inputs) == 2 and [item["id"] for item in inputs] == ["a", "b"],
            "E_P4_DOMAIN", "POC-1C.A runtime harness supports exactly inputs a,b")
     ranges = verified["input_ranges"]
     a_lo, a_hi = ranges["a"]
     b_lo, b_hi = ranges["b"]
+    cases = expected_case_count(ranges)
+    upper, lower = split_lui_addi(cases)
 
     required_counts = Counter([
         f"addi s0, zero, {a_lo}",
+        "addi s2, zero, 0",
         f"addi s1, zero, {b_lo}",
+        "add a0, s0, zero",
+        "add a1, s1, zero",
+        "jal ra, safe_add_sub",
+        "bne a0, s0, .L_fail",
+        "addi s2, s2, 1",
+        "addi s1, s1, 1",
         f"addi t0, zero, {b_hi + 1}",
+        "blt s1, t0, .L_inner",
+        "addi s0, s0, 1",
         f"addi t0, zero, {a_hi + 1}",
+        "blt s0, t0, .L_outer",
+        f"lui t2, 0x{upper:x}",
+        f"addi t2, t2, {lower}",
+        "bne s2, t2, .L_fail",
     ])
     for instruction, count in required_counts.items():
-        actual = text.count(instruction)
+        actual = counts[instruction]
         expect(actual == count, "E_P4_DOMAIN",
-               f"runtime harness domain binding mismatch for {instruction!r}: expected {count}, found {actual}")
+               f"runtime harness binding mismatch for {instruction!r}: expected {count}, found {actual}")
 
-    cases = expected_case_count(ranges)
-    upper, lower = split_lui_addi(cases)
-    expect(text.count(f"lui t2, 0x{upper:x}") == 1 and text.count(f"addi t2, t2, {lower}") == 1,
-           "E_P4_DOMAIN", "runtime harness case-count check does not match verified domain")
+    require_ordered_subsequence(program, [
+        "_start:",
+        f"addi s0, zero, {a_lo}",
+        "addi s2, zero, 0",
+        ".L_outer:",
+        f"addi s1, zero, {b_lo}",
+        ".L_inner:",
+        "add a0, s0, zero",
+        "add a1, s1, zero",
+        "jal ra, safe_add_sub",
+        "bne a0, s0, .L_fail",
+        "addi s2, s2, 1",
+        "addi s1, s1, 1",
+        f"addi t0, zero, {b_hi + 1}",
+        "blt s1, t0, .L_inner",
+        "addi s0, s0, 1",
+        f"addi t0, zero, {a_hi + 1}",
+        "blt s0, t0, .L_outer",
+        f"lui t2, 0x{upper:x}",
+        f"addi t2, t2, {lower}",
+        "bne s2, t2, .L_fail",
+        ".L_pass:",
+    ])
 
     contract = spec_doc.get("function", {}).get("poc1b_contract", {})
     expect(contract.get("expr") == "a", "E_P4_ORACLE",
            "POC-1C.A harness currently supports the accepted result == a contract only")
-    expect(text.count("bne a0, s0, .L_fail") == 1, "E_P4_ORACLE",
-           "runtime harness oracle does not uniquely implement result == a")
 
     contract_trace = []
     if isinstance(contract.get("clause_id"), str):
@@ -226,6 +302,11 @@ def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
         "oracle": "result == a",
         "oracle_kind": "accepted-contract-observation",
         "trace": contract_trace,
+        "case_counter_binding": {
+            "initialize": "addi s2, zero, 0",
+            "increment": "addi s2, s2, 1",
+            "assertion": "bne s2, t2, .L_fail",
+        },
     }
 
 
@@ -266,6 +347,7 @@ def generate(specification_path: Path, specir_path: Path, target_profile: str,
         "subject": fn["name"],
         "target_profile": target_profile,
         "source_revision": source_revision(),
+        "working_tree_clean": working_tree_clean(),
         "trace_context": collect_trace_ids(verified["function"]),
         "claims": normalized_verifier_claims(verified, specification_path, specir_path) + [{
             "id": "P3.specir_to_rv32i_assembly",
@@ -415,7 +497,8 @@ def run_qemu(elf: Path, evidence_path: Path, qemu: str) -> None:
         "assumptions": [
             "QEMU rv32 virt models the exercised RV32I behavior correctly",
             "SiFive test finisher maps PASS to exit 0 and FAIL to non-zero exit",
-            "runtime harness case-count assertion completes before PASS",
+            "runtime harness case-counter initialization/increment/final assertion are mechanically bound before PASS",
+            "generated code is checked not to touch callee-saved runtime state without save/restore support",
         ],
         "tool": {"path": qemu_path, "version": tool_version(qemu_path)},
         "invocation": command,
