@@ -155,6 +155,7 @@ def verify_specification(spec: Any) -> dict[str, Any]:
            "E_SPEC_BEHAVIOR", "function.behavior clause required")
     expect(behavior["clause_id"] not in clauses, "E_SPEC_CLAUSE",
            f"duplicate clause_id {behavior['clause_id']}")
+    validate_expr(behavior.get("expr"), names, "function.behavior.expr")
     clauses[behavior["clause_id"]] = {"kind": "behavior", "expr": behavior.get("expr")}
 
     overflow = fn.get("overflow_behavior")
@@ -166,6 +167,14 @@ def verify_specification(spec: Any) -> dict[str, Any]:
            f"duplicate clause_id {overflow['clause_id']}")
     clauses[overflow["clause_id"]] = {"kind": "overflow", "mode": "forbidden"}
 
+    contract = fn.get("contract")
+    expect(isinstance(contract, dict) and nonempty_string(contract.get("clause_id")),
+           "E_SPEC_CONTRACT", "function.contract clause required")
+    expect(contract["clause_id"] not in clauses, "E_SPEC_CLAUSE",
+           f"duplicate clause_id {contract['clause_id']}")
+    validate_expr(contract.get("expr"), names, "function.contract.expr")
+    clauses[contract["clause_id"]] = {"kind": "contract", "expr": contract.get("expr")}
+
     return {
         "id": fn["id"],
         "name": fn["name"],
@@ -173,6 +182,7 @@ def verify_specification(spec: Any) -> dict[str, Any]:
         "output": out,
         "behavior": behavior,
         "overflow": overflow,
+        "contract": contract,
         "clauses": clauses,
         "acceptance": acceptance,
     }
@@ -280,11 +290,17 @@ def verify_specir(doc: Any, spec_info: dict[str, Any]) -> dict[str, Any]:
         trace_list(post.get("trace"), f"postconditions[{index}].trace")
         validate_expr(post.get("expr"), post_symbols, f"postconditions[{index}].expr")
         seen.update(post["trace"])
-    expected_post = {"op": "==", "args": [output_symbol, body["expr"]]}
-    expect(len(postconditions) == 1 and postconditions[0]["expr"] == expected_post,
-           "E_POST_LINK", "POC-1C postcondition must equate output to body expression")
-    expect(spec_info["behavior"]["clause_id"] in postconditions[0]["trace"], "E_POST_LINK",
-           "postcondition must trace to accepted behavior clause")
+
+    expected_behavior_post = {"op": "==", "args": [output_symbol, body["expr"]]}
+    expected_contract_post = {"op": "==", "args": [output_symbol, spec_info["contract"]["expr"]]}
+    behavior_posts = [post for post in postconditions if post.get("expr") == expected_behavior_post]
+    contract_posts = [post for post in postconditions if post.get("expr") == expected_contract_post]
+    expect(len(postconditions) == 2 and len(behavior_posts) == 1 and len(contract_posts) == 1,
+           "E_POST_LINK", "POC-1C requires one behavior postcondition and one accepted-contract postcondition")
+    expect(spec_info["behavior"]["clause_id"] in behavior_posts[0]["trace"], "E_POST_LINK",
+           "behavior postcondition must trace to accepted behavior clause")
+    expect(spec_info["contract"]["clause_id"] in contract_posts[0]["trace"], "E_CONTRACT_LINK",
+           "contract postcondition must trace to accepted contract clause")
 
     required = set(spec_info["clauses"])
     represented = set(fn_trace) | seen
@@ -306,12 +322,14 @@ def verify_specir(doc: Any, spec_info: dict[str, Any]) -> dict[str, Any]:
         "input_ranges": ranges,
         "output_range": out_range,
         "body_range": expr_range,
+        "contract": spec_info["contract"],
         "p2_overflow_claim": p2_claim,
         "evidence": [
             {"id": "P1.function_identity", "status": "CHECKED"},
             {"id": "P1.constraint_traceability", "status": "CHECKED"},
             {"id": "P1.range_linkage", "status": "CHECKED"},
             {"id": "P1.behavior_linkage", "status": "CHECKED"},
+            {"id": "P1.contract_linkage", "status": "CHECKED"},
             {"id": "P2.fixed_width_type_domain", "status": "CHECKED"},
             {"id": "P2.output_range_containment", "status": "CHECKED"},
             {"id": p2_claim, "status": "CHECKED", "method": "sound interval analysis", "blocking": True},
