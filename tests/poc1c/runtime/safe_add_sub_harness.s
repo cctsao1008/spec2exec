@@ -3,6 +3,15 @@
     .globl _start
     .type _start, @function
 _start:
+    lui sp, %hi(__stack_top)
+    addi sp, sp, %lo(__stack_top)
+
+    # The trusted validation harness uses Zicsr only to make synchronous
+    # failures observable. Generated Spec2Exec target code remains RV32I-only.
+    lui t0, %hi(.L_trap)
+    addi t0, t0, %lo(.L_trap)
+    csrrw zero, mtvec, t0
+
     addi s0, zero, -100
     addi s2, zero, 0
 
@@ -49,5 +58,16 @@ _start:
 
 .L_halt_fail:
     jal zero, .L_halt_fail
+
+.L_trap:
+    # Any synchronous trap must be distinguishable from a timeout or random
+    # emulator failure and must use the same expected non-zero exit channel.
+    lui t0, 0x100
+    lui t1, 0x13
+    addi t1, t1, 0x333
+    sw t1, 0(t0)
+
+.L_halt_trap:
+    jal zero, .L_halt_trap
 
     .size _start, .-_start
