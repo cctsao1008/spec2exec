@@ -112,9 +112,9 @@ Deterministic Verification                    [DEMONSTRATED — limited declared
         ↓
 SpecIR after declared checks                  [DEMONSTRATED]
         ↓
-Portable Target Realization                   [DEMONSTRATED for RV32I; other targets planned]
+Target Realization                            [DEMONSTRATED for RV32I; other targets planned]
         ↓
-Executable / Firmware                         [DEMONSTRATED for RV32I ELF]
+Executable / Firmware                         [DEMONSTRATED for RV32I validation ELF]
         ↓
 Runtime / Emulator / Hardware Observation     [QEMU DEMONSTRATED; physical HW pending]
 
@@ -138,11 +138,16 @@ See [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.m
 
 **SpecIR** is the machine-independent intermediate representation used between an accepted specification and target realization. It represents the executable semantics, declared ranges, contracts, and trace links that the verifier and backends consume; target-specific machine details are kept outside machine-independent SpecIR.
 
-A real fragment from the current RV32I subject is:
+A real fragment from the current RV32I subject is shown below. It includes both postconditions and the executable body; the full document also carries inputs, output/ranges, overflow behavior, preconditions, and top-level trace metadata.
 
 ```json
 {
   "postconditions": [
+    {
+      "id": "POST-RESULT",
+      "trace": ["REQ-OPT-001-BEH"],
+      "expr": {"op": "==", "args": ["result", {"op": "-", "args": [{"op": "+", "args": ["a", "b"]}, "b"]}]}
+    },
     {
       "id": "POST-CONTRACT",
       "trace": ["REQ-OPT-001-EQ"],
@@ -172,18 +177,18 @@ accepted runtime contract: result == a
 contract trace: REQ-OPT-001-EQ
 ```
 
-The generated RV32I target code is:
+The generated RV32I target code, shown with the canonical generated formatting, is:
 
 ```asm
-.section .text
-.option norvc
-.globl safe_add_sub
-.type safe_add_sub,@function
+    .section .text
+    .option norvc
+    .globl safe_add_sub
+    .type safe_add_sub, @function
 safe_add_sub:
-    add t0,a0,a1
-    sub a0,t0,a1
+    add t0, a0, a1
+    sub a0, t0, a1
     ret
-.size safe_add_sub, .-safe_add_sub
+    .size safe_add_sub, .-safe_add_sub
 ```
 
 The primary executable-generation path uses **no generated C, LLVM IR, or other high-level-language compiler stage between SpecIR and target assembly**:
@@ -203,7 +208,7 @@ ELF32 object
         ↓
 GNU linker + validation harness
         ↓
-RV32I ELF
+RV32I validation ELF
         ↓
 QEMU rv32 virt
         ↓
@@ -214,13 +219,18 @@ For the current POC-1C evidence report:
 
 | Boundary | Current claim | Meaning |
 |---|---|---|
-| P1 / P2 | `CHECKED` | Deterministic checks over the accepted specification / SpecIR obligations implemented by the prototype |
+| P1 | `CHECKED` | Function identity plus constraint, range, behavior, and contract linkage/traceability against the accepted POC specification |
+| P2 | `CHECKED` | Fixed-width type-domain checks, output-range containment, and absence of signed-overflow UB for this i32 subject by blocking sound interval analysis |
 | P3 | `TESTED` | SpecIR → generated RV32I assembly has test evidence; this is not a formal compiler-equivalence proof |
 | P4-A / P4-H / P4-L | `TRUSTED` | Assembler, harness-object, and linker boundaries are part of the named trusted computing base; Spec2Exec does not claim to have verified those tools |
-| P4-R | `TESTED_EXHAUSTIVE` | Every case in the mechanically bound declared finite runtime domain was observed |
+| P4-R | `TESTED_EXHAUSTIVE` | Every case in the mechanically bound declared finite runtime domain was observed under QEMU `rv32 virt` |
 | P4-R.sensitivity | `TESTED` | Known-bad target mutations and a trap probe were required to reach the observable failure channel |
 
+No boundary in the current POC-1C evidence set carries `PROVEN`: **`TESTED` is not `PROVEN`, and `TRUSTED` is not `VERIFIED`**.
+
 `TESTED_EXHAUSTIVE` is scoped to the accepted contract's declared domain, not the full 32-bit input space. POC-1C.A observes all **40,401** input pairs in `[-100,100] × [-100,100]` under QEMU `rv32 virt`, checking `result == a` for every pair.
+
+For P4-R, QEMU is also part of the named trusted computing base: the evidence assumes that the QEMU `rv32 virt` machine model correctly represents the exercised RV32I behavior and that the SiFive test-finisher protocol maps the observed PASS/FAIL channel correctly.
 
 The runtime evidence also includes negative controls:
 
@@ -244,7 +254,7 @@ evidence.json     sha256 7600bd471e949d961f9c0639f59bb5fd2408677c8197cbc98d0ad28
 
 See the [POC-1C.A validation results](docs/poc1c-results.md) and [GitHub Actions run 31765577964](https://github.com/cctsao1008/spec2exec/actions/runs/31765577964) for the complete evidence set.
 
-The CI environment installs the RV32I binutils / QEMU dependencies and runs:
+On the Ubuntu CI runner, the RV32I toolchain/emulator prerequisites are installed as `binutils-riscv64-unknown-elf` and `qemu-system-misc`, then CI runs:
 
 ```sh
 make test-poc1c
@@ -308,10 +318,6 @@ Spec2Exec is not:
 ## Roadmap snapshot
 
 Current active work is split between backend scaling and trust-chain hardening. POC-1C.B continues RV32 backend stress, while #53, #54, and A0 address the still-unimplemented semantic-authority and trust-oriented research layers. Arm M-profile, hosted portability, and physical RP2350 validation remain planned or pending.
-
-The strategic direction remains:
-
-> **AI proposes. Humans authorize semantics. Deterministic systems verify. Evidence justifies trust. Portable backends execute.**
 
 ## License
 
