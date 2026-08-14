@@ -36,7 +36,7 @@
       "clause_id": "REQ-OPT-001-OVF",
       "mode": "forbidden"
     },
-    "poc1b_contract": {
+    "contract": {
       "clause_id": "REQ-OPT-001-EQ",
       "expr": "a"
     }
