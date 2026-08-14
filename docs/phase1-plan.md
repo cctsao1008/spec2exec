@@ -4,8 +4,9 @@
 - **POC-0:** complete
 - **POC-1A:** complete and evidence-hardened
 - **POC-1B:** complete for the initial host-C reference experiment
-- **POC-1C.A:** RV32I native/emulator baseline complete; physical hardware validation pending
-- **Next architecture experiment:** POC-1C.B — RV32 Backend Complexity
+- **POC-1C.A:** CLOSED / PASS for the RV32I native emulator baseline; physical hardware validation pending
+- **POC-1C.B entry hardening:** complete
+- **Current backend experiment:** POC-1C.B B1 — multiple live values / forced spill
 - **Later portability experiment:** POC-1D — Armv8-M Mainline Bare-Metal Cross-Target Generation
 - **Later hosted portability experiment:** POC-1E — Hosted ISA / OS Expansion
 - **Next semantic experiment:** POC-2 — State Machine
@@ -32,38 +33,46 @@ Object model:   ELF32 RISC-V
 
 ### POC-1C.A — Native Pipeline Validation
 
-The first native implementation baseline is complete in CI.
+The native emulator baseline is closed after hostile implementation review and closure re-review.
 
 ```text
+Accepted Specification
+        ↓
+Target-neutral verification
+        ↓
 Machine-independent SpecIR
         ↓
 RV32I Target Code Generator
         ↓
 RV32I assembly
         ↓
-GNU assembler
+GNU assembler (-march=rv32i -mabi=ilp32)
         ↓
-ELF32 object
+Generated object
+        ↓
+Trusted validation harness
         ↓
 GNU linker
         ↓
-RV32I ELF
+Validation ELF
         ↓
 QEMU rv32 virt
         ↓
-40,401 exhaustive runtime cases
+40,401 exhaustive accepted-contract observations
 ```
 
-Initial scope remains straight-line `add` and `sub`. Unsupported operations, unsupported ABI shapes, machine-specific fields in SpecIR, and temporary-register exhaustion fail closed. The backend uses a bounded temporary-register pool and emits machine-readable bookkeeping evidence.
+The generated target object remains RV32I-only. The trusted bare-metal harness uses Zicsr only to install `mtvec` for the diagnostic trap path; this is validation infrastructure, not an expansion of the architectural target.
 
-Successful baseline evidence:
+Evidence boundaries:
 
 ```text
-P1/P2  specification / SpecIR obligations       CHECKED
-P3     SpecIR → RV32I assembly                  TESTED
-P4-A   RV32I assembly → ELF32 object            TRUSTED
-P4-L   object → linked RV32I ELF                TRUSTED
-P4-R   linked ELF → runtime observation         TESTED_EXHAUSTIVE
+P1/P2             specification / SpecIR obligations       CHECKED
+P3                SpecIR → generated RV32I assembly        TESTED
+P4-A              generated assembly → generated object    TRUSTED
+P4-H              harness assembly → harness object        TRUSTED
+P4-L              objects + linker script → validation ELF TRUSTED
+P4-R              ELF → accepted contract                  TESTED_EXHAUSTIVE
+P4-R.sensitivity  known-bad controls → failure channel     TESTED
 ```
 
 The completed CI validation binding is:
@@ -85,15 +94,29 @@ Pico 2 is validation hardware, not the architectural target. See `docs/poc1c-res
 
 ### POC-1C.B — RV32 Backend Complexity
 
-POC-1C.B is the next architecture/backend experiment after the 1C.A baseline.
+The B0 entry-hardening gate is complete. It established:
 
 ```text
-B1  multiple live values / forced spill
-B2  single branch + single merge
-B3  single non-recursive call
+mechanically bound runtime case counting
+normalized harness integrity checks
+callee-saved register guard
+root-only preferred destination invariant
+verified runtime contract traceability
+runtime-oracle sensitivity evidence
+source/toolchain evidence hardening
+reserved stack and initialized sp
+observable synchronous trap/failure path
 ```
 
-These experiments determine whether local backend bookkeeping remains adequate or should be promoted into an explicit TargetIR/MachineIR-style representation.
+Current sequence:
+
+```text
+B1  multiple live values / forced spill       UNLOCKED / NEXT
+B2  single branch + single merge              PLANNED
+B3  single non-recursive call                 PLANNED
+```
+
+These experiments determine whether local backend bookkeeping remains adequate or should be promoted into an explicit TargetIR/MachineIR-style representation. A named MachineIR is not introduced merely because spilling exists; the implementation evidence must justify that transition.
 
 ## POC-1D — Armv8-M Mainline Bare Metal
 
