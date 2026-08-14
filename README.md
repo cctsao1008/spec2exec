@@ -4,6 +4,109 @@
 
 > Spec2Exec explores specification as the primary human-facing artifact between intent and executable software.
 
+## Why Spec2Exec?
+
+**AI is making software implementation cheap. It is not making software trust cheap.**
+
+A generated system can compile, pass tests, behave consistently, and even satisfy a formal specification while still implementing semantics that were never explicitly authorized.
+
+That is the trust gap Spec2Exec is designed to address.
+
+Software can fail without containing an obvious coding bug. A program may correctly execute the wrong rule, an incomplete rule, an outdated rule, or a plausible assumption that nobody actually accepted.
+
+```text
+implementation correctness
+        !=
+semantic correctness
+        !=
+semantic authority
+```
+
+A bug-free implementation does not imply that the implemented behavior is the right behavior. A formally verified implementation does not, by itself, prove that the formal specification represents the semantics that should have been executed.
+
+### Why this becomes more important with AI
+
+Traditional software development already contains ambiguity, unstated assumptions, and requirement gaps. AI does not create those problems, and the problem is not simply that AI is "worse than humans."
+
+What changes is the **scale and speed** at which interpretation becomes implementation:
+
+```text
+vague or incomplete intent
+        ↓
+seconds
+        ↓
+many inferred decisions and assumptions
+        ↓
+working implementation
+        ↓
+executable behavior
+```
+
+A synthesis system can turn missing semantics into executable decisions far faster than those decisions can be reviewed one by one. The resulting code may look completely reasonable while hiding choices that were never made authoritative.
+
+The same pattern appears across domains:
+
+| Domain | Example intent | Semantics that still require authority |
+|---|---|---|
+| Medical / healthcare | "Alert when the patient is deteriorating." | What counts as deterioration? Which measurements are authoritative? What happens with missing or conflicting sensors? How urgent must the response be? |
+| Aviation | "Switch to the backup source when the primary system fails." | What constitutes failure? How long may it persist? What if sources disagree? What state is required if both are unavailable? |
+| Security | "Grant access to administrators." | Which role? Which resources? Under what context? What exceptions or emergency paths are permitted? |
+| Finance | "Reject suspicious transactions." | What is suspicious? What happens near a threshold? Which exceptions are authorized? |
+| Cloud / distributed systems | "Retry failed requests." | Which failures are retryable? How many times? Is the operation idempotent? What happens when the retry budget is exhausted? |
+| Embedded / robotics / industrial control | "Limit actuator behavior when conditions are unsafe." | Which conditions? What limit? What if sensing is invalid? How quickly must the system react? |
+
+Different domains fail in different ways, but the trust question is the same:
+
+> **Who authorized the semantics, what was actually verified, and what evidence binds those claims to the executable that will run?**
+
+### Why existing tools are not enough by themselves
+
+Spec2Exec does not assume that testing, code review, formal methods, compilers, or runtime validation are ineffective. They are essential. The problem is that each normally establishes only part of the trust chain.
+
+| Method | It can provide evidence about | It does not automatically establish |
+|---|---|---|
+| Unit / integration testing | Observed behavior for selected cases | Whether the tested semantics were authorized or complete |
+| Code review | Whether an implementation appears reasonable and maintainable | Whether every hidden assumption was detected and approved |
+| Static analysis | Specific program properties and defect classes | Whether the requirement itself is correct or authoritative |
+| Formal verification | Whether a formal artifact satisfies stated properties under assumptions | Whether those stated properties represent the semantics that should have been executed |
+| Compiler / transformation correctness | Whether a transformation preserves defined source semantics | Whether the source semantics themselves were the right semantics |
+| Runtime / hardware testing | What the built artifact actually did under tested conditions | Whether the oracle, domain, assumptions, or semantic authority were complete |
+
+The missing piece is not another single PASS result. It is an explicit chain connecting **authorized semantics**, **verification claims**, **evidence**, **exact artifacts**, and **real execution**.
+
+Spec2Exec therefore aims to complement existing engineering tools by connecting their evidence rather than replacing them.
+
+### The Spec2Exec response
+
+```text
+Human / Domain Intent
+        ↓
+Candidate Semantics
+        ↓
+Ambiguity / Conflict / Missing-Semantics Detection
+        ↓
+Semantic Authority Gate
+        ↓
+Accepted Specification
+        ↓
+Candidate SpecIR
+        ↓
+Deterministic Verification
+        ↓
+Verified SpecIR
+        ↓
+Portable Target Realization
+        ↓
+Executable / Firmware
+        ↓
+Runtime / Emulator / Hardware Observation
+
+Across the entire chain:
+Claim ↔ Evidence ↔ Artifact ↔ Tool ↔ Assumption ↔ Provenance
+```
+
+The goal is not to pretend that every layer is formally proven. The goal is to make it explicit **what is accepted, what is checked, what is tested, what is proven, what is trusted, and what remains unresolved**.
+
 ## Project thesis
 
 Spec2Exec is not primarily an AI coding tool and is not defined by any particular synthesis model. Its long-term direction is **trust infrastructure for AI-generated software**: separate proposal from semantic authority, bind accepted semantics to deterministic verification and explicit evidence, and preserve that trust chain into executable behavior.
