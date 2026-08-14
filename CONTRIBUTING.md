@@ -5,17 +5,67 @@ Spec2Exec is currently architecture-first. Contributions should preserve the dis
 ## Contribution flow
 
 ```text
-Idea
+Idea / problem / review finding
   ↓
-Discussion
+Decide whether traceable engineering work is required
   ↓
-RFC
+Existing Issue?
+  ├── yes → work under that Issue
+  └── no
+       ├── behavior / semantics / architecture / evidence / interface / validation affected
+       │      → create Issue first
+       └── non-semantic maintenance only
+              → direct maintenance commit is acceptable
   ↓
-Accepted architecture / contract
+Implementation
   ↓
+Regression / evidence
+  ↓
+CI
+  ↓
+Commit references Issue when applicable
+  ↓
+Close Issue only after acceptance criteria pass
+  ↓
+Unlock dependent Issue / gate
+```
+
+## Issue-first engineering rule
+
+Before modifying code, first decide whether the change needs an Issue.
+
+Create or identify an Issue before implementation when the change affects any of the following:
+
+- executable behavior or semantics;
+- architecture or architecture boundaries;
+- SpecIR, backend, ABI, target, or execution-profile behavior;
+- evidence, verification, trust boundaries, or fail-closed behavior;
+- interfaces or externally visible contracts;
+- CI gates, validation scope, or POC experiments;
+- bug fixes or review findings that require technical disposition.
+
+Reuse an existing Issue when the work is already within its declared scope. Do not create one Issue per small edit when several edits are part of the same accepted engineering task.
+
+Create a new Issue when a discovered problem is outside the active Issue's scope, can be independently accepted, affects later roadmap work, or will be deferred rather than repaired immediately.
+
+A separate Issue is normally unnecessary for strictly non-semantic maintenance such as typo fixes, formatting, comment-only changes, small documentation corrections, or mechanical renames that do not alter behavior, evidence claims, interfaces, or validation results.
+
+Do not create Issues retroactively merely to justify a commit. The Issue should state **why the change is needed and what acceptance means**; the commit should state **what implementation changed**.
+
+For gated work, use the project rhythm:
+
+```text
 Issue
   ↓
 Implementation
+  ↓
+Regression / Evidence
+  ↓
+CI
+  ↓
+Close Issue
+  ↓
+Unlock dependent Issue
 ```
 
 ## Before implementation
