@@ -40,14 +40,14 @@ def _write_json(path: Path, data: Any) -> None:
 
 
 def verify_poc1b_contract(spec_doc: dict[str, Any], verified: dict[str, Any]) -> dict[str, Any]:
-    contract = spec_doc.get("function", {}).get("poc1b_contract")
-    _expect(isinstance(contract, dict), "E_POC1B_CONTRACT", "function.poc1b_contract is required")
+    contract = spec_doc.get("function", {}).get("contract")
+    _expect(isinstance(contract, dict), "E_POC1B_CONTRACT", "function.contract is required")
     clause_id = contract.get("clause_id")
     expr = contract.get("expr")
-    _expect(isinstance(clause_id, str) and clause_id, "E_POC1B_CONTRACT", "poc1b_contract.clause_id required")
+    _expect(isinstance(clause_id, str) and clause_id, "E_POC1B_CONTRACT", "contract.clause_id required")
     symbols = {x["id"] for x in verified["function"]["inputs"]}
-    _expect(isinstance(expr, (str, int, dict)), "E_POC1B_CONTRACT", "poc1b_contract.expr required")
-    v2._validate_expr(expr, symbols, "function.poc1b_contract.expr")
+    _expect(isinstance(expr, (str, int, dict)), "E_POC1B_CONTRACT", "contract.expr required")
+    v2._validate_expr(expr, symbols, "function.contract.expr")
     return {"clause_id": clause_id, "expr": expr}
 
 
