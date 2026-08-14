@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import sys
@@ -15,6 +16,10 @@ AS = shutil.which("riscv64-unknown-elf-as")
 LD = shutil.which("riscv64-unknown-elf-ld")
 QEMU = shutil.which("qemu-system-riscv32")
 TOOLS_AVAILABLE = all((AS, LD, QEMU))
+REQUIRE_RUNTIME = os.environ.get("POC1C_REQUIRE_RUNTIME") == "1"
+
+if REQUIRE_RUNTIME and not TOOLS_AVAILABLE:
+    raise RuntimeError("POC1C_REQUIRE_RUNTIME=1 but RV32I binutils/QEMU are unavailable")
 
 
 @unittest.skipUnless(TOOLS_AVAILABLE, "RV32I binutils and QEMU are required")
@@ -38,7 +43,7 @@ class RuntimeOracleTests(unittest.TestCase):
             harness_obj = build / "runtime-harness.o"
             elf = build / "safe_add_sub.elf"
             subprocess.run([AS, "-march=rv32i", "-mabi=ilp32", str(asm), "-o", str(obj)], check=True)
-            subprocess.run([AS, "-march=rv32i", "-mabi=ilp32", str(HARNESS), "-o", str(harness_obj)], check=True)
+            subprocess.run([AS, "-march=rv32i_zicsr", "-mabi=ilp32", str(HARNESS), "-o", str(harness_obj)], check=True)
             subprocess.run([
                 LD, "-m", "elf32lriscv", "-T", str(LINKER_SCRIPT),
                 str(harness_obj), str(obj), "-o", str(elf),
@@ -56,6 +61,9 @@ class RuntimeOracleTests(unittest.TestCase):
         for old, new in mutations:
             with self.subTest(mutation=f"{old.strip()} -> {new.strip()}"):
                 self.assertEqual(1, self._run_mutant(old, new))
+
+    def test_synchronous_trap_uses_observable_failure_channel(self):
+        self.assertEqual(1, self._run_mutant("    sub a0, t0, a1", "    ebreak"))
 
 
 if __name__ == "__main__":
