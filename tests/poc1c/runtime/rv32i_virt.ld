@@ -26,4 +26,11 @@ SECTIONS
         *(.bss*)
         *(COMMON)
     }
+
+    .stack (NOLOAD) : ALIGN(16)
+    {
+        __stack_bottom = .;
+        . = . + 4096;
+        __stack_top = .;
+    }
 }
