@@ -4,6 +4,35 @@
 
 > Spec2Exec explores specification as the primary human-facing artifact between intent and executable software.
 
+## Project thesis
+
+Spec2Exec is not primarily an AI coding tool and is not defined by any particular synthesis model. Its long-term direction is **trust infrastructure for AI-generated software**: separate proposal from semantic authority, bind accepted semantics to deterministic verification and explicit evidence, and preserve that trust chain into executable behavior.
+
+> **AI proposes. Humans authorize semantics. Deterministic systems verify. Evidence justifies trust. Portable backends execute.**
+
+The normative architecture is more general than human-only approval: semantic authority may also come from accepted parent specifications, standards, certified domain models, system contracts, safety authorities, or other explicit governance sources. AI and other synthesis systems are replaceable proposal engines; they do not gain semantic authority merely by producing plausible or high-quality output.
+
+The project value framework is a trust chain:
+
+```text
+#1 Trust Architecture
+        ↓
+#2 Specification / Semantic Authority Model
+        ↓
+#3 Evidence Architecture
+        ↓
+#4 Deterministic Verification
+        ↓
+#5 Portable Executable Realization
+   + Preservation Evidence
+        ↓
+#6 AI Synthesis Quality
+```
+
+The core is #1–#4. Portable realization extends accepted semantics to real machines. AI synthesis quality improves productivity and proposal quality, but remains outside the trusted semantic core by default.
+
+See `rfcs/0010-trust-chain-architecture.md` for the project-level trust thesis and long-term invariants.
+
 ## Primary architecture
 
 ```text
@@ -133,7 +162,7 @@ The intended long-term model is:
                       Executable / Firmware
 ```
 
-See `docs/target-profiles.md`, `docs/phase1-plan.md`, `docs/poc1c-results.md`, and `rfcs/0009-native-target-code-generation.md`.
+See `rfcs/0010-trust-chain-architecture.md`, `rfcs/0005-trust-intent-fidelity-and-specification-acceptance.md`, `rfcs/0006-semantic-preservation-and-evidence-model.md`, `rfcs/0009-native-target-code-generation.md`, `docs/target-profiles.md`, `docs/phase1-plan.md`, and `docs/poc1c-results.md`.
 
 ## License
 
