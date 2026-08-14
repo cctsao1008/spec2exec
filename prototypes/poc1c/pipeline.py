@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 from typing import Any
 
 from backend import Poc1CError, expect, validate_codegen_specir, validate_target_config, RV32ICodeGenerator
@@ -32,6 +33,7 @@ CLAIM_PROPERTIES = {
     "P1.constraint_traceability": "accepted constraints remain traceable in SpecIR",
     "P1.range_linkage": "SpecIR input/output ranges match accepted ranges",
     "P1.behavior_linkage": "SpecIR behavior expression matches accepted behavior",
+    "P1.contract_linkage": "accepted runtime contract is represented and traceable in SpecIR",
     "P2.fixed_width_type_domain": "declared values remain inside the fixed-width integer type domain",
     "P2.output_range_containment": "computed body range is contained in the declared output range",
     "P2.no_signed_overflow_ub": "no signed overflow occurs within declared input ranges",
@@ -41,6 +43,7 @@ CLAIM_PROPERTIES = {
     "P4-H.harness_assembly": "external assembler transforms the runtime harness into an ELF32 RISC-V object",
     "P4-L.object_to_linked_elf": "external linker constructs the linked RV32I ELF from the bound objects and linker script",
     "P4-R.linked_elf_runtime": "linked ELF satisfies the accepted runtime contract over the declared test domain",
+    "P4-R.sensitivity": "runtime oracle rejects known non-equivalent or trapping target-code mutations",
 }
 
 
@@ -136,7 +139,13 @@ def resolve_target_profile(name: str) -> dict[str, Any]:
 
 
 def resolve_gnu_toolchain_binding(target: dict[str, Any]) -> dict[str, list[str]]:
-    """Translate a validated target configuration into GNU binutils options."""
+    """Translate a validated target configuration into GNU binutils options.
+
+    Generated target code stays RV32I-only. The trusted bare-metal validation
+    harness additionally uses Zicsr solely to install mtvec for diagnostic trap
+    handling; that harness extension is not part of generated Spec2Exec target
+    semantics.
+    """
     isa = target["isa_profile"]
     exe = target["execution_profile"]
     key = (
@@ -151,6 +160,7 @@ def resolve_gnu_toolchain_binding(target: dict[str, Any]) -> dict[str, list[str]
     bindings = {
         ("riscv", "rv32i", (), "bare-metal", "ilp32-integer-subset", "gnu-riscv", "elf32-riscv"): {
             "assembler_flags": ["-march=rv32i", "-mabi=ilp32"],
+            "harness_assembler_flags": ["-march=rv32i_zicsr", "-mabi=ilp32"],
             "linker_flags": ["-m", "elf32lriscv"],
         }
     }
@@ -197,11 +207,7 @@ def split_lui_addi(value: int) -> tuple[int, int]:
 
 
 def normalized_assembly_lines(path: Path) -> list[str]:
-    """Return comment-free normalized assembly program lines.
-
-    Directives are retained only when they are labels; instruction matching is
-    therefore based on complete normalized lines rather than raw substrings.
-    """
+    """Return comment-free normalized assembly program lines."""
     result: list[str] = []
     for raw in path.read_text(encoding="utf-8").splitlines():
         code = raw.split("#", 1)[0].strip()
@@ -229,6 +235,7 @@ def require_ordered_subsequence(program_lines: list[str], required: list[str]) -
 def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
                              verified: dict[str, Any]) -> dict[str, Any]:
     """Mechanically bind the hand-written harness to the verified domain/oracle."""
+    del spec_doc  # Runtime semantics are consumed from the already-verified contract below.
     program = normalized_assembly_lines(harness_path)
     instructions = instruction_lines(program)
     counts = Counter(instructions)
@@ -242,6 +249,11 @@ def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
     upper, lower = split_lui_addi(cases)
 
     required_counts = Counter([
+        "lui sp, %hi(__stack_top)",
+        "addi sp, sp, %lo(__stack_top)",
+        "lui t0, %hi(.L_trap)",
+        "addi t0, t0, %lo(.L_trap)",
+        "csrrw zero, mtvec, t0",
         f"addi s0, zero, {a_lo}",
         "addi s2, zero, 0",
         f"addi s1, zero, {b_lo}",
@@ -265,8 +277,14 @@ def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
         expect(actual == count, "E_P4_DOMAIN",
                f"runtime harness binding mismatch for {instruction!r}: expected {count}, found {actual}")
 
+    expect(program.count(".L_trap:") == 1, "E_P4_DOMAIN", "runtime harness must define one trap handler")
     require_ordered_subsequence(program, [
         "_start:",
+        "lui sp, %hi(__stack_top)",
+        "addi sp, sp, %lo(__stack_top)",
+        "lui t0, %hi(.L_trap)",
+        "addi t0, t0, %lo(.L_trap)",
+        "csrrw zero, mtvec, t0",
         f"addi s0, zero, {a_lo}",
         "addi s2, zero, 0",
         ".L_outer:",
@@ -289,23 +307,30 @@ def validate_runtime_harness(harness_path: Path, spec_doc: dict[str, Any],
         ".L_pass:",
     ])
 
-    contract = spec_doc.get("function", {}).get("poc1b_contract", {})
+    contract = verified.get("contract", {})
     expect(contract.get("expr") == "a", "E_P4_ORACLE",
-           "POC-1C.A harness currently supports the accepted result == a contract only")
+           "POC-1C.A harness currently supports the verified result == a contract only")
+    clause_id = contract.get("clause_id")
+    expect(isinstance(clause_id, str) and clause_id, "E_P4_ORACLE",
+           "verified runtime contract must carry a clause id")
 
-    contract_trace = []
-    if isinstance(contract.get("clause_id"), str):
-        contract_trace.append(contract["clause_id"])
     return {
         "input_ranges": {name: [lo, hi] for name, (lo, hi) in ranges.items()},
         "expected_cases": cases,
         "oracle": "result == a",
         "oracle_kind": "accepted-contract-observation",
-        "trace": contract_trace,
+        "trace": [clause_id],
         "case_counter_binding": {
             "initialize": "addi s2, zero, 0",
             "increment": "addi s2, s2, 1",
             "assertion": "bne s2, t2, .L_fail",
+        },
+        "runtime_support": {
+            "stack_top_symbol": "__stack_top",
+            "trap_vector_csr": "mtvec",
+            "trap_handler": ".L_trap",
+            "failure_exit_code": 1,
+            "harness_isa_extension": "Zicsr (validation harness only)",
         },
     }
 
@@ -407,7 +432,7 @@ def build(specification_path: Path, specir_path: Path, target_profile: str,
     expect(ld_path is not None, "E_TOOLCHAIN", f"linker not found: {linker}")
 
     as_generated = [as_path, *toolchain["assembler_flags"], str(paths["asm"]), "-o", str(obj)]
-    as_harness = [as_path, *toolchain["assembler_flags"], str(harness_path), "-o", str(harness_obj)]
+    as_harness = [as_path, *toolchain["harness_assembler_flags"], str(harness_path), "-o", str(harness_obj)]
     link_cmd = [ld_path, *toolchain["linker_flags"], "-T", str(linker_script),
                 str(harness_obj), str(obj), "-o", str(elf)]
     subprocess.run(as_generated, check=True)
@@ -435,7 +460,10 @@ def build(specification_path: Path, specir_path: Path, target_profile: str,
             "id": "P4-H.harness_assembly",
             "status": "TRUSTED",
             "producer": "GNU assembler",
-            "assumptions": ["runtime harness source implements the mechanically checked domain/oracle"],
+            "assumptions": [
+                "runtime harness source implements the mechanically checked domain/oracle",
+                "Zicsr is used only by trusted validation infrastructure to install mtvec",
+            ],
             "tool": {"path": as_path, "version": tool_version(as_path)},
             "invocation": as_harness,
             "subject_binding": {
@@ -447,7 +475,7 @@ def build(specification_path: Path, specir_path: Path, target_profile: str,
             "id": "P4-L.object_to_linked_elf",
             "status": "TRUSTED",
             "producer": "GNU linker",
-            "assumptions": ["linker and linker script correctly realize the declared ELF32 layout"],
+            "assumptions": ["linker and linker script correctly realize the declared ELF32 layout and reserved stack"],
             "tool": {"path": ld_path, "version": tool_version(ld_path)},
             "invocation": link_cmd,
             "subject_binding": {
@@ -470,10 +498,14 @@ def build(specification_path: Path, specir_path: Path, target_profile: str,
     return {**paths, "object": obj, "harness_object": harness_obj, "elf": elf}
 
 
+def qemu_command(qemu_path: str, elf: Path) -> list[str]:
+    return [qemu_path, "-machine", "virt", "-nographic", "-bios", "none", "-kernel", str(elf)]
+
+
 def run_qemu(elf: Path, evidence_path: Path, qemu: str) -> None:
     qemu_path = shutil.which(qemu)
     expect(qemu_path is not None, "E_TOOLCHAIN", f"emulator not found: {qemu}")
-    command = [qemu_path, "-machine", "virt", "-nographic", "-bios", "none", "-kernel", str(elf)]
+    command = qemu_command(qemu_path, elf)
     proc = subprocess.run(command, timeout=10, text=True, capture_output=True)
     detail = (proc.stderr or proc.stdout or "").strip()
     expect(proc.returncode == 0, "E_RUNTIME",
@@ -496,9 +528,10 @@ def run_qemu(elf: Path, evidence_path: Path, qemu: str) -> None:
         "trace": runtime_validation.get("trace", []),
         "assumptions": [
             "QEMU rv32 virt models the exercised RV32I behavior correctly",
-            "SiFive test finisher maps PASS to exit 0 and FAIL to non-zero exit",
+            "SiFive test finisher maps PASS to exit 0 and FAIL to exit 1",
             "runtime harness case-counter initialization/increment/final assertion are mechanically bound before PASS",
             "generated code is checked not to touch callee-saved runtime state without save/restore support",
+            "minimal trap handler is installed before the generated function is exercised",
         ],
         "tool": {"path": qemu_path, "version": tool_version(qemu_path)},
         "invocation": command,
@@ -515,5 +548,104 @@ def run_qemu(elf: Path, evidence_path: Path, qemu: str) -> None:
         ],
         "notes": "This is exhaustive contract observation over the declared domain, not a structural comparison of the generated instruction sequence and not a formal P3 proof.",
     })
+    normalize_claim_schema(evidence)
+    write_json(evidence_path, evidence)
+
+
+def run_runtime_sensitivity(asm_path: Path, evidence_path: Path, harness_path: Path,
+                            linker_script: Path, assembler: str, linker: str,
+                            qemu: str) -> None:
+    """Demonstrate that the runtime failure channel rejects known-bad targets."""
+    as_path, ld_path, qemu_path = shutil.which(assembler), shutil.which(linker), shutil.which(qemu)
+    expect(as_path is not None, "E_TOOLCHAIN", f"assembler not found: {assembler}")
+    expect(ld_path is not None, "E_TOOLCHAIN", f"linker not found: {linker}")
+    expect(qemu_path is not None, "E_TOOLCHAIN", f"emulator not found: {qemu}")
+
+    evidence = load_json(evidence_path)
+    target = resolve_target_profile(evidence["target_profile"])
+    toolchain = resolve_gnu_toolchain_binding(target)
+    baseline_hash = sha256(asm_path)
+    baseline_text = asm_path.read_text(encoding="utf-8")
+    mutations = [
+        {
+            "name": "wrong-final-operation",
+            "old": "    sub a0, t0, a1",
+            "new": "    add a0, t0, a1",
+            "kind": "non-equivalent-target-code",
+        },
+        {
+            "name": "wrong-first-operation",
+            "old": "    add t0, a0, a1",
+            "new": "    sub t0, a0, a1",
+            "kind": "non-equivalent-target-code",
+        },
+        {
+            "name": "trap-path-ebreak",
+            "old": "    sub a0, t0, a1",
+            "new": "    ebreak",
+            "kind": "diagnostic-trap-path",
+        },
+    ]
+    observations = []
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        harness_obj = tmp_dir / "runtime-harness.o"
+        subprocess.run(
+            [as_path, *toolchain["harness_assembler_flags"], str(harness_path), "-o", str(harness_obj)],
+            check=True,
+        )
+        for index, mutation in enumerate(mutations):
+            expect(mutation["old"] in baseline_text, "E_P4_ORACLE",
+                   f"sensitivity mutation source not found: {mutation['old']!r}")
+            mutant_asm = tmp_dir / f"mutant-{index}.s"
+            mutant_obj = tmp_dir / f"mutant-{index}.o"
+            mutant_elf = tmp_dir / f"mutant-{index}.elf"
+            mutant_asm.write_text(baseline_text.replace(mutation["old"], mutation["new"], 1), encoding="utf-8")
+            subprocess.run(
+                [as_path, *toolchain["assembler_flags"], str(mutant_asm), "-o", str(mutant_obj)],
+                check=True,
+            )
+            subprocess.run(
+                [ld_path, *toolchain["linker_flags"], "-T", str(linker_script),
+                 str(harness_obj), str(mutant_obj), "-o", str(mutant_elf)],
+                check=True,
+            )
+            command = qemu_command(qemu_path, mutant_elf)
+            try:
+                proc = subprocess.run(command, timeout=5, text=True, capture_output=True)
+            except subprocess.TimeoutExpired as exc:
+                raise Poc1CError(f"E_P4_ORACLE: sensitivity mutation {mutation['name']} timed out") from exc
+            expect(proc.returncode == 1, "E_P4_ORACLE",
+                   f"sensitivity mutation {mutation['name']} returned {proc.returncode}, expected 1")
+            observations.append({
+                "name": mutation["name"],
+                "kind": mutation["kind"],
+                "replacement": {"from": mutation["old"].strip(), "to": mutation["new"].strip()},
+                "exit_code": proc.returncode,
+                "mutated_assembly_sha256": sha256(mutant_asm),
+                "mutated_elf_sha256": sha256(mutant_elf),
+            })
+
+    runtime_validation = evidence["runtime_validation"]
+    evidence["claims"].append({
+        "id": "P4-R.sensitivity",
+        "status": "TESTED",
+        "producer": "POC-1C runtime-oracle sensitivity runner",
+        "scope": "known non-equivalent code mutations plus an explicit synchronous-trap probe",
+        "trace": runtime_validation.get("trace", []),
+        "assumptions": [
+            "exit code 1 uniquely denotes the harness/trap failure path for these controls",
+            "mutation controls are diagnostic sensitivity checks, not compiler-correctness proofs",
+        ],
+        "tool": {"path": qemu_path, "version": tool_version(qemu_path)},
+        "subject_binding": {
+            "baseline_assembly_sha256": baseline_hash,
+            "harness_source_sha256": sha256(harness_path),
+            "linker_script_sha256": sha256(linker_script),
+        },
+        "observations": observations,
+    })
+    evidence["runtime_sensitivity_required"] = True
     normalize_claim_schema(evidence)
     write_json(evidence_path, evidence)
