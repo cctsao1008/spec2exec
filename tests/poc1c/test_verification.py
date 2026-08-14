@@ -31,6 +31,9 @@ class TargetNeutralVerificationTests(unittest.TestCase):
         ir_doc = json.loads(IR.read_text())
         verified = verification.verify_specir(ir_doc, verification.verify_specification(spec_doc))
         self.assertEqual("safe_add_sub", verified["function"]["name"])
+        self.assertEqual("REQ-OPT-001-EQ", verified["contract"]["clause_id"])
+        self.assertEqual("a", verified["contract"]["expr"])
+        self.assertIn("P1.contract_linkage", {claim["id"] for claim in verified["evidence"]})
 
     def test_c_specific_reserved_identifier_is_not_a_native_restriction(self):
         spec_doc = rename_symbol(json.loads(SPEC.read_text()), "a", "INT32_MIN")
@@ -43,6 +46,23 @@ class TargetNeutralVerificationTests(unittest.TestCase):
         ir_doc = copy.deepcopy(json.loads(IR.read_text()))
         ir_doc["function"]["target"] = "rv32i"
         with self.assertRaisesRegex(verification.VerificationError, "E_SPECIR_TARGET_LEAK"):
+            verification.verify_specir(ir_doc, verification.verify_specification(spec_doc))
+
+    def test_contract_clause_must_be_represented_in_specir(self):
+        spec_doc = json.loads(SPEC.read_text())
+        ir_doc = copy.deepcopy(json.loads(IR.read_text()))
+        ir_doc["function"]["postconditions"] = [
+            post for post in ir_doc["function"]["postconditions"]
+            if "REQ-OPT-001-EQ" not in post.get("trace", [])
+        ]
+        with self.assertRaisesRegex(verification.VerificationError, "E_POST_LINK|E_SPEC_CLAUSE_MISSING"):
+            verification.verify_specir(ir_doc, verification.verify_specification(spec_doc))
+
+    def test_contract_expression_mismatch_is_rejected(self):
+        spec_doc = copy.deepcopy(json.loads(SPEC.read_text()))
+        ir_doc = json.loads(IR.read_text())
+        spec_doc["function"]["contract"]["expr"] = "b"
+        with self.assertRaisesRegex(verification.VerificationError, "E_POST_LINK|E_CONTRACT_LINK"):
             verification.verify_specir(ir_doc, verification.verify_specification(spec_doc))
 
 
