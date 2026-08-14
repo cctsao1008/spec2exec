@@ -55,7 +55,7 @@ class RuntimeOracleTests(unittest.TestCase):
         ]
         for old, new in mutations:
             with self.subTest(mutation=f"{old.strip()} -> {new.strip()}"):
-                self.assertNotEqual(0, self._run_mutant(old, new))
+                self.assertEqual(1, self._run_mutant(old, new))
 
 
 if __name__ == "__main__":
