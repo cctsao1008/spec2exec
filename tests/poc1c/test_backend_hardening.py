@@ -85,6 +85,27 @@ class BackendHardeningTests(unittest.TestCase):
         self.assertIn("sub a0, t0, a1", asm)
         self.assertEqual(0, state["spill_count"])
 
+    def test_callee_saved_register_use_is_rejected_without_save_restore(self):
+        original = list(backend.TEMP_REGS)
+        backend.TEMP_REGS[:] = ["s0", *original[1:]]
+        try:
+            with self.assertRaisesRegex(backend.Poc1CError, "E_BACKEND_ABI_CLOBBER"):
+                self._generate(copy.deepcopy(self.ir))
+        finally:
+            backend.TEMP_REGS[:] = original
+
+    def test_generated_state_records_abi_preservation_policy(self):
+        _, state = self._generate(copy.deepcopy(self.ir))
+        self.assertEqual("forbidden-without-explicit-save-restore", state["callee_saved_policy"])
+        self.assertIn("s0", state["forbidden_unsaved_registers"])
+        self.assertEqual("root-only", state["preferred_dest_policy"])
+
+    def test_preferred_destination_is_root_only(self):
+        fn = backend.validate_codegen_specir(copy.deepcopy(self.ir))
+        generator = backend.RV32ICodeGenerator(fn, self.target)
+        with self.assertRaisesRegex(backend.Poc1CError, "E_BACKEND_STATE"):
+            generator.compile_expr({"op": "+", "args": ["a", "b"]}, preferred_dest="a0")
+
 
 if __name__ == "__main__":
     unittest.main()
