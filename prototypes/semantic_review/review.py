@@ -100,6 +100,29 @@ def _any_retry_enabled(values: dict[str, Any]) -> bool:
     )
 
 
+def validate_provenance(candidate: dict[str, Any], obligation_ids: set[str]) -> dict[str, dict[str, Any]]:
+    provenance = candidate.get("provenance")
+    if not isinstance(provenance, dict):
+        raise ReviewError("E_SEM_PROVENANCE: candidate.provenance must be an object")
+    if set(provenance) != obligation_ids:
+        missing = sorted(obligation_ids - set(provenance))
+        extra = sorted(set(provenance) - obligation_ids)
+        raise ReviewError(f"E_SEM_PROVENANCE: provenance/value mismatch: missing={missing} extra={extra}")
+
+    for obligation_id in sorted(obligation_ids):
+        record = provenance[obligation_id]
+        if not isinstance(record, dict):
+            raise ReviewError(f"E_SEM_PROVENANCE: {obligation_id} provenance must be an object")
+        for field in ("source_artifact", "source_requirement_id", "source_locator", "origin"):
+            if not isinstance(record.get(field), str) or not record[field]:
+                raise ReviewError(f"E_SEM_PROVENANCE: {obligation_id}.{field} must be non-empty")
+        if record.get("source_supports_value") is not False:
+            raise ReviewError(
+                f"E_SEM_PROVENANCE: {obligation_id} must not claim the incomplete source requirement supports its candidate value"
+            )
+    return provenance
+
+
 def review(policy: dict[str, Any], candidate: dict[str, Any], codeowners_text: str) -> dict[str, Any]:
     if policy.get("schema") != "spec2exec.semantic-review-policy/v0.1":
         raise ReviewError("unsupported semantic-review policy schema")
@@ -113,6 +136,7 @@ def review(policy: dict[str, Any], candidate: dict[str, Any], codeowners_text: s
     values = candidate.get("values")
     if not isinstance(values, dict):
         raise ReviewError("candidate.values must be an object")
+    provenance = validate_provenance(candidate, set(values))
 
     rows: list[dict[str, Any]] = []
     blocking = 0
@@ -144,6 +168,7 @@ def review(policy: dict[str, Any], candidate: dict[str, Any], codeowners_text: s
                 "impact": rule.get("impact", "UNSPECIFIED"),
                 "authority_basis": rule.get("authority_basis"),
                 "allowed_values": allowed,
+                "provenance": provenance.get(obligation_id),
             }
         )
 
@@ -156,6 +181,7 @@ def review(policy: dict[str, Any], candidate: dict[str, Any], codeowners_text: s
                 "impact": "UNSPECIFIED",
                 "authority_basis": None,
                 "allowed_values": [],
+                "provenance": provenance.get(obligation_id),
                 "reason": "candidate introduced a semantic obligation with no governing policy",
             }
         )
@@ -191,12 +217,14 @@ def review(policy: dict[str, Any], candidate: dict[str, Any], codeowners_text: s
         "schema": "spec2exec.semantic-review-result/v0.1",
         "subject": policy.get("subject"),
         "candidate_id": candidate.get("candidate_id"),
+        "requirement_id": candidate.get("requirement_id"),
         "outcome": outcome,
         "blocking_findings": blocking,
         "authority_adapter": owner_binding,
         "obligations": rows,
         "constraints": constraint_results,
         "limitations": [
+            "Candidate provenance identifies proposal/source context; it does not claim the incomplete source supports the proposed value.",
             "CODEOWNERS is a repository-declared attribution/ownership input, not proof of real-world organizational authority.",
             "This workflow POC does not provide cryptographic identity, quorum approval, or production payment assurance.",
         ],
