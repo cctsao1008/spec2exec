@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec2exec.dev/schemas/lifecycle-trust-result-v0.1.schema.json",
+  "title": "Spec2Exec bounded lifecycle trust result v0.1",
+  "description": "Issue #62 deterministic projection result. Property/context scoped; not an artifact-wide trust score.",
+  "type": "object",
+  "required": [
+    "schema", "scenario_id", "subject", "gated_action", "property", "artifact",
+    "evaluation_context", "projection_policy", "trust_claim", "dependency_completeness",
+    "assumptions", "active_defeaters", "invalidation_events", "impact_evaluations",
+    "revalidation_refs", "historical_evidence_ids", "reusable_evidence_ids",
+    "decision", "blockers", "limitations"
+  ],
+  "properties": {
+    "schema": {"const": "spec2exec.lifecycle-trust-result/v0.1"},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "subject": {"type": "string", "minLength": 1},
+    "gated_action": {"type": "string", "minLength": 1},
+    "property": {"type": "string", "minLength": 1},
+    "artifact": {
+      "type": "object",
+      "required": ["artifact_id", "revision", "sha256"],
+      "properties": {
+        "artifact_id": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "evaluation_context": {
+      "type": "object",
+      "required": ["context_id", "revision", "digest_sha256", "api_contract_revision"],
+      "properties": {
+        "context_id": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "digest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "api_contract_revision": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "projection_policy": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["projection_policy_id", "revision", "ref", "adoption_authority_ref"],
+          "properties": {
+            "projection_policy_id": {"type": "string", "minLength": 1},
+            "revision": {"type": "string", "minLength": 1},
+            "ref": {"type": "string", "minLength": 1},
+            "adoption_authority_ref": {"type": ["string", "null"]}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "trust_claim": {
+      "type": "object",
+      "required": ["claim_id", "property"],
+      "properties": {
+        "claim_id": {"type": "string", "minLength": 1},
+        "property": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "dependency_completeness": {
+      "type": "object",
+      "required": ["status", "record_id", "covered_dependency_kinds", "covered_source_classes", "evidence"],
+      "properties": {
+        "status": {"enum": ["MISSING", "ADEQUATE", "INADEQUATE"]},
+        "record_id": {"type": ["string", "null"]},
+        "covered_dependency_kinds": {"type": "array", "items": {"type": "string"}},
+        "covered_source_classes": {"type": "array", "items": {"type": "string"}},
+        "evidence": {"type": ["object", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["assumption_id", "lifecycle", "basis_ref", "evidence"],
+        "properties": {
+          "assumption_id": {"type": "string", "minLength": 1},
+          "lifecycle": {"enum": ["AssumptionLifecycle.BASIS_CURRENT", "AssumptionLifecycle.BASIS_STALE", "AssumptionLifecycle.VIOLATED", "AssumptionLifecycle.UNKNOWN"]},
+          "basis_ref": {"type": ["string", "null"]},
+          "evidence": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "active_defeaters": {"type": "array", "items": {"type": "string"}},
+    "invalidation_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_id", "kind", "subject_ref", "prior_revision", "new_revision", "resolved_by_revalidation"],
+        "properties": {
+          "event_id": {"type": "string", "minLength": 1},
+          "kind": {"type": "string", "minLength": 1},
+          "subject_ref": {"type": "string", "minLength": 1},
+          "prior_revision": {"type": ["string", "null"]},
+          "new_revision": {"type": ["string", "null"]},
+          "resolved_by_revalidation": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "impact_evaluations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["event_ref", "edge_ref", "source_ref", "target_ref", "property", "evaluation_context_digest", "disposition", "basis"],
+        "properties": {
+          "event_ref": {"type": "string"},
+          "edge_ref": {"type": "string"},
+          "source_ref": {"type": "string"},
+          "target_ref": {"type": "string"},
+          "property": {"type": "string"},
+          "evaluation_context_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "disposition": {"enum": ["ImpactDisposition.NO_MATERIAL_EFFECT", "ImpactDisposition.REVALIDATION_REQUIRED", "ImpactDisposition.INVALIDATED", "ImpactDisposition.UNKNOWN_IMPACT"]},
+          "basis": {"type": ["object", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "revalidation_refs": {"type": "array", "items": {"type": "string"}},
+    "historical_evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "reusable_evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "decision": {"enum": ["CURRENT", "BLOCKED"]},
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "additionalProperties": false
+}

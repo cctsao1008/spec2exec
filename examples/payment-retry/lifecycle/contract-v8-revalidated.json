@@ -1,0 +1,152 @@
+{
+  "artifact": {
+    "artifact_id": "PAY-CANDIDATE-ACCEPTED",
+    "revision": "1",
+    "sha256": "95018cb2c86bb1bea9cffb89e12ee31c711a26de159a1dcdacee21ce8b2b4c72"
+  },
+  "assumptions": [
+    {
+      "assumption_id": "API-IDEMPOTENCY-01",
+      "basis_context": {
+        "api_contract_revision": "v7",
+        "endpoint": "/payments",
+        "idempotency_key_scope": "logical-payment",
+        "operation": "charge"
+      },
+      "evidence": {"method": "provider-contract-fixture", "status": "HUMAN-DECLARED"},
+      "statement": "Repeating the logical payment request with the same correctly scoped idempotency key does not create an additional charge.",
+      "violated_contexts": []
+    }
+  ],
+  "authority_records": [
+    {
+      "anchor_id": "AUTH-ANCHOR-POC",
+      "authority_policy_id": "AUTH-PAY-LIFECYCLE",
+      "authority_policy_revision": "1",
+      "authority_record_id": "AUTH-PP-ADOPT-1",
+      "authority_validity": "AUTHORIZED",
+      "grant_kind": "DISCRETION",
+      "scope": ["projection-policy-adoption", "policy:PP-PAY-RETRY", "property:PAYMENT-RETRY-SAFETY"]
+    },
+    {
+      "anchor_id": "AUTH-ANCHOR-POC",
+      "authority_policy_id": "AUTH-PAY-LIFECYCLE",
+      "authority_policy_revision": "1",
+      "authority_record_id": "AUTH-PP-PERMISSIVE-1",
+      "authority_validity": "AUTHORIZED",
+      "grant_kind": "DISCRETION",
+      "scope": ["projection-policy-permissive-change", "policy:PP-PAY-RETRY", "property:PAYMENT-RETRY-SAFETY"]
+    },
+    {
+      "anchor_id": "AUTH-ANCHOR-POC",
+      "authority_policy_id": "AUTH-PAY-LIFECYCLE",
+      "authority_policy_revision": "1",
+      "authority_record_id": "AUTH-RESIDUAL-1",
+      "authority_validity": "AUTHORIZED",
+      "grant_kind": "DISCRETION",
+      "scope": ["residual-disposition", "property:PAYMENT-RETRY-SAFETY"]
+    },
+    {
+      "anchor_id": "AUTH-ANCHOR-POC",
+      "authority_policy_id": "AUTH-PAY-LIFECYCLE",
+      "authority_policy_revision": "1",
+      "authority_record_id": "AUTH-COMP-RESIDUAL-1",
+      "authority_validity": "AUTHORIZED",
+      "grant_kind": "DISCRETION",
+      "scope": ["residual-disposition", "dependency-completeness-residual", "property:PAYMENT-RETRY-SAFETY"]
+    }
+  ],
+  "defeaters": [],
+  "dependencies": [
+    {"edge_id": "EDGE-ASSUMES-IDEMPOTENCY", "kind": "ASSUMES", "source_ref": "API-IDEMPOTENCY-01", "target_ref": "CLAIM-PAYMENT-RETRY-SAFETY"},
+    {"edge_id": "EDGE-SEMANTICS", "kind": "SEMANTIC_DEPENDS_ON", "source_ref": "ACCEPTED-SEMANTICS-001", "target_ref": "CLAIM-PAYMENT-RETRY-SAFETY"},
+    {"edge_id": "EDGE-EVIDENCE", "kind": "EVIDENCE_DEPENDS_ON", "source_ref": "EV-SEMANTIC-REVIEW-001", "target_ref": "CLAIM-PAYMENT-RETRY-SAFETY"},
+    {"edge_id": "EDGE-TCB", "kind": "TCB_DEPENDS_ON", "source_ref": "TOOL-SEMANTIC-REVIEW-001", "target_ref": "EV-SEMANTIC-REVIEW-001"}
+  ],
+  "dependency_completeness": {
+    "completeness_claim_id": "DC-PAYMENT-RETRY-SAFETY-V1",
+    "covered_dependency_kinds": ["ASSUMES", "SEMANTIC_DEPENDS_ON", "EVIDENCE_DEPENDS_ON", "TCB_DEPENDS_ON"],
+    "covered_source_classes": ["AssumptionRecord", "AcceptedSemantics", "EvidenceRecord", "TCBRecord"],
+    "discovery_method": "bounded-fixture-enumeration",
+    "evidence": {"method": "bounded-dependency-enumeration", "status": "CHECKED"},
+    "known_exclusions": [],
+    "unresolved_areas": []
+  },
+  "established_material_relations": [
+    {"gates_property": true, "kind": "ASSUMES", "source_class": "AssumptionRecord", "source_ref": "API-IDEMPOTENCY-01", "target_ref": "CLAIM-PAYMENT-RETRY-SAFETY"},
+    {"gates_property": true, "kind": "SEMANTIC_DEPENDS_ON", "source_class": "AcceptedSemantics", "source_ref": "ACCEPTED-SEMANTICS-001", "target_ref": "CLAIM-PAYMENT-RETRY-SAFETY"},
+    {"gates_property": true, "kind": "EVIDENCE_DEPENDS_ON", "source_class": "EvidenceRecord", "source_ref": "EV-SEMANTIC-REVIEW-001", "target_ref": "CLAIM-PAYMENT-RETRY-SAFETY"},
+    {"gates_property": true, "kind": "TCB_DEPENDS_ON", "source_class": "TCBRecord", "source_ref": "TOOL-SEMANTIC-REVIEW-001", "target_ref": "EV-SEMANTIC-REVIEW-001"}
+  ],
+  "evaluation_context": {
+    "api_contract_revision": "v8",
+    "context_id": "CTX-PAY-V8",
+    "endpoint": "/payments",
+    "idempotency_key_scope": "logical-payment",
+    "operation": "charge",
+    "revision": "2"
+  },
+  "evidence_records": [
+    {"dependency_refs": ["ACCEPTED-SEMANTICS-001"], "evidence_id": "EV-SEMANTIC-REVIEW-001", "method": "deterministic-semantic-review", "status": "CHECKED"},
+    {"dependency_refs": ["PAY-CANDIDATE-ACCEPTED"], "evidence_id": "EV-CLIENT-ARTIFACT-001", "method": "bounded-client-regression", "status": "TESTED"}
+  ],
+  "gated_action": "release",
+  "impact_assertions": [],
+  "invalidation_events": [
+    {
+      "default_impact": "ImpactDisposition.REVALIDATION_REQUIRED",
+      "event_id": "IE-API-V7-V8",
+      "kind": "REVISION_CHANGE",
+      "new_revision": "v8",
+      "prior_revision": "v7",
+      "subject_ref": "API-IDEMPOTENCY-01"
+    }
+  ],
+  "presented_projection": null,
+  "projection_policies": [
+    {
+      "adoption_authority_ref": "AUTH-PP-ADOPT-1",
+      "allow_dependency_completeness_residual": false,
+      "allowed_residual_defeater_kinds": ["ENVIRONMENT_LIMITATION"],
+      "applicability": {"api_contract_revision": ["v7", "v8"]},
+      "completeness_evidence_profiles": [{"method": "bounded-dependency-enumeration", "status": "CHECKED"}],
+      "gated_action": "release",
+      "non_waivable_defeater_kinds": ["DEPENDENCY_COMPLETENESS"],
+      "precedence": 100,
+      "projection_policy_id": "PP-PAY-RETRY",
+      "property": "PAYMENT-RETRY-SAFETY",
+      "required_dependency_kinds": ["ASSUMES", "SEMANTIC_DEPENDS_ON", "EVIDENCE_DEPENDS_ON", "TCB_DEPENDS_ON"],
+      "required_source_classes": ["AssumptionRecord", "AcceptedSemantics", "EvidenceRecord", "TCBRecord"],
+      "reuse_evidence_profiles": {
+        "AssumptionLifecycle.BASIS_CURRENT": [
+          {"method": "provider-contract-fixture", "status": "HUMAN-DECLARED"},
+          {"method": "contract-equivalence-check", "status": "CHECKED"}
+        ],
+        "DefeaterDisposition.RESOLVED": [{"method": "bounded-defeater-resolution", "status": "CHECKED"}],
+        "ImpactDisposition.NO_MATERIAL_EFFECT": [{"method": "dependency-impact-check", "status": "CHECKED"}]
+      },
+      "revision": "1"
+    }
+  ],
+  "property": "PAYMENT-RETRY-SAFETY",
+  "record_supersessions": [],
+  "revalidations": [
+    {
+      "context_binding": {
+        "api_contract_revision": "v8",
+        "endpoint": "/payments",
+        "idempotency_key_scope": "logical-payment",
+        "operation": "charge"
+      },
+      "event_refs": ["IE-API-V7-V8"],
+      "evidence": {"method": "contract-equivalence-check", "status": "CHECKED"},
+      "method": "contract-equivalence-check",
+      "revalidation_id": "RV-API-IDEMPOTENCY-V8",
+      "target_ref": "API-IDEMPOTENCY-01"
+    }
+  ],
+  "scenario_id": "payment-retry-v8-revalidated",
+  "schema": "spec2exec.lifecycle-trust-input/v0.1",
+  "subject": "payment-retry",
+  "trust_claim": {"claim_id": "CLAIM-PAYMENT-RETRY-SAFETY", "property": "PAYMENT-RETRY-SAFETY"}
+}

@@ -67,3 +67,34 @@ The CODEOWNERS adapter is a **repository identity/ownership adapter**, not the R
 The demo reports attribution as repository-declared and unauthenticated. It does not claim that GitHub identity, CODEOWNERS, or repository write access is cryptographically sufficient for production authority.
 
 Future adapters may bind OIDC, signed commits, organization roles, or enterprise identity while preserving the RFC 0011 authority model.
+
+## Lifecycle Trust experiment
+
+Issue #62 adds a separate bounded RFC 0012 experiment under
+[`lifecycle/`](lifecycle/).
+
+It asks what happens after the semantic candidate was accepted when an
+external provider assumption changes:
+
+```text
+accepted payment-retry semantics
+        +
+Payment API v7 idempotency assumption
+        ↓
+CurrentTrustProjection = CURRENT
+
+Payment API v7 → v8
+client artifact unchanged
+        ↓
+old assumption basis stale
+        ↓
+CurrentTrustProjection = BLOCKED
+
+policy-accepted revalidation
+        ↓
+fresh CurrentTrustProjection = CURRENT
+```
+
+This lifecycle experiment does not change the earlier semantic-review result,
+does not make CODEOWNERS semantic authority, and does not claim production
+payment assurance.

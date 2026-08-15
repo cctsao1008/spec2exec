@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec2exec.dev/schemas/lifecycle-trust-input-v0.1.schema.json",
+  "title": "Spec2Exec bounded lifecycle trust input v0.1",
+  "description": "Issue #62 experiment contract. This schema is not a universal RFC 0012 storage model.",
+  "type": "object",
+  "required": [
+    "schema", "scenario_id", "subject", "gated_action", "property", "artifact",
+    "evaluation_context", "trust_claim", "authority_records", "projection_policies",
+    "assumptions", "evidence_records", "dependencies", "established_material_relations",
+    "dependency_completeness", "defeaters", "invalidation_events", "impact_assertions",
+    "revalidations", "record_supersessions", "presented_projection"
+  ],
+  "properties": {
+    "schema": {"const": "spec2exec.lifecycle-trust-input/v0.1"},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "subject": {"type": "string", "minLength": 1},
+    "gated_action": {"type": "string", "minLength": 1},
+    "property": {"type": "string", "minLength": 1},
+    "artifact": {"$ref": "#/$defs/artifact"},
+    "evaluation_context": {"$ref": "#/$defs/evaluationContext"},
+    "trust_claim": {"$ref": "#/$defs/trustClaim"},
+    "authority_records": {"type": "array", "items": {"$ref": "#/$defs/authorityRecord"}},
+    "projection_policies": {"type": "array", "items": {"$ref": "#/$defs/projectionPolicy"}},
+    "assumptions": {"type": "array", "items": {"$ref": "#/$defs/assumption"}},
+    "evidence_records": {"type": "array", "items": {"$ref": "#/$defs/evidenceRecord"}},
+    "dependencies": {"type": "array", "items": {"$ref": "#/$defs/dependencyEdge"}},
+    "established_material_relations": {"type": "array", "items": {"$ref": "#/$defs/materialRelation"}},
+    "dependency_completeness": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/dependencyCompleteness"}]},
+    "defeaters": {"type": "array", "items": {"$ref": "#/$defs/defeater"}},
+    "invalidation_events": {"type": "array", "items": {"$ref": "#/$defs/invalidationEvent"}},
+    "impact_assertions": {"type": "array", "items": {"$ref": "#/$defs/impactAssertion"}},
+    "revalidations": {"type": "array", "items": {"$ref": "#/$defs/revalidation"}},
+    "record_supersessions": {"type": "array", "items": {"$ref": "#/$defs/recordSupersession"}},
+    "presented_projection": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/presentedProjection"}]}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "stringArray": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+    "evidence": {
+      "type": "object",
+      "required": ["status", "method"],
+      "properties": {
+        "status": {
+          "enum": [
+            "PROVEN", "CHECKED", "TESTED", "TESTED_EXHAUSTIVE", "MEASURED",
+            "ESTIMATED", "HUMAN-DECLARED", "HUMAN-ACCEPTED", "TRUSTED",
+            "ASSUMED", "ADVISORY", "UNRESOLVED"
+          ]
+        },
+        "method": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "contextSelector": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          {"type": ["string", "number", "boolean"]},
+          {"type": "array", "items": {"type": ["string", "number", "boolean"]}}
+        ]
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["artifact_id", "revision", "sha256"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/nonEmptyString"},
+        "revision": {"$ref": "#/$defs/nonEmptyString"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "evaluationContext": {
+      "type": "object",
+      "required": ["context_id", "revision", "api_contract_revision", "endpoint", "operation", "idempotency_key_scope"],
+      "properties": {
+        "context_id": {"$ref": "#/$defs/nonEmptyString"},
+        "revision": {"$ref": "#/$defs/nonEmptyString"},
+        "api_contract_revision": {"$ref": "#/$defs/nonEmptyString"},
+        "endpoint": {"$ref": "#/$defs/nonEmptyString"},
+        "operation": {"$ref": "#/$defs/nonEmptyString"},
+        "idempotency_key_scope": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "trustClaim": {
+      "type": "object",
+      "required": ["claim_id", "property"],
+      "properties": {
+        "claim_id": {"$ref": "#/$defs/nonEmptyString"},
+        "property": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "authorityRecord": {
+      "type": "object",
+      "required": ["authority_record_id", "authority_validity", "grant_kind", "anchor_id", "authority_policy_id", "authority_policy_revision", "scope"],
+      "properties": {
+        "authority_record_id": {"$ref": "#/$defs/nonEmptyString"},
+        "authority_validity": {"enum": ["AUTHORIZED", "UNAUTHORIZED", "POTENTIALLY_STALE", "INVALIDATED"]},
+        "grant_kind": {"enum": ["VALUE", "VALUE_SET", "CONSTRAINT", "PROCEDURE", "SOURCE", "DISCRETION"]},
+        "anchor_id": {"$ref": "#/$defs/nonEmptyString"},
+        "authority_policy_id": {"$ref": "#/$defs/nonEmptyString"},
+        "authority_policy_revision": {"$ref": "#/$defs/nonEmptyString"},
+        "scope": {"$ref": "#/$defs/stringArray"}
+      },
+      "additionalProperties": false
+    },
+    "evidenceProfileMap": {
+      "type": "object",
+      "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+    },
+    "projectionPolicy": {
+      "type": "object",
+      "required": [
+        "projection_policy_id", "revision", "gated_action", "property", "applicability",
+        "adoption_authority_ref", "required_dependency_kinds", "required_source_classes",
+        "completeness_evidence_profiles", "reuse_evidence_profiles",
+        "allowed_residual_defeater_kinds", "non_waivable_defeater_kinds",
+        "allow_dependency_completeness_residual"
+      ],
+      "properties": {
+        "projection_policy_id": {"$ref": "#/$defs/nonEmptyString"},
+        "revision": {"$ref": "#/$defs/nonEmptyString"},
+        "gated_action": {"$ref": "#/$defs/nonEmptyString"},
+        "property": {"$ref": "#/$defs/nonEmptyString"},
+        "applicability": {"$ref": "#/$defs/contextSelector"},
+        "precedence": {"type": "integer"},
+        "adoption_authority_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "supersedes_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "permissive_change_authority_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "permissive_change_rationale": {"$ref": "#/$defs/nonEmptyString"},
+        "required_dependency_kinds": {"$ref": "#/$defs/stringArray"},
+        "required_source_classes": {"$ref": "#/$defs/stringArray"},
+        "completeness_evidence_profiles": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "reuse_evidence_profiles": {"$ref": "#/$defs/evidenceProfileMap"},
+        "allowed_residual_defeater_kinds": {"$ref": "#/$defs/stringArray"},
+        "non_waivable_defeater_kinds": {"$ref": "#/$defs/stringArray"},
+        "allow_dependency_completeness_residual": {"type": "boolean"},
+        "permissive_narrowing": {
+          "type": "object",
+          "required": ["authority_ref", "rationale"],
+          "properties": {
+            "authority_ref": {"$ref": "#/$defs/nonEmptyString"},
+            "rationale": {"$ref": "#/$defs/nonEmptyString"},
+            "omitted_material_dependency_kinds": {"$ref": "#/$defs/stringArray"},
+            "omitted_material_source_classes": {"$ref": "#/$defs/stringArray"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "assumption": {
+      "type": "object",
+      "required": ["assumption_id", "statement", "basis_context", "evidence", "violated_contexts"],
+      "properties": {
+        "assumption_id": {"$ref": "#/$defs/nonEmptyString"},
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "basis_context": {"$ref": "#/$defs/contextSelector"},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "violated_contexts": {"type": "array", "items": {"$ref": "#/$defs/contextSelector"}}
+      },
+      "additionalProperties": false
+    },
+    "evidenceRecord": {
+      "type": "object",
+      "required": ["evidence_id", "status", "method", "dependency_refs"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"$ref": "#/$defs/evidence/properties/status"},
+        "method": {"$ref": "#/$defs/nonEmptyString"},
+        "dependency_refs": {"$ref": "#/$defs/stringArray"}
+      },
+      "additionalProperties": false
+    },
+    "dependencyEdge": {
+      "type": "object",
+      "required": ["edge_id", "source_ref", "target_ref", "kind"],
+      "properties": {
+        "edge_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "target_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "materialRelation": {
+      "type": "object",
+      "required": ["source_ref", "target_ref", "kind", "source_class", "gates_property"],
+      "properties": {
+        "source_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "target_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "source_class": {"$ref": "#/$defs/nonEmptyString"},
+        "gates_property": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "dependencyCompleteness": {
+      "type": "object",
+      "required": ["completeness_claim_id", "covered_dependency_kinds", "covered_source_classes", "discovery_method", "evidence", "known_exclusions", "unresolved_areas"],
+      "properties": {
+        "completeness_claim_id": {"$ref": "#/$defs/nonEmptyString"},
+        "covered_dependency_kinds": {"$ref": "#/$defs/stringArray"},
+        "covered_source_classes": {"$ref": "#/$defs/stringArray"},
+        "discovery_method": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "known_exclusions": {"type": "array"},
+        "unresolved_areas": {"type": "array"},
+        "residual_authority_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "mandatory_review_trigger": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "defeater": {
+      "type": "object",
+      "required": ["defeater_id", "kind", "disposition"],
+      "properties": {
+        "defeater_id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "disposition": {"enum": ["OPEN", "RESOLVED", "ACCEPTED_RESIDUAL"]},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "authority_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "review_trigger": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "invalidationEvent": {
+      "type": "object",
+      "required": ["event_id", "kind", "subject_ref", "default_impact"],
+      "properties": {
+        "event_id": {"$ref": "#/$defs/nonEmptyString"},
+        "kind": {"$ref": "#/$defs/nonEmptyString"},
+        "subject_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "prior_revision": {"type": ["string", "null"]},
+        "new_revision": {"type": ["string", "null"]},
+        "default_impact": {"enum": ["ImpactDisposition.REVALIDATION_REQUIRED", "ImpactDisposition.INVALIDATED", "ImpactDisposition.UNKNOWN_IMPACT"]}
+      },
+      "additionalProperties": false
+    },
+    "impactAssertion": {
+      "type": "object",
+      "required": ["event_ref", "edge_ref", "disposition"],
+      "properties": {
+        "event_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "edge_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "disposition": {"enum": ["ImpactDisposition.NO_MATERIAL_EFFECT", "ImpactDisposition.REVALIDATION_REQUIRED", "ImpactDisposition.INVALIDATED", "ImpactDisposition.UNKNOWN_IMPACT"]},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      },
+      "additionalProperties": false
+    },
+    "revalidation": {
+      "type": "object",
+      "required": ["revalidation_id", "target_ref", "context_binding", "event_refs", "method", "evidence"],
+      "properties": {
+        "revalidation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "target_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "context_binding": {"$ref": "#/$defs/contextSelector"},
+        "event_refs": {"$ref": "#/$defs/stringArray"},
+        "method": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence": {"$ref": "#/$defs/evidence"}
+      },
+      "additionalProperties": false
+    },
+    "recordSupersession": {
+      "type": "object",
+      "required": ["supersession_id", "prior_record_ref", "reason"],
+      "properties": {
+        "supersession_id": {"$ref": "#/$defs/nonEmptyString"},
+        "prior_record_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "prior_revision": {"type": ["string", "null"]},
+        "replacement_record_ref": {"type": ["string", "null"]},
+        "reason": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "presentedProjection": {
+      "type": "object",
+      "required": ["projection_policy_ref", "evaluation_context_digest", "artifact_sha256", "basis_record_refs"],
+      "properties": {
+        "projection_policy_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "evaluation_context_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "basis_record_refs": {"$ref": "#/$defs/stringArray"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

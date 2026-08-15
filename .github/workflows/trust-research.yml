@@ -8,10 +8,13 @@ on:
       - 'examples/payment-retry/**'
       - 'prototypes/semantic_review/**'
       - 'prototypes/existing_compiler/**'
+      - 'prototypes/lifecycle_trust/**'
       - 'spec/schemas/semantic-*.schema.json'
+      - 'spec/schemas/lifecycle-trust-*.schema.json'
       - 'tests/research/**'
       - 'tests/semantic_review/**'
       - 'tests/existing_compiler/**'
+      - 'tests/lifecycle_trust/**'
       - '.github/CODEOWNERS'
       - '.github/workflows/trust-research.yml'
       - 'examples/hello/**'
@@ -23,10 +26,13 @@ on:
       - 'examples/payment-retry/**'
       - 'prototypes/semantic_review/**'
       - 'prototypes/existing_compiler/**'
+      - 'prototypes/lifecycle_trust/**'
       - 'spec/schemas/semantic-*.schema.json'
+      - 'spec/schemas/lifecycle-trust-*.schema.json'
       - 'tests/research/**'
       - 'tests/semantic_review/**'
       - 'tests/existing_compiler/**'
+      - 'tests/lifecycle_trust/**'
       - '.github/CODEOWNERS'
       - '.github/workflows/trust-research.yml'
       - 'examples/hello/**'
@@ -74,6 +80,15 @@ jobs:
             --markdown-output build/payment-retry/accepted-review.md \
             --expect ACCEPTED
 
+      - name: Run lifecycle-trust unit tests
+        run: python -m unittest discover -s tests/lifecycle_trust -p 'test_*.py' -v
+
+      - name: Run bounded payment-retry lifecycle validation
+        run: |
+          python prototypes/lifecycle_trust/validate.py \
+            --build-dir build/lifecycle-trust \
+            --summary build/lifecycle-trust/validation-summary.json
+
       - name: Run existing-compiler unit tests
         run: python -m unittest discover -s tests/existing_compiler -p 'test_*.py' -v
 
@@ -90,5 +105,7 @@ jobs:
           path: |
             build/payment-retry/*.json
             build/payment-retry/*.md
+            build/lifecycle-trust/*.json
+            build/lifecycle-trust/*.md
             build/existing-compiler/evidence.json
             build/existing-compiler/generated.c
