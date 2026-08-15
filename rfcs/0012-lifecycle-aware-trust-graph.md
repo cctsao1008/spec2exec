@@ -93,6 +93,17 @@ historical observation vs standing reliance
 
 Revision 2 remains Draft until a closure review confirms that these changes close the findings without introducing a new trust bypass.
 
+### Revision 2 implementation note
+
+The primary Revision 2 hardening was committed as:
+
+```text
+42914239d15f3f79135c87b2d12961051031a1d6
+Harden RFC 0012 lifecycle trust graph after hostile review (#61)
+```
+
+A subsequent documentation-only clarification commit may change the repository HEAD without changing the RFC 0012 architecture. Closure review should therefore inspect the current ZIP snapshot and confirm the exact revision it received rather than relying on this historical commit as the repository HEAD.
+
 ## Motivation
 
 The current architecture can correctly establish statements such as:
