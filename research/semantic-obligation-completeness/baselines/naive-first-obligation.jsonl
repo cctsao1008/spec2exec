@@ -1,0 +1,6 @@
+{"id":"C0-001","obligations":["retry_count"]}
+{"id":"C0-002","obligations":["administrator_role_definition"]}
+{"id":"C0-003","obligations":["temperature_threshold"]}
+{"id":"C0-004","obligations":["disagreement_threshold"]}
+{"id":"C0-005","obligations":["control_period_or_rate"]}
+{"id":"C0-006","obligations":["recovery_threshold"]}
