@@ -11,8 +11,14 @@ Do **not** provide the full Spec2Exec repository, `benchmark.jsonl`, scorer sour
 README discussion containing gold states, prior model outputs, or any file exposing
 the expected field labels.
 
-A run performed after the evaluated context has seen the gold field states is
-contaminated and must not be reported as a measured A0F baseline.
+The evaluated context must not browse the web, search external sources, invoke
+external research/tools, or retrieve the contents of named policies,
+configurations, datasheets, APIs, or standards. The task is to classify only what
+is supplied in the two blinded files.
+
+A run performed after the evaluated context has seen the gold field states or other
+gold-derived discussion is contaminated and must not be reported as a measured
+A0F baseline.
 
 ## Task
 
@@ -32,7 +38,11 @@ Use exactly one state:
 - `CONFLICT`: supplied authoritative statements disagree about that field and no
   supplied precedence rule resolves the disagreement.
 - `NOT_APPLICABLE`: the field is explicitly outside the semantics/scope of this
-  case, or the requirement makes the concept inapplicable.
+  case, or the supplied requirement makes the concept inapplicable.
+
+A relevant field with missing or ambiguous information is `UNRESOLVED`, **not**
+`NOT_APPLICABLE`. Do not use `NOT_APPLICABLE` to make an unresolved or conflicting
+field disappear from the case.
 
 Do not use common practice, engineering intuition, safety convention, external
 documentation, or a plausible default as a substitute for missing information.

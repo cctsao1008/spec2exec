@@ -78,6 +78,8 @@ def score(gold_rows: list[dict], pred_rows: list[dict]) -> dict:
     exact_cases = 0
     unsafe_den = 0
     unsafe = 0
+    applicable_den = 0
+    unsafe_dismissals = 0
     resolved_den = 0
     overblocked = 0
 
@@ -96,6 +98,8 @@ def score(gold_rows: list[dict], pred_rows: list[dict]) -> dict:
                 "correct": 0,
                 "unsafe_den": 0,
                 "unsafe": 0,
+                "applicable_den": 0,
+                "unsafe_dismissals": 0,
                 "resolved_den": 0,
                 "overblocked": 0,
                 "cases": 0,
@@ -123,6 +127,16 @@ def score(gold_rows: list[dict], pred_rows: list[dict]) -> dict:
                 if actual == "RESOLVED":
                     unsafe += 1
                     bucket["unsafe"] += 1
+
+            # NOT_APPLICABLE removes a field from the effective semantic scope.
+            # Applying it to any gold-applicable field is therefore a distinct
+            # fail-open dismissal, not merely conservative overblocking.
+            if expected != "NOT_APPLICABLE":
+                applicable_den += 1
+                bucket["applicable_den"] += 1
+                if actual == "NOT_APPLICABLE":
+                    unsafe_dismissals += 1
+                    bucket["unsafe_dismissals"] += 1
 
             if expected == "RESOLVED":
                 resolved_den += 1
@@ -158,6 +172,11 @@ def score(gold_rows: list[dict], pred_rows: list[dict]) -> dict:
             "unsafe_field_resolution_rate": (
                 bucket["unsafe"] / bucket["unsafe_den"] if bucket["unsafe_den"] else 0.0
             ),
+            "unsafe_field_dismissal_rate": (
+                bucket["unsafe_dismissals"] / bucket["applicable_den"]
+                if bucket["applicable_den"]
+                else 0.0
+            ),
             "overblocking_rate": (
                 bucket["overblocked"] / bucket["resolved_den"]
                 if bucket["resolved_den"]
@@ -173,6 +192,10 @@ def score(gold_rows: list[dict], pred_rows: list[dict]) -> dict:
         "case_exact_match": exact_cases / len(gold_rows) if gold_rows else 0.0,
         "unsafe_field_resolution_rate": unsafe / unsafe_den if unsafe_den else 0.0,
         "unsafe_field_resolution_denominator": unsafe_den,
+        "unsafe_field_dismissal_rate": (
+            unsafe_dismissals / applicable_den if applicable_den else 0.0
+        ),
+        "unsafe_field_dismissal_denominator": applicable_den,
         "overblocking_rate": overblocked / resolved_den if resolved_den else 0.0,
         "overblocking_denominator": resolved_den,
         "unresolved_field_recall": recall("UNRESOLVED"),

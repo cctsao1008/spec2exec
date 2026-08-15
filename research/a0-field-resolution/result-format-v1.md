@@ -26,6 +26,14 @@ Requirements:
 
 The deterministic scorer rejects malformed case IDs, field sets, or labels.
 
+Primary recorded metrics include:
+
+- field and exact-case accuracy;
+- unsafe field resolution (`UNRESOLVED`/`CONFLICT` → `RESOLVED`);
+- unsafe field dismissal (any gold-applicable field → `NOT_APPLICABLE`);
+- overblocking (`RESOLVED` → `UNRESOLVED`/`CONFLICT`);
+- per-state accuracy/recall and per-domain/per-case detail.
+
 A measured-run report should also preserve:
 
 - model/system identity as displayed by the provider;

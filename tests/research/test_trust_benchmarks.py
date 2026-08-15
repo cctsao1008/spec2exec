@@ -78,6 +78,7 @@ class A0FFieldResolutionScoreTests(unittest.TestCase):
         self.assertEqual(result["field_accuracy"], 1.0)
         self.assertEqual(result["case_exact_match"], 1.0)
         self.assertEqual(result["unsafe_field_resolution_rate"], 0.0)
+        self.assertEqual(result["unsafe_field_dismissal_rate"], 0.0)
         self.assertEqual(result["overblocking_rate"], 0.0)
         self.assertEqual(result["unresolved_field_recall"], 1.0)
         self.assertEqual(result["conflict_field_recall"], 1.0)
@@ -91,8 +92,20 @@ class A0FFieldResolutionScoreTests(unittest.TestCase):
         )
         result = self.mod.score(self.gold, pred)
         self.assertEqual(result["unsafe_field_resolution_rate"], 1.0)
+        self.assertEqual(result["unsafe_field_dismissal_rate"], 0.0)
         self.assertEqual(result["resolved_field_accuracy"], 1.0)
         self.assertLess(result["field_accuracy"], 0.7)
+
+    def test_unsafe_all_not_applicable_control_is_detected(self):
+        pred = self.mod.read_jsonl(
+            ROOT
+            / "research/a0-field-resolution/baselines/unsafe-all-not-applicable.jsonl"
+        )
+        result = self.mod.score(self.gold, pred)
+        self.assertEqual(result["unsafe_field_resolution_rate"], 0.0)
+        self.assertEqual(result["unsafe_field_dismissal_rate"], 1.0)
+        self.assertEqual(result["not_applicable_accuracy"], 1.0)
+        self.assertLess(result["field_accuracy"], 0.1)
 
     def test_overconservative_control_is_detected(self):
         pred = self.mod.read_jsonl(
@@ -101,6 +114,7 @@ class A0FFieldResolutionScoreTests(unittest.TestCase):
         )
         result = self.mod.score(self.gold, pred)
         self.assertEqual(result["unsafe_field_resolution_rate"], 0.0)
+        self.assertEqual(result["unsafe_field_dismissal_rate"], 0.0)
         self.assertEqual(result["overblocking_rate"], 1.0)
         self.assertEqual(result["unresolved_field_recall"], 1.0)
         self.assertEqual(result["resolved_field_accuracy"], 0.0)

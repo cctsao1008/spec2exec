@@ -1,12 +1,14 @@
 {
   "benchmark_version": "a0f/v1",
   "contamination_declaration": {
+    "external_tools_disabled_or_unused": false,
     "fresh_context": false,
     "gold_not_supplied": false,
     "only_blinded_prompt_and_input_supplied": false,
     "operator_notes": "",
     "prior_results_not_supplied": false,
-    "repository_not_supplied": false
+    "repository_not_supplied": false,
+    "web_search_disabled_or_unused": false
   },
   "effort_or_reasoning_mode": "n/a",
   "evaluation_input_sha256": "",
