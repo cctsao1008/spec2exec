@@ -221,7 +221,7 @@ See:
 - [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md) — **Accepted / Lifecycle Trust Baseline**
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
 
-RFC 0012 extends the architecture in a deliberately cross-cutting direction: assumptions, dependency completeness, defeaters, invalidation, ProjectionPolicy-gated current-trust projection, and re-assurance are modeled as lifecycle-bearing trust relationships rather than new serial compiler stages. The architecture baseline is Accepted; executable validation proceeds separately under [issue #62](https://github.com/cctsao1008/spec2exec/issues/62).
+RFC 0012 extends the architecture in a deliberately cross-cutting direction: assumptions, dependency completeness, defeaters, invalidation, ProjectionPolicy-gated current-trust projection, and re-assurance are modeled as lifecycle-bearing trust relationships rather than new serial compiler stages. The architecture baseline is Accepted; its first bounded executable validation is complete under [issue #62](https://github.com/cctsao1008/spec2exec/issues/62). See the [bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md).
 
 ## What is demonstrated today
 
@@ -338,7 +338,7 @@ The unsafe candidate is blocked because it contains both an unauthorized decisio
 
 This is a **workflow POC following RFC 0011 principles**, not a replacement for the validated POC-1C authority-record evaluator and not a claim that CODEOWNERS is sufficient production authority.
 
-The trust-research workflow validates the benchmark scorers, semantic review, CODEOWNERS fail-closed behavior, and the existing-compiler experiment in GitHub Actions run `31883256343`.
+The shared trust-research workflow validates the benchmark scorer controls, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. The current validated trust-research run is `31907601851`.
 
 ### 5. Existing-compiler evidence composition
 
@@ -374,6 +374,36 @@ The exact compiler version/invocation and generated artifacts are evidence-bound
 This experiment does not claim the host compiler is verified. It demonstrates that Spec2Exec's trust/evidence model can remain explicit when realization is delegated to an existing compiler.
 
 See [Existing-Compiler Realization Experiment](docs/existing-compiler-integration.md) and [issue #60](https://github.com/cctsao1008/spec2exec/issues/60).
+
+### 6. Bounded lifecycle Trust Graph validation
+
+The first executable slice of RFC 0012 is validated under closed issue #62 for the property `PAYMENT-RETRY-SAFETY`.
+
+The three primary scenarios bind the same client artifact SHA-256:
+
+```text
+95018cb2c86bb1bea9cffb89e12ee31c711a26de159a1dcdacee21ce8b2b4c72
+```
+
+and demonstrate:
+
+```text
+Payment API v7
+    → CURRENT
+
+Payment API v7 → v8
+client artifact byte-identical
+    → provider assumption BASIS_STALE
+    → REVALIDATION_REQUIRED
+    → BLOCKED
+
+policy-accepted v8 revalidation
+    → fresh property/context projection CURRENT
+```
+
+The validated implementation revision is `797c0e4497e6fb9355236f659b96bf4e7870ecdc`. GitHub Actions run `31907601851` completed successfully with 29 / 29 lifecycle tests, including all mandatory fail-closed controls from #62. The experiment preserves RFC 0011 as the semantic-authority owner and RFC 0006 as the evidence-status owner.
+
+This is bounded validation evidence, not formal proof of RFC 0012, universal dependency completeness, production payment assurance, certification, or a generic Trust Graph platform. See [bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md).
 
 ## Why AI raises the stakes
 
@@ -465,7 +495,7 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
 | Existing-compiler evidence composition | host-C experiment implemented/tested under #60 |
-| Lifecycle-aware Trust Graph | RFC 0012 Accepted / Lifecycle Trust Baseline; architecture #61 closed; bounded payment-retry lifecycle implementation open under #62 |
+| Lifecycle-aware Trust Graph | RFC 0012 Accepted; architecture #61 closed; bounded payment-retry lifecycle implementation/validation #62 closed with 29 / 29 lifecycle tests and green CI |
 | RV32 forced-spill experiment | backend work remains available under #37 |
 | Hazard3 / RP2350 hardware validation | pending under #36 |
 | Strong identity / OIDC / signatures / quorum | deferred future authority work |
@@ -475,6 +505,7 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 For the fastest introduction:
 
 - [Payment-retry semantic-authority example](examples/payment-retry/README.md)
+- [Bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md)
 - [Blocked semantic diff](examples/payment-retry/unsafe-review.md)
 - [C0 semantic-obligation completeness benchmark](research/semantic-obligation-completeness/)
 - [A0 unsafe semantic-resolution benchmark](research/a0-semantic-resolution/)
