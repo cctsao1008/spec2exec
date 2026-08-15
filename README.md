@@ -76,22 +76,25 @@ A formally verified implementation can still faithfully implement a specificatio
 
 For a first-pass mental model:
 
-```mermaid
-flowchart TD
-    A["Requirement / Intent"]
-    B["Semantic Obligation Discovery"]
-    C["Semantic Resolution / Conflict Exposure"]
-    D["Executable Semantic Closure"]
-    E["Semantic Authority"]
-    F["Deterministic Verification / Evidence"]
-    G["Target Realization"]
-
-    A --> B --> C --> D --> E --> F --> G
+```text
+Requirement / Intent
+        ↓
+Semantic Obligation Discovery
+        ↓
+Semantic Resolution / Conflict Exposure
+        ↓
+Executable Semantic Closure
+        ↓
+Semantic Authority
+        ↓
+Deterministic Verification / Evidence
+        ↓
+Target Realization
 ```
 
 Completeness is cross-cutting rather than a single pipeline pass. **C0 obligation completeness** studies whether authority-relevant questions were surfaced at all, while **RFC 0011 Semantic Completeness** prevents known authority-relevant obligations from silently disappearing from the executable semantic closure.
 
-The detailed ASCII diagrams and RFC text below remain the more precise descriptions of architecture, state, evidence boundaries, and implementation status.
+The more detailed ASCII diagrams and RFC text below remain the more precise descriptions of architecture, state, evidence boundaries, and implementation status.
 
 ## Current research tracks
 
