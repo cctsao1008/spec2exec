@@ -1,0 +1,171 @@
+{
+  "$id": "https://spec2exec.local/schemas/authority-v0.1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {"$ref": "#/$defs/manifest"},
+    {"$ref": "#/$defs/anchor"},
+    {"$ref": "#/$defs/policies"},
+    {"$ref": "#/$defs/obligations"},
+    {"$ref": "#/$defs/closure"},
+    {"$ref": "#/$defs/acceptance"}
+  ],
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "attribution": {
+      "type": "object",
+      "required": ["mechanism", "evidence_status"],
+      "properties": {
+        "mechanism": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_status": {"$ref": "#/$defs/nonEmptyString"},
+        "authenticated": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["schema", "record_set_id", "anchor_set", "components"],
+      "properties": {
+        "schema": {"const": "spec2exec.authority-manifest/v0.1"},
+        "record_set_id": {"$ref": "#/$defs/nonEmptyString"},
+        "anchor_set": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["anchor_id", "component", "revision"],
+            "properties": {
+              "anchor_id": {"$ref": "#/$defs/nonEmptyString"},
+              "component": {"$ref": "#/$defs/nonEmptyString"},
+              "revision": {"$ref": "#/$defs/nonEmptyString"}
+            }
+          }
+        },
+        "components": {
+          "type": "object",
+          "required": ["anchor", "policies", "obligations", "closure"],
+          "additionalProperties": {
+            "type": "object",
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": {"$ref": "#/$defs/nonEmptyString"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          }
+        }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "required": ["schema", "anchor_id", "revision", "declared_by", "attribution", "protection", "scope"],
+      "properties": {
+        "schema": {"const": "spec2exec.authority-anchor/v0.1"},
+        "anchor_id": {"$ref": "#/$defs/nonEmptyString"},
+        "revision": {"$ref": "#/$defs/nonEmptyString"},
+        "declared_by": {"$ref": "#/$defs/nonEmptyString"},
+        "attribution": {"$ref": "#/$defs/attribution"},
+        "protection": {"$ref": "#/$defs/attribution"},
+        "scope": {
+          "type": "object",
+          "required": ["subjects"],
+          "properties": {
+            "subjects": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}}
+          }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": ["policy_id", "revision", "source_revision", "scope", "subjects", "grant_kind", "grant", "redelegation_allowed"],
+      "properties": {
+        "policy_id": {"$ref": "#/$defs/nonEmptyString"},
+        "revision": {"$ref": "#/$defs/nonEmptyString"},
+        "source_anchor_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_policy_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_revision": {"$ref": "#/$defs/nonEmptyString"},
+        "subjects": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "scope": {
+          "type": "object",
+          "required": ["build_ids"],
+          "properties": {
+            "build_ids": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}}
+          }
+        },
+        "grant_kind": {"enum": ["VALUE", "VALUE_SET", "CONSTRAINT", "PROCEDURE", "SOURCE", "DISCRETION"]},
+        "grant": {"type": "object"},
+        "allowed_authority_agents": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "self_authorization_allowed": {"type": "boolean"},
+        "redelegation_allowed": {"type": "boolean"},
+        "attribution_requirement": {"type": "object"},
+        "evidence_profile": {"type": "object"}
+      },
+      "anyOf": [
+        {"required": ["source_anchor_id"]},
+        {"required": ["source_policy_id"]}
+      ]
+    },
+    "policies": {
+      "type": "object",
+      "required": ["schema", "policies"],
+      "properties": {
+        "schema": {"const": "spec2exec.authority-policies/v0.1"},
+        "policies": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/policy"}}
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "required": ["obligation_id", "subject", "value", "resolution_state", "applicability", "classification_basis", "provenance", "spec_locator", "authority_policy_id", "policy_revision", "authority_agent", "proposer", "attribution"],
+      "properties": {
+        "obligation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "subject": {"$ref": "#/$defs/nonEmptyString"},
+        "resolution_state": {"enum": ["RESOLVED", "UNRESOLVED", "CONFLICT"]},
+        "applicability": {"enum": ["APPLICABLE", "NOT_APPLICABLE", "UNKNOWN"]},
+        "authority_state": {"enum": ["CURRENT", "POTENTIALLY_STALE", "INVALIDATED", "REVOKED", "EXPIRED"]},
+        "classification_basis": {"type": "object"},
+        "provenance": {"type": "object"},
+        "spec_locator": {"$ref": "#/$defs/nonEmptyString"},
+        "authority_policy_id": {"$ref": "#/$defs/nonEmptyString"},
+        "policy_revision": {"$ref": "#/$defs/nonEmptyString"},
+        "authority_agent": {"$ref": "#/$defs/nonEmptyString"},
+        "proposer": {"$ref": "#/$defs/nonEmptyString"},
+        "attribution": {"$ref": "#/$defs/attribution"}
+      }
+    },
+    "obligations": {
+      "type": "object",
+      "required": ["schema", "obligations"],
+      "properties": {
+        "schema": {"const": "spec2exec.semantic-obligations/v0.1"},
+        "obligations": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/obligation"}}
+      }
+    },
+    "closure": {
+      "type": "object",
+      "required": ["schema", "closure_id", "method", "method_version", "candidate_subjects", "included_obligations", "excluded_subjects", "constraint_policy_ids", "selected_build"],
+      "properties": {
+        "schema": {"const": "spec2exec.authority-closure/v0.1"},
+        "closure_id": {"$ref": "#/$defs/nonEmptyString"},
+        "method": {"$ref": "#/$defs/nonEmptyString"},
+        "method_version": {"$ref": "#/$defs/nonEmptyString"},
+        "candidate_subjects": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "included_obligations": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "excluded_subjects": {"type": "array"},
+        "constraint_policy_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "selected_build": {
+          "type": "object",
+          "required": ["build_id", "target_profile", "configuration", "authority_policy_id", "policy_revision", "authority_agent", "attribution"]
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "required": ["schema", "outcome", "acceptance_state", "authority_validity", "evaluation_method", "authority_tcb", "closure", "obligation_evaluations", "constraint_evaluations"],
+      "properties": {
+        "schema": {"const": "spec2exec.authority-acceptance/v0.1"},
+        "outcome": {"const": "ACCEPTED"},
+        "acceptance_state": {"const": "ACCEPTED"},
+        "authority_validity": {"const": "AUTHORIZED"},
+        "evaluation_method": {"const": "deterministic-authority-gate-v0.1"}
+      }
+    }
+  }
+}
