@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec2exec.local/schema/semantic-review-result-v0.1",
+  "title": "Spec2Exec Semantic Review Result v0.1",
+  "type": "object",
+  "required": [
+    "schema",
+    "subject",
+    "candidate_id",
+    "outcome",
+    "blocking_findings",
+    "authority_adapter",
+    "obligations",
+    "constraints"
+  ],
+  "properties": {
+    "schema": {"const": "spec2exec.semantic-review-result/v0.1"},
+    "subject": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "outcome": {"enum": ["ACCEPTED", "BLOCKED"]},
+    "blocking_findings": {"type": "integer", "minimum": 0},
+    "authority_adapter": {"type": "object"},
+    "obligations": {"type": "array"},
+    "constraints": {"type": "array"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
