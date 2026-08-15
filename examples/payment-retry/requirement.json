@@ -1,0 +1,10 @@
+{
+  "schema": "spec2exec.payment-retry-requirement/v0.1",
+  "requirement_id": "PAY-RETRY-001",
+  "text": "Retry failed payment requests.",
+  "semantic_subject": "payment-retry",
+  "notes": [
+    "The source requirement authorizes retry as a goal but does not define the full executable retry policy.",
+    "Candidate values remain proposals until resolved and authorized."
+  ]
+}
