@@ -35,6 +35,7 @@ class SemanticReviewTests(unittest.TestCase):
         self.assertEqual(by_id["retry_count"]["status"], "UNAUTHORIZED")
         self.assertEqual(by_id["retry_on_http_500"]["status"], "AUTHORIZED")
         self.assertEqual(by_id["retry_on_timeout"]["status"], "UNRESOLVED")
+        self.assertFalse(by_id["retry_count"]["provenance"]["source_supports_value"])
 
     def test_accepted_candidate_passes(self):
         result = self.mod.review(self.policy, self.accepted, self.codeowners)
@@ -55,10 +56,29 @@ class SemanticReviewTests(unittest.TestCase):
     def test_unknown_semantic_obligation_is_unauthorized(self):
         candidate = copy.deepcopy(self.accepted)
         candidate["values"]["invented_retry_jitter"] = True
+        candidate["provenance"]["invented_retry_jitter"] = {
+            "source_artifact": "examples/payment-retry/requirement.json",
+            "source_requirement_id": "PAY-RETRY-001",
+            "source_locator": "/text",
+            "origin": "ai-proposal",
+            "source_supports_value": False,
+        }
         result = self.mod.review(self.policy, candidate, self.codeowners)
         self.assertEqual(result["outcome"], "BLOCKED")
         row = next(x for x in result["obligations"] if x["obligation_id"] == "invented_retry_jitter")
         self.assertEqual(row["status"], "UNAUTHORIZED")
+
+    def test_missing_provenance_fails_closed(self):
+        candidate = copy.deepcopy(self.accepted)
+        del candidate["provenance"]["retry_count"]
+        with self.assertRaises(self.mod.ReviewError):
+            self.mod.review(self.policy, candidate, self.codeowners)
+
+    def test_false_source_support_claim_fails_closed(self):
+        candidate = copy.deepcopy(self.accepted)
+        candidate["provenance"]["retry_count"]["source_supports_value"] = True
+        with self.assertRaises(self.mod.ReviewError):
+            self.mod.review(self.policy, candidate, self.codeowners)
 
     def test_constraint_violation_blocks(self):
         candidate = copy.deepcopy(self.accepted)
