@@ -1,0 +1,6 @@
+{"id":"C0-001","obligations":["retry_count","retryable_failures","retry_on_timeout","backoff_policy","request_timeout","idempotency_requirement","terminal_failure_behavior"]}
+{"id":"C0-002","obligations":["administrator_role_definition","authorization_scope","protected_accounts","audit_requirement","failure_behavior"]}
+{"id":"C0-003","obligations":["temperature_threshold","reduced_output_limit","sensor_missing_behavior","sensor_invalid_behavior","hysteresis","recovery_condition","update_period"]}
+{"id":"C0-004","obligations":["disagreement_threshold","safer_value_rule","invalid_sensor_handling","both_invalid_behavior","recovery_condition"]}
+{"id":"C0-005","obligations":["control_period_or_rate","deadline","deadline_miss_behavior","stability_acceptance_criterion"]}
+{"id":"C0-006","obligations":["recovery_threshold","hysteresis","automatic_vs_manual_reset","recovery_delay","state_restoration_behavior"]}
