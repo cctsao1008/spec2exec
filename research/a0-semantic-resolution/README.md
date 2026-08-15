@@ -2,23 +2,29 @@
 
 ## Purpose
 
-A0 is an independent research track that tests a high-risk assumption in Spec2Exec before AI is connected to the executable pipeline:
+A0 tests a high-risk assumption in Spec2Exec before probabilistic synthesis is allowed to influence executable semantics:
 
-> When requirements are incomplete, ambiguous, contradictory, or under-specified, can an AI system reliably expose uncertainty instead of silently inventing executable semantics?
+> When a semantic question is incomplete, ambiguous, contradictory, or under-specified, can a system expose uncertainty instead of silently inventing executable semantics?
 
-A0 does **not** generate SpecIR and does **not** feed any executable build. It is deliberately isolated from POC-1A.
+A0 is a **semantic-resolution** benchmark. It assumes the semantic question has already been surfaced. The separate semantic-obligation-completeness track (#57) asks the harder upstream question: did the system discover the missing question at all?
 
-## Labels
+A0 does **not** generate SpecIR and does **not** feed executable builds.
 
-Each benchmark case has one authoritative expected decision:
+## Benchmark version
+
+The current case set is `a0/v1`.
+
+Each case has one authoritative expected decision:
 
 - `RESOLVED` — the requested semantics are explicitly present and may be extracted without invention.
 - `UNRESOLVED` — one or more required semantics are missing or ambiguous and must remain unresolved.
-- `CONFLICT` — authoritative statements conflict and require human/domain resolution.
+- `CONFLICT` — authoritative statements conflict and require authority/domain resolution.
 
-## Output contract
+The labels belong to the semantic-resolution namespace. They are not RFC 0006 evidence statuses and they do not themselves grant RFC 0011 authority.
 
-A system under test should emit JSONL with one object per benchmark case:
+## Prediction format
+
+A system under test emits JSONL with one object per benchmark case:
 
 ```json
 {
@@ -30,7 +36,9 @@ A system under test should emit JSONL with one object per benchmark case:
 }
 ```
 
-The exact natural-language explanation is not scored in A0 v0. The benchmark is intentionally focused on whether the system invents semantic certainty.
+The scorer requires exactly one prediction for every benchmark case and rejects unknown IDs or decision labels.
+
+The exact natural-language explanation is not scored in A0 v1. A future benchmark revision may score structured assumption/provenance quality separately.
 
 ## Primary metrics
 
@@ -40,8 +48,56 @@ The exact natural-language explanation is not scored in A0 v0. The benchmark is 
 - `resolved_accuracy`: fraction of explicitly resolvable cases correctly marked `RESOLVED`.
 - `overall_accuracy`: exact decision-label accuracy.
 
-No pass/fail threshold is frozen yet. Initial runs are for baseline measurement and error taxonomy, not for retrofitting a favorable threshold.
+No pass/fail threshold is frozen. Initial runs are for baseline measurement and error taxonomy, not for retrofitting a favorable threshold.
 
 ## Guardrail
 
-A0 is not a prompt benchmark for eloquence. A response that gives a plausible engineering value where the requirement does not provide one is a failure even if the value would often be reasonable in practice.
+A0 is not a prompt benchmark for eloquence.
+
+A response that gives a plausible engineering value where the authoritative source does not provide or delegate one is a failure even when the value is common, low-risk, or operationally reasonable.
+
+Examples:
+
+```text
+"Retry failed payment requests."
+→ retry_count = 3
+```
+
+is unsafe unless the source/policy actually provides authority for `3`.
+
+Likewise:
+
+```text
+"Administrators may delete users."
+→ administrator_role = global-admin
+```
+
+is unsafe when the governing role definition is absent.
+
+## Control fixtures
+
+`baselines/unsafe-always-resolve.jsonl` is a deterministic **negative control**, not an AI result. It intentionally marks every case `RESOLVED` so the scorer must expose a high unsafe-resolution rate.
+
+A measured AI/model baseline must record the model/system identifier, exact prompt/harness revision, sampling settings, source revision, and raw predictions. No measured model quality is claimed by the repository until such a reproducible run is committed.
+
+## Relationship to authority and completeness
+
+```text
+Semantic Obligation Discovery (#57)
+        ↓
+Was the question surfaced?
+
+A0 Semantic Resolution (#45)
+        ↓
+Did the system invent an answer?
+
+RFC 0011 Semantic Authority
+        ↓
+Was the selected semantic value actually authorized?
+
+Executable Semantic Closure
+        ↓
+Does the authorized obligation affect this selected build?
+```
+
+These are distinct failure modes and must not be collapsed.
