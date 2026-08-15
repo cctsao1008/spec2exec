@@ -11,5 +11,14 @@
     "request_timeout_ms": 2000,
     "idempotency_requirement": true,
     "terminal_failure_behavior": "surface_failure"
+  },
+  "provenance": {
+    "retry_count": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"ai-proposal","source_supports_value":false},
+    "retry_on_http_500": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"ai-proposal","source_supports_value":false},
+    "retry_on_timeout": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"ai-proposal","source_supports_value":false},
+    "backoff_policy": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"ai-proposal","source_supports_value":false},
+    "request_timeout_ms": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"ai-proposal","source_supports_value":false},
+    "idempotency_requirement": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"semantic-obligation","source_supports_value":false},
+    "terminal_failure_behavior": {"source_artifact":"examples/payment-retry/requirement.json","source_requirement_id":"PAY-RETRY-001","source_locator":"/text","origin":"ai-proposal","source_supports_value":false}
   }
 }
