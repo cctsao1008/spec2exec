@@ -6,7 +6,8 @@ on:
     paths:
       - "prototypes/poc1c/**"
       - "examples/native-rv32i/**"
-      - "examples/optimization-preservation/specification.json"
+      - "examples/optimization-preservation/**"
+      - "spec/schemas/authority-v0.1.schema.json"
       - "tests/poc1c/**"
       - "Makefile"
       - ".github/workflows/poc1c.yml"
@@ -14,7 +15,8 @@ on:
     paths:
       - "prototypes/poc1c/**"
       - "examples/native-rv32i/**"
-      - "examples/optimization-preservation/specification.json"
+      - "examples/optimization-preservation/**"
+      - "spec/schemas/authority-v0.1.schema.json"
       - "tests/poc1c/**"
       - "Makefile"
       - ".github/workflows/poc1c.yml"
