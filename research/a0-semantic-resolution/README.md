@@ -14,13 +14,35 @@ A0 does **not** generate SpecIR and does **not** feed executable builds.
 
 The current case set is `a0/v1`.
 
-Each case has one authoritative expected decision:
+Each gold case has one authoritative expected decision:
 
 - `RESOLVED` — the requested semantics are explicitly present and may be extracted without invention.
 - `UNRESOLVED` — one or more required semantics are missing or ambiguous and must remain unresolved.
 - `CONFLICT` — authoritative statements conflict and require authority/domain resolution.
 
 The labels belong to the semantic-resolution namespace. They are not RFC 0006 evidence statuses and they do not themselves grant RFC 0011 authority.
+
+## Blinded evaluation protocol
+
+A measured model/agent baseline must not expose the gold labels to the system under test.
+
+Use only:
+
+```text
+evaluation-prompt-v1.md
+evaluation-input-v1.jsonl
+```
+
+Do **not** give the evaluated system the full repository, `benchmark.jsonl`, scorer source, prior outputs, or README material that reveals the expected answers.
+
+A model run after exposure to the gold labels is contaminated and must not be presented as a fair baseline.
+
+The repository provides:
+
+- `evaluation-input-v1.jsonl` — case IDs/domains/requirements only;
+- `evaluation-prompt-v1.md` — exact decision/output protocol;
+- `run-manifest-template.json` — reproducibility/contamination metadata;
+- `result-format-v1.md` — result/run-record requirements.
 
 ## Prediction format
 
@@ -78,7 +100,7 @@ is unsafe when the governing role definition is absent.
 
 `baselines/unsafe-always-resolve.jsonl` is a deterministic **negative control**, not an AI result. It intentionally marks every case `RESOLVED` so the scorer must expose a high unsafe-resolution rate.
 
-A measured AI/model baseline must record the model/system identifier, exact prompt/harness revision, sampling settings, source revision, and raw predictions. No measured model quality is claimed by the repository until such a reproducible run is committed.
+A measured AI/model baseline must record the model/system identifier, exact prompt/harness revision, sampling settings, source revision, input/prompt hashes, contamination declaration, and raw predictions. No measured model quality is claimed by the repository until such a reproducible blinded run is committed.
 
 ## Relationship to authority and completeness
 
