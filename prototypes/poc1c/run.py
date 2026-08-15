@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from pathlib import Path
-from pipeline import build, generate, run_qemu, run_runtime_sensitivity
+from pipeline_authority import build, generate, run_qemu, run_runtime_sensitivity
 
 p = argparse.ArgumentParser()
 p.add_argument("mode", choices=["generate", "build", "all"])
