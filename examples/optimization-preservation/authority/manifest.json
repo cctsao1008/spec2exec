@@ -1,0 +1,29 @@
+{
+  "anchor_set": [
+    {
+      "anchor_id": "ANCHOR-POC1C-PROJECT",
+      "component": "anchor",
+      "revision": "1"
+    }
+  ],
+  "components": {
+    "anchor": {
+      "path": "anchor.json",
+      "sha256": "bbbe946031e2a9af739b7284a7df68758302b8315606b45f1e403e9e296a4b20"
+    },
+    "closure": {
+      "path": "closure.json",
+      "sha256": "ef5ca9640c486b95339067b79c27864ae8b859774a31d9b869c622bbabd58b8e"
+    },
+    "obligations": {
+      "path": "obligations.json",
+      "sha256": "49aac4ed65a405bf678304547ebff63cff986d0e46d5e52304831334f94fd778"
+    },
+    "policies": {
+      "path": "policies.json",
+      "sha256": "86357168ee50970ac6d64205a1f835b313bf9c4cca05e8073538eeafd478c35d"
+    }
+  },
+  "record_set_id": "AUTHSET-POC1C-001",
+  "schema": "spec2exec.authority-manifest/v0.1"
+}
