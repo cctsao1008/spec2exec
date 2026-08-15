@@ -1,6 +1,6 @@
 # RFC 0012 — Lifecycle-Aware Trust Graph
 
-- **Status:** Draft / Proposed — Revision 2, closure-amended candidate
+- **Status:** Draft / Proposed — Revision 2, projection-policy-hardened closure candidate
 - **Issue:** #61
 - **Scope:** first-class assumptions, dependency completeness, defeaters/residual doubt, typed dependency edges, deterministic trust invalidation, projection-policy-gated context-bound current-trust projection, and re-assurance across revision-bound claims and artifacts
 
@@ -15,7 +15,7 @@ This RFC proposes a cross-cutting **Trust Graph** that makes four questions firs
 1. **Dependency completeness:** what does a gated property claim materially depend on, and what basis supports the claim that material dependencies were not silently omitted?
 2. **Assumption lifecycle:** what claims depend on an assumption, under which bound context, and what happens when its support/basis/context changes?
 3. **Defeaters / residual doubt:** what concrete reasons could defeat a trust claim, which have been resolved, and which remain explicit limitations under an authorized residual-disposition decision?
-4. **Trust invalidation / re-assurance:** when a requirement, authority basis, assumption, TCB component, tool, context, dependency, or artifact changes — or when new adverse knowledge is discovered — which property claims remain current, which require revalidation, and which historical evidence may still be reused?
+4. **Trust invalidation / re-assurance:** when a requirement, authority basis, assumption, TCB component, tool, context, policy, dependency, or artifact changes — or when new adverse knowledge is discovered — which property claims remain current, which require revalidation, and which historical evidence may still be reused?
 
 The Trust Graph is **not a new serial compiler stage** and does not replace the current executable semantic path.
 
@@ -119,7 +119,18 @@ N-04  DependencyCompletenessClaim recursion termination was unstated
 N-05  EvaluationContext participation as a dependency source was unstated
 ```
 
-This closure-amended Revision 2 incorporates those items. It remains Draft until one final narrow closure review confirms that the amendments close N-01 through N-05 without introducing a new blocker or trust bypass.
+The first closure-amended Revision 2 incorporated N-01 through N-05. A subsequent final narrow review found N-02 through N-05 closed, but kept N-01 partially open and identified two new high-severity issues:
+
+```text
+NEW-HIGH-01  ProjectionPolicy was mandatory but not lifecycle-active;
+             a policy revision could leave an old CurrentTrustProjection current.
+
+NEW-HIGH-02  ProjectionPolicy adoption / baseline coverage-setting was not
+             authority-bound; an under-specified policy could reproduce the
+             effect of a forbidden completeness narrowing without an RFC 0011 path.
+```
+
+This projection-policy-hardened closure candidate addresses those two issues without reopening the already-closed N-02 through N-05 semantics. It remains Draft pending one final micro-closure review of the ProjectionPolicy lifecycle/authority boundary and regression check.
 
 ## Motivation
 
@@ -325,9 +336,28 @@ This includes, where authority-relevant:
 - resolving a defeater whose resolution changes authority-relevant use;
 - revalidating an authority relationship;
 - selecting a context/configuration that changes applicability or gating;
+- adopting or revising a ProjectionPolicy for a gated action when that policy can determine, relax, narrow, or otherwise permit current use;
 - waiving or narrowing a blocking condition.
 
 A Trust Graph evaluator may check these records. It does not manufacture authority.
+
+### 8. Load-bearing gate inputs are lifecycle-disciplined
+
+Any record whose value, revision, applicability, or disposition can change whether a gated `CurrentTrustProjection` permits current use is a **load-bearing gate input** for that projection.
+
+A load-bearing gate input must be:
+
+```text
+explicitly bound to the projection or to a bound dependency chain
+revision/content bound
+attributable to its producer/adopting party
+represented as a lifecycle dependency when its change can alter current use
+subject to invalidation when its relevant state/revision changes
+authority-bound under RFC 0011 when adopting/changing it can permissively
+relax, narrow, waive, or otherwise determine gated use
+```
+
+This rule applies to ProjectionPolicy and also constrains future lifecycle-gating records. It does not turn every project setting into semantic authority: the authority requirement applies to gate inputs whose adoption/change can permissively determine current use.
 
 ## Logical record graph
 
@@ -413,7 +443,7 @@ The context is content-addressed or otherwise revision-bound.
 
 When context selection can change which semantic obligations, authority policies, constraints, or exclusions apply, the selection is authority-relevant under RFC 0011.
 
-An `EvaluationContext` may itself participate as a dependency source when facts represented by that context determine applicability or current trust. This permits context changes to propagate through ordinary dependency semantics without turning RFC 0012 into a general environment-model framework.
+An `EvaluationContext` **participates as a dependency source when** facts represented by that context are material to applicability or current trust. This permits context changes to propagate through ordinary dependency semantics without turning RFC 0012 into a general environment-model framework.
 
 ## TrustClaim
 
@@ -521,6 +551,7 @@ Initial dependency kinds may include concepts equivalent to:
 ```text
 SEMANTIC_DEPENDS_ON
 AUTHORITY_DEPENDS_ON
+PROJECTION_POLICY_DEPENDS_ON
 ASSUMES
 EVIDENCE_DEPENDS_ON
 TCB_DEPENDS_ON
@@ -562,6 +593,9 @@ artifact/source hash binding
 
 RFC 0011 authority dependency
         → AUTHORITY_DEPENDS_ON
+
+ProjectionPolicy + revision bound into CurrentTrustProjection
+        → PROJECTION_POLICY_DEPENDS_ON
 ```
 
 Mechanically derived edges contribute to dependency completeness but do not prove that no other material edge exists.
@@ -606,11 +640,11 @@ content-addressed artifact-edge completeness
 
 The architecture prefers a visible weak completeness basis over an invisible assumption of completeness.
 
-A `DependencyCompletenessClaim` is itself an RFC 0006 evidence-bearing lifecycle record. It is **not recursively gated by another DependencyCompletenessClaim**; its method, scope, exclusions, unresolved areas, and evidence status/profile are the explicit basis at which this completeness recursion terminates.
+A `DependencyCompletenessClaim` is itself an RFC 0006 evidence-bearing lifecycle record. It is **not recursively gated by another DependencyCompletenessClaim**; its method, scope, exclusions, unresolved areas, and evidence status/profile are the explicit basis at which this completeness recursion terminates. It remains subject to ordinary dependency/cycle analysis; this recursion boundary does not exempt it from `EVIDENTIARY_SELF_SUPPORT` handling.
 
 For gated current use, the mere existence of a DependencyCompletenessClaim is insufficient. Its declared coverage must satisfy the applicable `ProjectionPolicy` for the target property and EvaluationContext. Known exclusions or unresolved areas that fall inside policy-required dependency coverage fail closed unless that policy explicitly permits a residual disposition and the corresponding RFC 0011 authority binding is valid.
 
-A producer cannot self-authorize narrower completeness coverage merely by declaring an exclusion. Declared exclusions, narrowed coverage, or other changes that reduce a policy-defined blocking condition are authority-relevant under principle 7 when they affect semantic/gating applicability and require the corresponding RFC 0011 authority basis.
+A producer cannot self-authorize narrower completeness coverage merely by declaring an exclusion. A `ProjectionPolicy` likewise may not omit a dependency class or relation already established as material for the gated property and EvaluationContext merely by declining to require that class. Such omission is a permissive narrowing of a blocking condition and is authority-relevant under principle 7; it requires the corresponding RFC 0011 authority basis and explicit rationale. This rule does not claim universal real-world dependency knowledge: it applies to dependency classes/relations already established as material by accepted semantics, existing Trust Graph records, prior policy, or another traceable basis.
 
 ### Completeness defeater
 
@@ -624,7 +658,7 @@ DefeaterDisposition.OPEN
 
 No special evidence class or confidence score is introduced.
 
-A `DEPENDENCY_COMPLETENESS` defeater is **non-waivable by default**. It may be dispositioned as `ACCEPTED_RESIDUAL` only when the applicable ProjectionPolicy explicitly authorizes residual completeness uncertainty for that exact property and EvaluationContext, the RFC 0011 authority path covers that decision, and a mandatory review trigger is recorded. Merely holding a general `DISCRETION` grant does not make dependency-completeness uncertainty waivable unless the applicable policy delegates that specific residual disposition.
+A `DEPENDENCY_COMPLETENESS` defeater is **non-waivable by default**. It may be dispositioned as `ACCEPTED_RESIDUAL` only when the applicable ProjectionPolicy explicitly authorizes residual completeness uncertainty for that exact property and EvaluationContext, the RFC 0011 authority path covers that decision, and a mandatory review trigger is recorded. Merely holding a general `DISCRETION` grant does not make dependency-completeness uncertainty waivable unless the applicable ProjectionPolicy identifies a valid RFC 0011 authority path covering that specific residual disposition.
 
 ### Three distinct absence/unknown cases
 
@@ -770,6 +804,7 @@ Examples:
 ```text
 Requirement revision changed
 AuthorityPolicy superseded
+ProjectionPolicy revision changed or superseded
 AuthorityAnchor protection basis changed
 Assumption source/API contract changed
 Verifier revision changed
@@ -779,6 +814,10 @@ Generated artifact changed
 Deployment configuration changed
 Prior provenance record discovered incorrect
 ```
+
+### ProjectionPolicy revision
+
+An applicable `ProjectionPolicy` is a lifecycle dependency source for every `CurrentTrustProjection` computed under it. A change to the applicable ProjectionPolicy or its revision raises a `REVISION_CHANGE` InvalidationEvent against dependent projections. Any prior CurrentTrustProjection bound to the superseded policy revision becomes non-current pending re-evaluation, even when artifact bytes, evidence, authority records, and EvaluationContext are otherwise unchanged.
 
 ### TCB/tool defect discovery
 
@@ -914,6 +953,8 @@ A logical ProjectionPolicy identifies at least:
 projection_policy_id / revision
 gated action / decision
 applicability conditions / EvaluationContext constraints
+adopting party / attribution
+RFC 0011 authority path / AuthorityAnchor reference for adoption
 required TrustClaim properties
 for each required property:
   required dependency kinds / source-record classes
@@ -923,17 +964,25 @@ for each required property:
   allowed property-specific composition rules
 residual-disposition policy
 non-waivable defeater kinds
-authority references for any authority-bearing waiver/residual clauses
+authority references for authority-bearing waiver/residual/narrowing clauses
 source revision
 ```
 
 > **Every gated CurrentTrustProjection requires an applicable ProjectionPolicy. In the absence of an applicable policy, the projection fails closed.**
 
+A ProjectionPolicy used for a gated action is a load-bearing gate input. Its adoption and revision must be attributable and revision-bound. Because the policy can determine whether current use is permitted, adoption of the policy and any revision that permissively changes required properties, dependency coverage, evidence/reuse requirements, composition rules, residual permissions, or non-waivable conditions must bind an applicable RFC 0011 authority path terminating at a declared AuthorityAnchor. The ProjectionPolicy points to that authority; it does not create it.
+
 For each policy-required property, the ProjectionPolicy determines which dependency classes the DependencyCompletenessClaim must cover and which RFC 0006 evidence profiles or methods are acceptable for reuse-permitting conclusions such as `AssumptionLifecycle.BASIS_CURRENT`, `DefeaterDisposition.RESOLVED`, and `ImpactDisposition.NO_MATERIAL_EFFECT`.
 
-The ProjectionPolicy may choose a deliberately bounded/weak completeness standard for a research POC, but that weakness must remain explicit in the policy and in the bound completeness claim. A ProjectionPolicy does not transform weak evidence into strong evidence and must not collapse RFC 0006 classes into a scalar ordering.
+The ProjectionPolicy may choose a deliberately bounded/weak completeness standard for a research POC, but that weakness must remain explicit in the policy and in the bound completeness claim and must be authorized for the gated action under the preceding rule. A ProjectionPolicy does not transform weak evidence into strong evidence and must not collapse RFC 0006 classes into a scalar ordering.
 
-Policy clauses that merely define lifecycle gate requirements do not create semantic authority. Any clause that would authorize an exception, waiver, narrowed blocking condition, or residual use still requires the applicable RFC 0011 authority path under principle 7. The ProjectionPolicy points to that authority; it does not replace it.
+Policy clauses that only tighten lifecycle gate requirements do not manufacture semantic authority, but the adopted policy remains attributable, revision-bound, and lifecycle-active. Any clause or revision that authorizes an exception, waiver, residual use, or permissively omits/narrows a blocking condition requires the applicable RFC 0011 authority path under principle 7. Setting required dependency coverage below a dependency class or relation already established as material for the gated property/context is such a permissive narrowing, not merely a neutral gate-requirement definition.
+
+### ProjectionPolicy lifecycle
+
+`ProjectionPolicy + revision` is bound into every dependent CurrentTrustProjection and induces a `PROJECTION_POLICY_DEPENDS_ON` relation. A policy revision is evaluated as a lifecycle event even when artifact bits and EvaluationContext do not change.
+
+A previously computed projection cannot remain current merely because it still references policy v1 after v2 becomes the applicable policy. It becomes non-current pending evaluation under the new applicable policy. Historical v1 projections remain historical records; their current-use validity does not carry forward automatically.
 
 ## Gated current-trust projection
 
@@ -951,6 +1000,7 @@ defeater set + dispositions
 impact evaluations
 applicable authority references
 ProjectionPolicy + revision
+ProjectionPolicy adoption authority / attribution
 source revision
 ```
 
@@ -959,6 +1009,8 @@ A projection must not collapse property-scoped states into an undifferentiated a
 A gated current-trust projection fails closed when:
 
 - no applicable ProjectionPolicy exists for the gated action / property / EvaluationContext;
+- the ProjectionPolicy adoption/authority binding required above is absent, invalid, stale, or outside scope;
+- the projection is bound to a ProjectionPolicy revision that is no longer the applicable current policy without a recorded re-evaluation basis;
 - a policy-required property has an open material defeater;
 - a policy-required property has no dependency-completeness basis;
 - a dependency-completeness basis does not cover the dependency kinds/source classes the ProjectionPolicy requires for that property/context;
@@ -1014,6 +1066,7 @@ new assumption validation
 new defeater resolution
 new dependency-completeness claim
 new context binding
+new ProjectionPolicy evaluation / authority binding
 ```
 
 A ReAssuranceRecord is not a new evidence class and does not assert more than its component claims/evidence support.
@@ -1064,7 +1117,19 @@ But the executable's current semantic-authority property claim
 cannot be reused until affected upstream authority/semantic claims are current
 ```
 
-An unchanged SHA is strong evidence that the bits did not change. It is not by itself evidence that the **meaning, authority context, dependency completeness, assumptions, or deployment context** remained current.
+Similarly:
+
+```text
+ProjectionPolicy v1 → v2
+        ↓
+prior CurrentTrustProjection bound to v1 becomes non-current
+        ↓
+artifact / evidence / context may remain unchanged
+        ↓
+projection must be re-evaluated under v2 and its authority binding
+```
+
+An unchanged SHA is strong evidence that the bits did not change. It is not by itself evidence that the **meaning, authority context, ProjectionPolicy, dependency completeness, assumptions, or deployment context** remained current.
 
 ## Worked example A — payment retry and idempotency
 
@@ -1123,6 +1188,8 @@ relevant authority constraint/evidence
 A DependencyCompletenessClaim for this POC explicitly states which dependency classes were considered. It does **not** claim that all real payment semantics are complete.
 
 The applicable ProjectionPolicy must state which dependency classes are required for the `PAYMENT-RETRY-SAFETY` projection and what evidence/reuse profiles are acceptable. A completeness claim that explicitly excludes a policy-required provider/environment dependency does not become adequate merely because the exclusion is visible; the projection remains blocked unless the policy explicitly permits that residual completeness uncertainty under the RFC 0011-bound exception rule.
+
+Likewise, the ProjectionPolicy cannot reproduce that exclusion by silently declining to require an `ASSUMES` dependency already established as material for `PAYMENT-RETRY-SAFETY`. Such permissive narrowing requires an explicit RFC 0011 authority basis and rationale; the policy cannot self-authorize weaker coverage.
 
 Known out-of-scope semantic questions include, unless separately represented:
 
@@ -1281,6 +1348,7 @@ Possible defeaters:
 - dependency-completeness basis missing
 - dependency-completeness basis does not satisfy ProjectionPolicy coverage
 - material assumption edge may be omitted
+- ProjectionPolicy permissively omits an already-established material dependency
 - evidentiary self-support cycle
 
 Claim: executable carries accepted semantics
@@ -1371,14 +1439,16 @@ If this RFC is accepted, the intended invariants are:
 12. **The Trust Graph creates no semantic authority.**
 13. **Lifecycle/impact state is property-scoped and context-bound.** Artifact-wide labels are projections only.
 14. **Every current-trust projection binds the exact EvaluationContext in which it was computed.** Use in a materially different/unbound context fails closed pending impact evaluation.
-15. **An unchanged artifact hash does not by itself establish unchanged semantic authority, assumptions, dependency completeness, or current trust context.**
+15. **An unchanged artifact hash does not by itself establish unchanged semantic authority, ProjectionPolicy, assumptions, dependency completeness, or current trust context.**
 16. **Knowledge changes can invalidate current reliance even when artifact/tool revisions are unchanged.**
 17. **The invalidation engine terminates on cycles.** Evidentiary self-support cycles are surfaced as defeaters unless an out-of-cycle basis resolves them.
 18. **Re-assurance may selectively reuse valid evidence but must bind reused/regenerated claims to the new dependency and EvaluationContext.**
 19. **Trust Graph state spans the executable semantic path; it is not inserted as a misleading serial compiler stage.**
 20. **RFC 0006 remains the only normative owner of evidence classes; RFC 0011 remains the normative owner of semantic authority.**
-21. **Every gated CurrentTrustProjection requires an applicable ProjectionPolicy.** The policy declares required property coverage, dependency-class completeness coverage, and acceptable evidence profiles/methods for reuse-permitting conclusions; absent or inadequate policy coverage fails closed.
+21. **Every gated CurrentTrustProjection requires an applicable, attributable, revision-bound ProjectionPolicy with the required RFC 0011 adoption authority.** The policy declares required property coverage, dependency-class completeness coverage, and acceptable evidence profiles/methods for reuse-permitting conclusions; absent or inadequate policy coverage fails closed. A policy may not self-authorize omission of a dependency class/relation already established as material.
 22. **Record supersession is lifecycle-active.** Creating a RecordSupersession raises `RECORD_CORRECTION` invalidation for known dependents and makes prior projections using the superseded basis non-current pending impact evaluation.
+23. **ProjectionPolicy is lifecycle-active.** ProjectionPolicy revision/supersession raises `REVISION_CHANGE` invalidation for dependent CurrentTrustProjection records and makes prior projections bound to the old applicable policy non-current pending re-evaluation.
+24. **Load-bearing gate inputs are lifecycle-disciplined.** Any record whose value/revision/applicability/disposition can change whether a gated projection permits current use must be bound, revision/content addressed, attributable, dependency-represented where material, invalidation-active, and RFC 0011 authority-bound when its adoption/change can permissively determine current use.
 
 ## Minimum implementation experiment after architecture acceptance
 
@@ -1414,6 +1484,9 @@ Mandatory negative controls should include:
 
 ```text
 missing ProjectionPolicy
+ProjectionPolicy with missing/invalid RFC 0011 adoption authority
+ProjectionPolicy permissively omitting an already-established material dependency
+ProjectionPolicy v1 → v2 while cached v1 projection is presented as current
 missing completeness basis
 completeness basis with policy-inadequate coverage
 missing assumption edge / incomplete discovery declaration
@@ -1432,32 +1505,30 @@ A useful falsification criterion is:
 
 ## Open closure questions
 
-Before promotion from Draft, the final closure review should answer only the remaining amendment questions:
+Before promotion from Draft, the final micro-closure review should answer only:
 
-1. Does mandatory ProjectionPolicy existence close the vacuous-gate path identified as N-01?
-2. Does policy-required completeness coverage prevent a narrow-but-visible DependencyCompletenessClaim from being treated as adequate without authority/policy approval?
-3. Is `DEPENDENCY_COMPLETENESS` now non-waivable by default with a sufficiently narrow exceptional path?
-4. Does RecordSupersession now invalidate dependent prior CurrentTrustProjection records rather than only influencing future recomputation?
-5. Is the completeness-recursion termination rule explicit enough for schema implementation?
-6. Is EvaluationContext participation as a dependency source clear without expanding scope into a general environment model?
-7. Did these closure amendments introduce any new blocker, authority bypass, or silent stale-trust path?
+1. Is `ProjectionPolicy` now lifecycle-active such that a policy revision cannot leave an old dependent CurrentTrustProjection current?
+2. Is ProjectionPolicy adoption/revision sufficiently bound to RFC 0011 where the policy can permissively determine gated use?
+3. Can a ProjectionPolicy still reproduce a forbidden completeness narrowing merely by declining to require an already-established material dependency class/relation?
+4. Is the load-bearing gate-input invariant coherent without turning unrelated project configuration into semantic authority?
+5. Did these changes directly regress any previously closed N-02 through N-05 behavior?
+6. Did this hardening introduce any new blocker, semantic-authority bypass, or silent stale-trust path?
 
 ## Status / next step
 
-This RFC is intentionally **Draft / Proposed — Revision 2, closure-amended candidate**.
+This RFC is intentionally **Draft / Proposed — Revision 2, projection-policy-hardened closure candidate**.
 
-The Revision 2 closure review found all Revision 1 mapped findings closed and recommended acceptance after minor changes. Those changes are now incorporated for N-01 through N-05.
+The prior final narrow review judged N-02 through N-05 closed and N-01 partially closed. It identified two remaining high-severity issues confined to ProjectionPolicy lifecycle and adoption/coverage authority. This candidate addresses those issues and leaves the already-closed N-02 through N-05 mechanisms unchanged except for wording clarifications.
 
-The next step is one **narrow final closure review**, not another architecture redesign. It should verify:
+The next step is one **final micro-closure review**, not another broad architecture review. It should verify:
 
 ```text
-N-01 ProjectionPolicy / coverage adequacy       CLOSED?
-N-02 completeness residual default             CLOSED?
-N-03 supersession invalidation                 CLOSED?
-N-04 completeness recursion termination        CLOSED?
-N-05 EvaluationContext dependency-source rule  CLOSED?
+NEW-HIGH-01 ProjectionPolicy lifecycle / stale policy projection   CLOSED?
+NEW-HIGH-02 ProjectionPolicy adoption / permissive narrowing       CLOSED?
 
-Any new blocker or trust bypass introduced?    NO?
+Load-bearing gate-input discipline coherent?                        YES?
+N-02 through N-05 regressed?                                        NO?
+Any new blocker / authority bypass / silent stale-trust path?       NO?
 ```
 
-No executable Trust Graph implementation should be merged solely on the basis of this draft. If the final closure review passes, RFC 0012 may be promoted to an Accepted lifecycle-trust baseline and a separate bounded implementation Issue may be opened.
+No executable Trust Graph implementation should be merged solely on the basis of this draft. If the micro-closure review passes, RFC 0012 may be promoted to an Accepted lifecycle-trust baseline and a separate bounded implementation Issue may be opened.
