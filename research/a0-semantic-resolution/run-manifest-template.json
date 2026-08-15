@@ -1,0 +1,22 @@
+{
+  "schema": "spec2exec.a0-run/v1",
+  "benchmark_version": "a0/v1",
+  "evaluation_protocol": "blinded",
+  "system_id": "REPLACE_ME",
+  "system_version": "REPLACE_ME",
+  "provider_or_runtime": "REPLACE_ME",
+  "harness_revision": "REPLACE_ME",
+  "evaluation_prompt_sha256": "REPLACE_ME",
+  "evaluation_input_sha256": "REPLACE_ME",
+  "sampling": {
+    "temperature": "REPLACE_ME_OR_NOT_APPLICABLE",
+    "seed": "REPLACE_ME_OR_NOT_APPLICABLE",
+    "other_controls": "REPLACE_ME_OR_NOT_APPLICABLE"
+  },
+  "source_revision": "REPLACE_ME",
+  "predictions_sha256": "REPLACE_ME",
+  "contamination": {
+    "gold_labels_exposed_to_system": false,
+    "notes": ""
+  }
+}
