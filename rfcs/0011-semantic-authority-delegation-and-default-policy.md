@@ -1,8 +1,8 @@
 # RFC 0011 — Semantic Authority, Delegation, and Default Policy
 
-- **Status:** Draft / Proposed — closure-reviewed; awaiting #54 reconciliation before acceptance
+- **Status:** Accepted / Semantic Authority Baseline
 - **Issue:** #53
-- **Dependency:** #54 must reconcile evidence vocabulary and RFC lifecycle before this RFC is promoted to Accepted
+- **Evidence dependency:** Resolved by RFC 0006 / #54
 - **Scope:** semantic obligations, authority trust anchors, delegated defaults, authority validity, applicability, provenance, attribution, revision/invalidation, completeness, and fail-closed acceptance before SpecIR synthesis
 
 ## Summary
@@ -19,11 +19,11 @@ The central rule is:
 
 The authority chain itself is not infinitely provable. Spec2Exec explicitly declares where authority derivation stops and trust begins. The declared anchor set and the mechanism that protects/controls anchor declarations are therefore part of the **Authority TCB**.
 
-This RFC refines RFC 0010 and, once Accepted, supersedes the mixed authority-state model in Draft RFC 0005. Evidence-strength vocabulary remains owned by RFC 0006 / issue #54 rather than by this RFC.
+RFC 0006 owns evidence strength and evidence profiles. This RFC owns semantic-authority state.
 
-## Closure-review disposition
+## Review history
 
-The hostile architecture review of the first draft returned **PASS WITH MAJOR FINDINGS**. Revision 2 introduced AuthorityAnchors, the Authority TCB, typed authority state, bounded grant kinds, policy-controlled self-authorization, conservative executable semantic closure, extraction provenance, immutable acceptance/current validity separation, composition constraints, and a deterministic gate that produces no authority.
+The first hostile architecture review returned **PASS WITH MAJOR FINDINGS**. Revision 2 introduced AuthorityAnchors, Authority TCB, typed authority state, bounded grant kinds, policy-controlled self-authorization, conservative executable semantic closure, extraction provenance, immutable acceptance/current validity separation, composition constraints, and a deterministic gate that produces no authority.
 
 The closure review of revision 2 returned:
 
@@ -32,16 +32,9 @@ PASS WITH MINOR FINDINGS
 READY FOR #54 RECONCILIATION
 ```
 
-The closure review identified two remaining completeness risks rather than a new architecture defect:
-
-1. a candidate could be omitted before gating if `obligation-hood` or closure exclusion were treated as untrusted free metadata;
-2. an obligation could bind only a favorable authority grant if the evaluator did not discover the complete set of potentially applicable authority grants.
-
-This revision closes those residuals with explicit **semantic completeness** and **authority completeness** invariants.
+The final amendments close the two remaining omission risks with explicit **semantic completeness** and **authority completeness** rules.
 
 ## Architecture boundary
-
-Unresolved or invalid authority state remains before executable SpecIR.
 
 ```text
 Source Artifacts / Candidate Frontends
@@ -75,9 +68,9 @@ Semantic Synthesis
 SpecIR
 ```
 
-`UNRESOLVED`, `CONFLICT`, unauthorized, revoked, expired, invalidated, or potentially stale obligations in the executable semantic closure fail closed before SpecIR synthesis.
+Unresolved, conflicting, unauthorized, revoked, expired, invalidated, or potentially stale obligations in the executable semantic closure fail closed before SpecIR synthesis.
 
-This RFC does **not** move those states into executable SpecIR by default.
+These states do **not** belong in executable SpecIR by default.
 
 ## Candidate-semantics sources and extraction
 
@@ -111,19 +104,17 @@ extraction method
 normalization / transformation information
 ```
 
-Where practical, `source_locator` should be machine-checkable.
+A provenance locator does not itself establish that the source supports the extracted value. The extraction/support claim uses RFC 0006 evidence.
 
-A provenance record stating `clause 4.2` does not establish that clause 4.2 supports the extracted value. The extraction/support claim carries evidence under RFC 0006.
-
-Lossy normalization, merging, or rewriting remains traceable to the contributing source spans rather than silently becoming authoritative provenance.
+Lossy normalization, merging, or rewriting remains traceable to contributing source spans rather than silently becoming authoritative provenance.
 
 ## Semantic obligation
 
-A **semantic obligation** is the authority-gated unit of this RFC:
+A **semantic obligation** is:
 
 > An authority-relevant decision or constraint whose alternatives can change the accepted observable behavior, contract, configuration meaning, or verification obligations of the selected build.
 
-Typical semantic obligations include:
+Typical obligations include:
 
 ```text
 motor cutoff threshold
@@ -136,17 +127,15 @@ configuration meaning
 contract clause
 ```
 
-Semantics-preserving choices such as register allocation, temporary-register selection, equivalent instruction scheduling, assembler formatting, and non-semantic naming are not authority obligations merely because they change implementation details.
+Semantics-preserving implementation choices such as register allocation, temporary-register selection, equivalent instruction scheduling, assembler formatting, and non-semantic naming are not authority obligations merely because they change implementation details.
 
 ### Obligation-hood is authority-relevant
 
-Determining that a candidate subject **is not** a semantic obligation can remove it from authority gating. That determination is therefore authority-relevant whenever exclusion could widen what becomes executable without authority.
-
-Normative rule:
+Determining that a candidate subject is *not* a semantic obligation can remove it from gating.
 
 > **Obligation-hood and exclusion from the executable semantic closure require an authorized basis or a deterministic derivation from already authorized data. An untrusted source may not silently classify behavior-determining semantics as non-obligatory.**
 
-An unbasis'd exclusion is treated conservatively as in-closure and fails closed with the closure/authority machinery.
+An unbasis'd exclusion is treated conservatively as in-closure.
 
 ## Typed state model
 
@@ -164,9 +153,7 @@ Proposal origin is recorded separately. Derived obligations identify their deriv
 
 ### Authority validity
 
-`authority_validity` is a **computed evaluation state for an exact evaluation context**. It is not an immutable truth stored on the SemanticObligation.
-
-Candidate values are:
+`authority_validity` is a **computed evaluation state for an exact evaluation context**, not an immutable field of the SemanticObligation.
 
 ```text
 AUTHORIZED
@@ -186,7 +173,7 @@ NOT_ACCEPTED
 ACCEPTED
 ```
 
-An `AcceptanceRecord` is an immutable historical event. Current validity is evaluated separately.
+An `AcceptanceRecord` is immutable history. Current validity is evaluated separately.
 
 ### Applicability
 
@@ -200,7 +187,7 @@ UNKNOWN
 
 ### Attribution assurance
 
-Authority semantics and identity/attribution assurance are separate. An implementation represents:
+Authority semantics and identity/attribution assurance are separate. Implementations represent:
 
 ```text
 attribution mechanism
@@ -209,7 +196,7 @@ assurance descriptor or policy-defined acceptable mechanism
 supporting evidence
 ```
 
-A policy may define acceptable attribution mechanisms or a policy-specific partial order/profile. This RFC does not impose a universal scalar ranking.
+A policy may define acceptable attribution mechanisms or a policy-specific profile. There is no required universal scalar ranking.
 
 The first POC may honestly represent current acceptance as unauthenticated human-declared / VCS-attributed presence. Cryptographic signatures remain future work.
 
@@ -227,13 +214,9 @@ selected build / configuration classification
 closure inclusion / exclusion
 ```
 
-Normative rule:
-
 > **Any classification or scope decision that can widen authority-policy applicability or remove a candidate from authority gating is itself authority-relevant and requires an authorized basis or a deterministic derivation from already authorized data.**
 
-Untrusted classification may conservatively narrow or deny delegation. It must not widen delegation or silently remove a candidate from the gate.
-
-This rule is intentionally asymmetric: conservative escalation is safe; authority-reducing classification is not.
+Untrusted classification may conservatively narrow/deny delegation. It must not widen delegation or silently remove a candidate from the gate.
 
 ## Authority Trust Anchors and Authority TCB
 
@@ -241,8 +224,8 @@ An **AuthorityAnchor** is a revision-bound trust root whose authority is asserte
 
 The **Authority TCB** includes:
 
-1. the declared AuthorityAnchor records;
-2. the exact anchor-set enumeration and revision/hash;
+1. declared AuthorityAnchor records;
+2. exact anchor-set enumeration and revision/hash;
 3. the mechanism that controls/protects anchor declaration or modification.
 
 The architecture requires:
@@ -250,12 +233,12 @@ The architecture requires:
 1. every authority-binding path terminates at a declared AuthorityAnchor;
 2. the authority/delegation graph is acyclic;
 3. the anchor set is enumerable and revision-bound;
-4. the AcceptanceRecord enumerates the anchors and binds the anchor-set identity/hash;
-5. changing the anchor set or its protection/declaration basis creates a validity/re-acceptance obligation.
+4. the AcceptanceRecord enumerates anchors and binds the anchor-set identity/hash;
+5. changing the anchor set or protection/declaration basis creates a validity/re-acceptance obligation.
 
 A project may have multiple anchors, and an obligation may require multiple bindings rooted at different anchors.
 
-The evidence status attached to anchor assertions/protection belongs to RFC 0006. For the first POC, repository write-access governance and human-declared project ownership may be represented honestly as unauthenticated trust inputs rather than stronger authenticated approval.
+Evidence for anchor assertions/protection uses RFC 0006. The first POC may represent repository write-access governance and human-declared project ownership honestly as unauthenticated trust inputs.
 
 ## Authority policy and grant kinds
 
@@ -283,7 +266,7 @@ attribution requirement
 
 Unbounded phrases such as `use industry-standard defaults` are insufficient unless reduced to a pinned source, bounded set/range, pinned procedure, explicit constraints, or explicitly bounded discretionary scope.
 
-Grant kinds are:
+Grant kinds:
 
 ```text
 VALUE
@@ -306,19 +289,11 @@ Authorizes selection within an enumerated or mechanically bounded set/range.
 
 Authorizes/asserts an invariant over applicable obligations or their composition.
 
-Constraint satisfaction is separate from the authority of the constraint. A policy specifies an **acceptable evidence profile** under RFC 0006, for example allowed evidence statuses, method class, scope, and required subject bindings. The model does not assume a universal scalar `status >= X` ordering.
+Constraint satisfaction is separate from constraint authority. A policy specifies an **acceptable evidence profile** under RFC 0006, such as allowed statuses, required method class, scope, and subject bindings. No universal scalar `status >= X` ordering is assumed.
 
 ### PROCEDURE
 
-Authorizes a deterministic decision procedure and binds:
-
-```text
-procedure/tool identity
-version/revision
-bound inputs / input-source references
-constraints
-fail-closed fallback
-```
+Authorizes a deterministic decision procedure and binds tool identity, version/revision, input/source references, constraints, and fail-closed fallback.
 
 ### SOURCE
 
@@ -326,13 +301,9 @@ Delegates to a specific external source and pinned revision or an explicitly aut
 
 ### DISCRETION
 
-Delegates bounded judgement.
+Delegates bounded judgement. `DISCRETION` uses a closed or mechanically bounded subject/scope expression. Wildcard/open-ended authority such as `scope = *` is not valid for the first authority model.
 
-`DISCRETION` must use a closed or mechanically bounded subject/scope expression. Wildcard or open-ended authority such as `scope = *` is not a valid `DISCRETION` grant for the first authority model.
-
-The allowed scope, constraints, attribution requirements, and self-authorization rule must be explicit.
-
-For the first #53 implementation, self-authorizing `DISCRETION` is allowed only when the grant is anchor-direct because redelegation/depth > 1 is already outside the MVI. This is an MVI restriction, not a permanent universal architecture rule.
+For the first #53 implementation, self-authorizing `DISCRETION` is allowed only when anchor-direct because redelegation/depth > 1 is outside the MVI. This is an MVI restriction, not a permanent universal rule.
 
 ## Authority agent and self-authorization
 
@@ -342,11 +313,11 @@ An **authority agent** may be a human role, deterministic policy engine, rules e
 
 The architecture records `proposer` and `authority_agent` separately.
 
-Default rule:
+Default:
 
 > **If the same agent originated a candidate and also exercises authority over it, the gate fails closed unless the applicable policy explicitly permits self-authorization for that grant kind and bounded scope.**
 
-For `VALUE_SET` or a version-pinned deterministic `PROCEDURE`, the admissible semantics are already bounded by the authority source. For `DISCRETION`, self-authorization is more consequential and must be explicit and visible in acceptance/evidence.
+For `VALUE_SET` or a version-pinned `PROCEDURE`, admissible semantics are already bounded. For `DISCRETION`, same-agent proposal/authorization is more consequential and must be explicit and evidence-visible.
 
 Redelegation is fail-closed by default. The first implementation uses `redelegation_allowed = false` and maximum depth 1 beyond anchor/policy.
 
@@ -358,13 +329,11 @@ Separately, the evaluator must discover the complete set of authority grants tha
 
 ### Conservative grant discovery
 
-The gate must not rely only on authority bindings supplied by the obligation itself.
+The gate does not rely only on authority bindings supplied by the obligation.
 
-Normative rule:
+> **For each in-closure semantic obligation, authority evaluation conservatively discovers the complete set of grants whose declared subject, scope, applicability, and selected-build context can govern that obligation. Every potentially applicable grant is evaluated; grants rejected as inapplicable retain a deterministic or authorized inapplicability basis.**
 
-> **For each in-closure semantic obligation, authority evaluation must conservatively discover the complete set of grants whose declared subject, scope, applicability, and selected-build context can govern that obligation. Every potentially applicable grant is evaluated; grants rejected as inapplicable retain a deterministic or authorized inapplicability basis.**
-
-The evaluation therefore records at least:
+The evaluation records at least:
 
 ```text
 authority_bindings_used
@@ -373,9 +342,9 @@ authority_grants_applicable
 authority_grants_rejected_as_inapplicable + basis
 ```
 
-If applicable grants rooted at different anchors or policies contradict the selected value/rule/procedure and no authorized precedence rule resolves them, the result is an **authority conflict** and fails closed.
+If applicable grants rooted at different anchors/policies contradict the selected value/rule/procedure and no authorized precedence rule resolves them, the result is an **authority conflict** and fails closed.
 
-Suggested structured failure:
+Suggested failure category:
 
 ```text
 E_AUTH_AUTHORITY_CONFLICT
@@ -389,7 +358,7 @@ Full jurisdiction and precedence lattices remain deferred; fail-closed conflict 
 
 Authority gating is scoped to a **selected build, target, and configuration**.
 
-The selected configuration itself is authority-relevant when its choice can change which obligations are gated.
+The selected configuration itself is authority-relevant when its choice changes which obligations are gated.
 
 The **executable semantic closure** is the transitive set of semantic obligations and authority constraints that can affect accepted observable behavior, contract, configuration meaning, or verification obligations of the selected build.
 
@@ -399,7 +368,7 @@ The **executable semantic closure** is the transitive set of semantic obligation
 
 An under-approximated closure is an authority bypass.
 
-A `ClosureRecord` / AcceptanceRecord therefore identifies:
+A `ClosureRecord` / AcceptanceRecord identifies:
 
 ```text
 selected build / target / configuration
@@ -411,13 +380,11 @@ applicable authority constraints
 transitive dependencies
 ```
 
-Every exclusion that could reduce authority requirements requires an authorized or deterministic basis. The gate checks both the inclusion set **and the exclusion set**.
+The gate checks both the inclusion set and the exclusion set.
 
-For the first #53 implementation, multi-configuration closure analysis is not required. The MVI may use one explicit enumeration.
+For the first #53 implementation, multi-configuration closure analysis is not required; the MVI may use one explicit enumeration.
 
 ## Semantic completeness and authority completeness
-
-Two soundness conditions are normative:
 
 ### Semantic completeness
 
@@ -429,9 +396,9 @@ This includes omission by untrusted obligation-hood classification, `NOT_APPLICA
 
 > **No applicable authority grant or constraint may be silently omitted from authority evaluation.**
 
-This includes grants not explicitly referenced by the candidate obligation. Authority evaluation derives the potentially applicable set from the declared Authority TCB, policies, subject/scope matching, and selected build context.
+This includes grants not explicitly referenced by the candidate obligation. Authority evaluation derives the potentially applicable set from the Authority TCB, policies, subject/scope matching, and selected-build context.
 
-These completeness properties are necessary to prevent a plausible, machine-readable ACCEPTED record from being produced by omission.
+These properties prevent a plausible machine-readable ACCEPTED record from succeeding by omission.
 
 ## Composition constraints
 
@@ -444,10 +411,10 @@ The gate requires:
 ```text
 all applicable semantic obligations have valid authority
 AND
-all applicable authority constraints are satisfied under their required evidence profiles
+all applicable authority constraints are satisfied under declared RFC 0006 evidence profiles
 ```
 
-The authority of a constraint and the evidence that the closure satisfies the constraint are distinct facts.
+Constraint authority and constraint-satisfaction evidence are distinct facts.
 
 ## Logical record graph
 
@@ -489,11 +456,11 @@ Acceptance Record or structured rejection
 
 > **The Semantic Authority Gate is deterministic and produces no authority. It checks recorded authority/evaluation facts and emits acceptance or explicit reason codes.**
 
-The gate must not mutate an unauthoritative decision into an authoritative one merely because a matching policy was discovered.
+The gate does not mutate an unauthoritative candidate into an authoritative one merely because it discovers a matching policy.
 
 ### Minimum gate conditions
 
-For every in-closure obligation, and for every exclusion/applicable authority rule relevant to that closure, the gate requires at least:
+For every in-closure obligation, exclusion, and applicable authority rule relevant to that closure, the gate requires at least:
 
 ```text
 resolution_state == RESOLVED
@@ -519,7 +486,7 @@ all applicable CONSTRAINT grants satisfy their evidence profiles
 
 ### Structured outcomes
 
-The implementation should expose structured reason codes, including at least categories equivalent to:
+Implementations expose structured categories equivalent to:
 
 ```text
 E_AUTH_NO_ANCHOR
@@ -540,7 +507,7 @@ E_AUTH_CONSTRAINT
 E_AUTH_CLOSURE
 ```
 
-Exact names are implementation details; structured fail-closed categories are normative.
+Exact code names are implementation details; structured fail-closed categories are normative.
 
 ## Acceptance is immutable; validity is evaluated
 
@@ -548,13 +515,7 @@ An acceptance event is historical and append-only.
 
 `authority_validity` is computed against an exact evaluation context and dependency set. It is not maintained as an unproven mutable flag on the obligation.
 
-When an authority/source/policy/agent/procedure/anchor dependency changes, an existing acceptance becomes:
-
-```text
-POTENTIALLY_STALE
-```
-
-for the new evaluation context and fails closed for a new build until an explicit event occurs.
+When an authority/source/policy/agent/procedure/anchor dependency changes, an existing acceptance is `POTENTIALLY_STALE` in the new evaluation context and fails closed for a new build until an explicit event occurs.
 
 Lifecycle events include:
 
@@ -565,15 +526,13 @@ InvalidationEvent
 RevocationEvent
 ```
 
-`REVALIDATED` and `REACCEPTED` are event outcomes/actions, not additional `authority_validity` enum values.
+`REVALIDATED` and `REACCEPTED` are event outcomes/actions, not additional `authority_validity` states.
 
-A RevalidationClaim identifies old/new dependency revisions, semantic scope, method, producer, supporting evidence status/profile, and result. Natural-language equivalence will often remain human-declared rather than formally proven.
+A RevalidationClaim identifies old/new dependency revisions, semantic scope, method, producer, supporting RFC 0006 evidence status/profile, and result.
 
-Historical acceptance remains immutable; current validity may differ by evaluation context, supporting rollback, branch/fork variants, and later audit.
+Historical acceptance remains immutable; current validity may differ by evaluation context.
 
 ## Attribution and evidence interaction
-
-This RFC separates:
 
 ```text
 authority semantics
@@ -585,7 +544,7 @@ evidence strength
 
 RFC 0006 is the normative owner of evidence classes and evidence profiles.
 
-For example:
+Example:
 
 ```text
 authority_validity = AUTHORIZED
@@ -593,22 +552,18 @@ attribution = unauthenticated repository declaration
 evidence_status = HUMAN-DECLARED
 ```
 
-is coherent and does not imply cryptographic authentication.
-
-A deterministic policy evaluation may be `CHECKED`, while the AuthorityAnchor on which it relies remains a declared/trusted input according to its own evidence.
+A deterministic policy evaluation may be `CHECKED`, while its AuthorityAnchor remains a declared/trusted input under separate evidence.
 
 ## Relationship to existing RFCs
 
 - RFC 0010 defines the project-level trust-chain thesis.
-- RFC 0005 preserves the intent-fidelity limitation but no longer owns a mixed authority/evidence state taxonomy.
-- RFC 0006 owns evidence classes, evidence profiles, preservation boundaries, and RFC lifecycle/dependency rules.
+- RFC 0005 is historical/superseded for authority mechanics and preserves the intent-fidelity limitation.
+- RFC 0006 owns evidence classes, evidence profiles, preservation boundaries, typed evidence namespace, and RFC lifecycle/dependency rules.
 - RFC 0009 owns native target realization.
 
-Once #54 is complete, this RFC may be promoted to Accepted because its evidence and lifecycle dependency is then resolved.
+## Normative invariants
 
-## Proposed invariants
-
-1. **A semantic obligation may become executable only when it is resolved, applicable to the selected build, authorized under valid authority bindings, and all dependencies are gate-valid.**
+1. **A semantic obligation may become executable only when resolved, applicable to the selected build, authorized under valid authority bindings, and all dependencies are gate-valid.**
 2. **Obligation-hood, authority-relevant classification, selected configuration, and closure exclusion cannot reduce authority requirements without an authorized or deterministic basis.**
 3. **Semantic completeness: no authority-relevant semantic obligation may be silently omitted from the executable semantic closure.**
 4. **Authority completeness: no applicable authority grant or constraint may be silently omitted from authority evaluation.**
@@ -628,16 +583,14 @@ Once #54 is complete, this RFC may be promoted to Accepted because its evidence 
 
 ## Minimum viable implementation under #53
 
-The first implementation remains tied to the real POC-1C subject.
-
-Candidate semantic obligations include:
+The first implementation remains tied to the real POC-1C subject:
 
 ```text
 overflow_behavior = forbidden
 accepted input domain a,b ∈ [-100,100]
 ```
 
-The MVI should include:
+MVI:
 
 ```text
 1 AuthorityAnchor
@@ -652,7 +605,7 @@ The MVI should include:
 content-hash binding into accepted-spec/evidence artifacts
 ```
 
-Minimum negative cases include:
+Negative cases include:
 
 ```text
 no anchor
@@ -669,7 +622,7 @@ redelegation not permitted
 classification widening without basis
 obligation excluded from closure without basis
 selected configuration without authority basis
-contradicting applicable grant from a second authority source
+contradicting applicable authority grant from a second authority source
 POTENTIALLY_STALE dependency
 closure constraint violation
 ```
@@ -703,35 +656,3 @@ This RFC does not:
 - replace requirements-management, governance, certification, or assurance-case systems;
 - claim certification or regulatory qualification;
 - claim authority can be proved without declared trust anchors.
-
-## Implementation sequence
-
-```text
-RFC 0011 closure review                       COMPLETE
-        ↓
-closure-review residual amendments            COMPLETE
-        ↓
-#54 evidence / lifecycle reconciliation       REQUIRED BEFORE ACCEPTANCE
-        ↓
-RFC 0011 acceptance decision
-        ↓
-Authority + evidence record shape
-        ↓
-Authority-record schema
-        ↓
-Minimal accepted-spec authority binding
-        ↓
-Deterministic authority evaluation + fail-closed gate
-        ↓
-Negative authority regression tests
-        ↓
-Revision / POTENTIALLY_STALE tests
-        ↓
-Delegated-default tests
-        ↓
-Closure-constraint tests
-        ↓
-Bind acceptance into downstream evidence
-        ↓
-CI / #53 closure
-```
