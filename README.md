@@ -218,7 +218,10 @@ See:
 
 - [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md)
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
+- [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md) — **Draft / Proposed, Revision 2**
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
+
+RFC 0012 extends the architecture in a deliberately cross-cutting direction: assumptions, dependency completeness, defeaters, invalidation, and re-assurance are modeled as lifecycle-bearing trust relationships rather than new serial compiler stages. It remains Draft pending closure review and does not authorize a Trust Graph implementation by itself.
 
 ## What is demonstrated today
 
@@ -440,7 +443,8 @@ Spec2Exec is not:
 - a certified medical, aviation, automotive, financial, industrial-safety, or security system;
 - a claim that exhaustive finite-domain testing is formal proof;
 - a claim that QEMU execution is physical-hardware validation;
-- a claim that every semantic obligation in a real-world system can currently be discovered completely.
+- a claim that every semantic obligation in a real-world system can currently be discovered completely;
+- a claim that every material lifecycle dependency can currently be discovered completely.
 
 ## Target and validation scope
 
@@ -461,6 +465,7 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
 | Existing-compiler evidence composition | host-C experiment implemented/tested under #60 |
+| Lifecycle-aware Trust Graph | RFC 0012 Revision 2 Draft under #61; hostile review found major findings; v2 hardening implemented, closure review pending |
 | RV32 forced-spill experiment | backend work remains available under #37 |
 | Hazard3 / RP2350 hardware validation | pending under #36 |
 | Strong identity / OIDC / signatures / quorum | deferred future authority work |
@@ -478,6 +483,7 @@ For architecture and evidence:
 
 - [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md)
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
+- [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md)
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
 - [RFC 0009 — Native Target Code Generation](rfcs/0009-native-target-code-generation.md)
 - [POC-1C validation results](docs/poc1c-results.md)
@@ -486,7 +492,7 @@ For architecture and evidence:
 
 ## Roadmap direction
 
-The project now has two deliberately separate scaling axes:
+The project now has three deliberately separate scaling axes:
 
 ```text
 Research axis
@@ -497,6 +503,17 @@ Research axis
     authority
         ↓
     evidence
+
+Lifecycle trust axis
+    property-scoped dependencies
+        ↓
+    dependency completeness
+        ↓
+    assumptions / defeaters
+        ↓
+    invalidation / selective reuse
+        ↓
+    re-assurance
 
 Workflow axis
     semantic diff
