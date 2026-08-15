@@ -3,7 +3,8 @@
   "artifact_id": "SPEC-OPT-001",
   "acceptance": {
     "status": "accepted-for-poc",
-    "authority_role": "project-owner"
+    "authority_role": "project-owner",
+    "authority_manifest": "authority/manifest.json"
   },
   "function": {
     "id": "REQ-OPT-001",
