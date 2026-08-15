@@ -119,6 +119,32 @@ A0 v1 contains cross-domain cases for motor safety, sensors, timing, payment ret
 
 See [A0](research/a0-semantic-resolution/) and [issue #45](https://github.com/cctsao1008/spec2exec/issues/45).
 
+### A0F — held-out field-level semantic resolution
+
+A0F was added after A0 v1 decision-level results began to saturate on strong models. Instead of asking for one case-level decision, each held-out case supplies a fixed semantic-field vocabulary and asks the system to classify every field as:
+
+```text
+RESOLVED
+UNRESOLVED
+CONFLICT
+NOT_APPLICABLE
+```
+
+This separates several behaviors that a case-level A0 label cannot distinguish:
+
+```text
+Did the system safely avoid inventing one missing field?
+Did it over-block fields that were already explicit?
+Did it identify the exact conflicting field?
+Did it recognize a field that is explicitly outside the case semantics?
+```
+
+A0F v1 contains 24 held-out cases and 114 field classifications. Its scorer reports `field_accuracy`, `case_exact_match`, `unsafe_field_resolution_rate`, `overblocking_rate`, per-state accuracy/recall, and per-domain/per-case detail. The benchmark has deterministic oracle, unsafe-always-resolve, and over-conservative controls.
+
+A0F is **not C0**: the field vocabulary is supplied to the evaluated system, so A0F measures field-level resolution discipline rather than open-ended semantic-obligation discovery. No measured external-model A0F quality is currently claimed; such a run must use a fresh blinded context with only the A0F evaluation prompt/input.
+
+See [A0F](research/a0-field-resolution/) and [issue #63](https://github.com/cctsao1008/spec2exec/issues/63).
+
 ### C0 — semantic-obligation discovery / completeness
 
 C0 asks the harder upstream question:
@@ -159,8 +185,10 @@ See [C0](research/semantic-obligation-completeness/) and [issue #57](https://git
 The distinction is:
 
 ```text
-C0: Did we discover the question?
-A0: Did we invent the answer?
+A0:  Did we invent the answer at case level?
+A0F: Given an explicit field vocabulary, which fields are resolved,
+     unresolved, conflicting, or not applicable?
+C0:  Did we discover the authority-relevant questions in the first place?
 RFC 0011: Was the selected answer authorized?
 Executable Semantic Closure: Does it affect this selected build?
 ```
@@ -338,7 +366,7 @@ The unsafe candidate is blocked because it contains both an unauthorized decisio
 
 This is a **workflow POC following RFC 0011 principles**, not a replacement for the validated POC-1C authority-record evaluator and not a claim that CODEOWNERS is sufficient production authority.
 
-The shared trust-research workflow validates the A0/C0 scorer controls and measured-baseline regression, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. The current validated research-regression run is `31911177163`.
+The shared trust-research workflow validates A0/A0F/C0 scorer controls, the measured A0 baseline regression, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. The A0F infrastructure revision `43f2e761f311282671f47068f60c33cf73d9ac64` passed Trust Research run `31913085179`.
 
 ### 5. Existing-compiler evidence composition
 
@@ -490,7 +518,8 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 |---|---|
 | Semantic-authority / provenance | RFC 0011 Accepted; narrow authority-gated POC-1C MVI validated under #53 |
 | Evidence vocabulary / RFC normalization | RFC 0006 Accepted; #54 completed |
-| A0 unsafe semantic resolution | `a0/v1` benchmark/scorer/control fixtures plus one blinded measured Opus 5 / High baseline recorded; #45 closed |
+| A0 unsafe semantic resolution | `a0/v1` frozen benchmark/scorer/control fixtures plus one blinded measured Opus 5 / High baseline; #45 closed |
+| A0F field-level semantic resolution | `a0f/v1` held-out 24-case / 114-field benchmark, scorer, blinded protocol, and controls implemented under #63; infrastructure CI green; no measured external-model A0F result yet |
 | C0 obligation discovery / completeness | `c0/v1` benchmark/scorer/control fixtures implemented under #57 |
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
@@ -507,10 +536,10 @@ For the fastest introduction:
 
 - [Payment-retry semantic-authority example](examples/payment-retry/README.md)
 - [A0 measured baseline — Claude Opus 5 / High](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md)
+- [A0F held-out field-level semantic-resolution benchmark](research/a0-field-resolution/)
+- [C0 semantic-obligation completeness benchmark](research/semantic-obligation-completeness/)
 - [Bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md)
 - [Blocked semantic diff](examples/payment-retry/unsafe-review.md)
-- [C0 semantic-obligation completeness benchmark](research/semantic-obligation-completeness/)
-- [A0 unsafe semantic-resolution benchmark](research/a0-semantic-resolution/)
 
 For architecture and evidence:
 
@@ -529,9 +558,11 @@ The project now has three deliberately separate scaling axes:
 
 ```text
 Research axis
-    unsafe resolution
+    A0 unsafe case-level resolution
         ↓
-    obligation discovery/completeness
+    A0F field-level resolution discipline
+        ↓
+    C0 open-ended obligation discovery/completeness
         ↓
     authority
         ↓
@@ -558,7 +589,7 @@ Workflow axis
     future stronger identity / approval mechanisms
 ```
 
-`a0/v1` and `c0/v1` should now be treated as frozen measured/research baselines. Held-out or adversarial benchmark revisions should use explicit versioning and an Issue before benchmark semantics change, rather than mutating the measured baseline after observing its result.
+`a0/v1` and `c0/v1` remain frozen measured/research baselines. A0F is a separately versioned held-out track and must not be used to rewrite A0 v1 after observing A0 results. Future benchmark-semantic revisions likewise require explicit versioning and an Issue rather than silent mutation.
 
 Native backend experiments remain useful for testing realization boundaries, but the project does not need to become a full production compiler to validate the trust architecture. Existing-compiler integration is an explicit first step toward demonstrating that the same evidence model can span multiple realization strategies.
 
