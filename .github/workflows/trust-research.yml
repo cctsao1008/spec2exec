@@ -1,0 +1,93 @@
+name: Trust Research and Workflow POCs
+
+on:
+  push:
+    paths:
+      - 'research/a0-semantic-resolution/**'
+      - 'research/semantic-obligation-completeness/**'
+      - 'examples/payment-retry/**'
+      - 'prototypes/semantic_review/**'
+      - 'prototypes/existing_compiler/**'
+      - 'spec/schemas/semantic-review-result-v0.1.schema.json'
+      - 'tests/research/**'
+      - 'tests/semantic_review/**'
+      - 'tests/existing_compiler/**'
+      - '.github/CODEOWNERS'
+      - '.github/workflows/trust-research.yml'
+      - 'examples/hello/**'
+      - 'prototypes/poc0/**'
+  pull_request:
+    paths:
+      - 'research/a0-semantic-resolution/**'
+      - 'research/semantic-obligation-completeness/**'
+      - 'examples/payment-retry/**'
+      - 'prototypes/semantic_review/**'
+      - 'prototypes/existing_compiler/**'
+      - 'tests/research/**'
+      - 'tests/semantic_review/**'
+      - 'tests/existing_compiler/**'
+      - '.github/CODEOWNERS'
+      - '.github/workflows/trust-research.yml'
+      - 'examples/hello/**'
+      - 'prototypes/poc0/**'
+
+jobs:
+  trust-research:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run A0 and semantic-completeness scorer tests
+        run: python -m unittest discover -s tests/research -p 'test_*.py' -v
+
+      - name: Run semantic review / CODEOWNERS adapter tests
+        run: python -m unittest discover -s tests/semantic_review -p 'test_*.py' -v
+
+      - name: Verify unsafe payment candidate is blocked
+        shell: bash
+        run: |
+          set +e
+          python prototypes/semantic_review/review.py \
+            --policy examples/payment-retry/authority-policy.json \
+            --candidate examples/payment-retry/unsafe-candidate.json \
+            --codeowners .github/CODEOWNERS \
+            --json-output build/payment-retry/unsafe-review.json \
+            --markdown-output build/payment-retry/unsafe-review.md \
+            --expect BLOCKED
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+
+      - name: Verify corrected payment candidate is accepted
+        run: |
+          python prototypes/semantic_review/review.py \
+            --policy examples/payment-retry/authority-policy.json \
+            --candidate examples/payment-retry/accepted-candidate.json \
+            --codeowners .github/CODEOWNERS \
+            --json-output build/payment-retry/accepted-review.json \
+            --markdown-output build/payment-retry/accepted-review.md \
+            --expect ACCEPTED
+
+      - name: Run existing-compiler unit tests
+        run: python -m unittest discover -s tests/existing_compiler -p 'test_*.py' -v
+
+      - name: Run existing-compiler evidence experiment
+        run: |
+          python prototypes/existing_compiler/run.py \
+            --build-dir build/existing-compiler \
+            --evidence build/existing-compiler/evidence.json
+
+      - name: Upload trust-research evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: trust-research-evidence
+          path: |
+            build/payment-retry/*.json
+            build/payment-retry/*.md
+            build/existing-compiler/evidence.json
+            build/existing-compiler/generated.c
