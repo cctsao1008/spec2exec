@@ -1,0 +1,15 @@
+{
+  "schema": "spec2exec.semantic-candidate/v0.1",
+  "candidate_id": "PAY-CANDIDATE-ACCEPTED",
+  "requirement_id": "PAY-RETRY-001",
+  "proposer": "ai-coding-agent-demo",
+  "values": {
+    "retry_count": 3,
+    "retry_on_http_500": true,
+    "retry_on_timeout": false,
+    "backoff_policy": "exponential",
+    "request_timeout_ms": 2000,
+    "idempotency_requirement": true,
+    "terminal_failure_behavior": "surface_failure"
+  }
+}
