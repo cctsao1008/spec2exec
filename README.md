@@ -218,10 +218,10 @@ See:
 
 - [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md)
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
-- [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md) — **Draft / Proposed, Revision 2**
+- [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md) — **Accepted / Lifecycle Trust Baseline**
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
 
-RFC 0012 extends the architecture in a deliberately cross-cutting direction: assumptions, dependency completeness, defeaters, invalidation, and re-assurance are modeled as lifecycle-bearing trust relationships rather than new serial compiler stages. It remains Draft pending closure review and does not authorize a Trust Graph implementation by itself.
+RFC 0012 extends the architecture in a deliberately cross-cutting direction: assumptions, dependency completeness, defeaters, invalidation, ProjectionPolicy-gated current-trust projection, and re-assurance are modeled as lifecycle-bearing trust relationships rather than new serial compiler stages. The architecture baseline is Accepted; executable validation proceeds separately under [issue #62](https://github.com/cctsao1008/spec2exec/issues/62).
 
 ## What is demonstrated today
 
@@ -465,7 +465,7 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
 | Existing-compiler evidence composition | host-C experiment implemented/tested under #60 |
-| Lifecycle-aware Trust Graph | RFC 0012 Revision 2 Draft under #61; hostile review found major findings; v2 hardening implemented, closure review pending |
+| Lifecycle-aware Trust Graph | RFC 0012 Accepted / Lifecycle Trust Baseline; architecture #61 closed; bounded payment-retry lifecycle implementation open under #62 |
 | RV32 forced-spill experiment | backend work remains available under #37 |
 | Hazard3 / RP2350 hardware validation | pending under #36 |
 | Strong identity / OIDC / signatures / quorum | deferred future authority work |
