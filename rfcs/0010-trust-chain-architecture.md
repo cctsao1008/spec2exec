@@ -1,7 +1,7 @@
 # RFC 0010 — Trust-Chain Architecture for AI-Generated Software
 
 - **Status:** Accepted / Project Thesis
-- **Scope:** Top-level trust architecture, semantic authority, evidence, verification, executable realization, and AI synthesis boundaries
+- **Scope:** Top-level trust architecture, semantic authority, evidence, deterministic verification, executable realization, and AI synthesis boundaries
 
 ## Thesis
 
@@ -11,29 +11,25 @@ Its long-term purpose is to provide **trust infrastructure for software whose im
 
 Public architecture thesis:
 
-> **AI proposes. Humans authorize semantics. Deterministic systems verify. Evidence justifies trust. Portable backends execute.**
+> **AI proposes. Humans and delegated authority mechanisms authorize semantics. Deterministic systems verify. Evidence justifies trust. Target backends realize accepted semantics.**
 
-The normative form is more general:
+Normative form:
 
-> Probabilistic or heuristic systems may propose semantics, but they do not possess semantic authority by default. Accepted semantics cross an explicit authority boundary. Deterministic systems establish reproducible claims where such claims are possible. Evidence justifies those claims, and portable backends realize accepted semantics as executable behavior.
+> Probabilistic or heuristic systems may propose semantics, but they do not possess semantic authority by default. Accepted semantics cross an explicit authority boundary rooted in declared trust anchors. Deterministic systems establish reproducible claims where such claims are possible. Evidence justifies those claims, and target backends realize accepted semantics as executable behavior.
 
 ## Motivation
 
 As software synthesis becomes cheaper, implementation generation is expected to become less scarce than establishing why a particular executable should be trusted.
 
-The central Spec2Exec question is therefore not only:
-
-> Can a system generate executable software from a specification?
-
-It is also:
+The central question is therefore:
 
 > **Why should a user trust this exact executable, under these exact assumptions, as an implementation of the semantics that were actually authorized?**
 
-This changes the project from a generator-centric architecture into a trust-chain architecture.
+This changes Spec2Exec from a generator-centric architecture into a trust-chain architecture.
 
-## Value framework as a trust chain
+## Capability chain
 
-The project is organized around six dependent capabilities rather than six parallel features:
+The project is organized around six dependent capabilities:
 
 ```text
 #1 Trust Architecture
@@ -44,150 +40,133 @@ The project is organized around six dependent capabilities rather than six paral
         ↓
 #4 Deterministic Verification
         ↓
-#5 Portable Executable Realization
-   + Preservation Evidence
+#5 Target Executable Realization
         ↓
 #6 AI Synthesis Quality
 ```
 
-The dependency is conceptual:
+These are not six interchangeable features.
 
-- **#1–#4 form the trusted core.**
-- **#5 realizes accepted semantics on concrete execution targets and must preserve the trust chain.**
-- **#6 is an upstream intelligence capability that may improve productivity and proposal quality, but does not gain semantic authority merely by being accurate or capable.**
-
-AI quality affects productivity. It does not define authority.
+- **#1–#3 define the trust model and its evidence semantics.**
+- **#4 provides deterministic assurance over named properties.**
+- **#5 realizes accepted semantics on concrete targets and is accompanied by preservation/observation evidence, but realization itself is not an assurance activity.**
+- **#6 is replaceable upstream intelligence. It may improve productivity without becoming authority by capability alone.**
 
 ## Layer model
 
-The same capabilities can be grouped into three architectural layers:
+The architecture distinguishes trust, assurance, realization, and intelligence:
 
 ```text
-                 TRUST LAYER
+                  TRUST LAYER
         #1 Trust Architecture
         #2 Semantic Authority Model
         #3 Evidence Architecture
 
-               ASSURANCE LAYER
+                ASSURANCE LAYER
         #4 Deterministic Verification
-        #5 Portable Executable Realization
-           + Preservation Evidence
+        Preservation / observation evidence
+        for realization boundaries
 
-             INTELLIGENCE LAYER
-        #6 AI Synthesis Quality
+               REALIZATION LAYER
+        #5 Target Code Generation
+        Assembler / Object / Linker
+        Loader / Runtime / Hardware
+
+              INTELLIGENCE LAYER
+        #6 AI / search / heuristic synthesis
 ```
 
-The Intelligence Layer may execute early in the runtime workflow, but it remains outside the trusted semantic core unless an explicit domain policy grants authority to a particular source.
+The previous wording that placed **Portable Executable Realization itself inside the Assurance Layer** is superseded by this model. Realization produces artifacts. Assurance produces or evaluates evidence about properties of those artifacts.
 
 ## Runtime flow
 
-A representative runtime flow is:
+Representative flow:
 
 ```text
-Human / Domain Sources
+Human / Domain / Governance Sources
           │
           ▼
    Candidate Semantics  ◄──── AI / search / heuristics / synthesis
           │
           ▼
-┌──────────────────────────────┐
-│   Semantic Authority Gate    │
-│ ambiguity / conflict /       │
-│ provenance / acceptance      │
-└──────────────┬───────────────┘
-               │
-               ▼
+Extraction / Interpretation
+          │
+          ▼
+Candidate Semantic Obligations
+          │
+          ▼
+Authority Resolution / Evaluation
+          │
+          ▼
+Deterministic Semantic Authority Gate
+          │
+          ▼
       Accepted Specification
-               │
-               ▼
+          │
+          ▼
       Semantic Synthesis
-               │
-               ▼
+          │
+          ▼
          Candidate SpecIR
-               │
-               ▼
+          │
+          ▼
     Deterministic Verification
-               │
-               ▼
+          │
+          ▼
          Verified SpecIR
-               │
-               ▼
- Portable Target Realization
-               │
-               ▼
+          │
+          ▼
+      Target Realization
+          │
+          ▼
      Executable / Firmware
-               │
-               ▼
+          │
+          ▼
  Runtime / Emulator / Hardware Observation
 ```
 
-Trust Architecture and Evidence Architecture span the entire flow rather than appearing as one serial stage.
+Trust Architecture and Evidence Architecture span the whole flow rather than appearing as one serial stage.
 
 ## Semantic authority
 
-The most important distinction in the architecture is between **proposing semantics** and **authorizing semantics**.
+The core distinction is between **proposing semantics** and **authorizing semantics**.
 
-A synthesis system may infer a plausible interpretation, but plausibility is not authority.
+Plausibility is not authority.
 
-For example:
+Example:
 
 ```text
 Requirement:
     stop the motor when temperature is too high
 
-Unresolved semantics may include:
+Potential semantic obligations:
     threshold
     comparison operator
-    sampling interval
     sensor-failure behavior
-    debounce / filtering
     reaction latency
     restart policy
 ```
 
-A model may propose values for all of these, but no proposal may silently become authoritative executable behavior.
+A model may propose values for all of these. A proposal may become accepted executable semantics only through an applicable authority basis.
 
-### Authority boundary
+RFC 0011 is the normative owner of the semantic-authority mechanics, including:
 
-The required flow is:
-
-```text
-Human intent / domain requirement
-        ↓
-Candidate interpretation
-        ↓
-ambiguity / conflict / missing-semantics detection
-        ↓
-Authority Resolution
-        ↓
-Accepted Semantics
-```
-
-The architecture must preserve the distinction between candidate, assumed, unresolved, derived, and accepted semantics.
-
-### Authority sources
-
-Human acceptance is the primary authority mechanism in current prototypes, but the architecture is not permanently restricted to a single human approval action.
-
-Possible authority sources include:
-
-- a human developer or system engineer;
-- a safety or certification authority;
-- a regulatory or standards requirement;
-- an accepted parent specification;
-- a certified domain model;
-- an approved interface or system contract;
-- a formal governance workflow.
-
-The authority source, provenance, revision, and acceptance state must remain representable.
+- semantic obligations;
+- AuthorityAnchors / Authority TCB;
+- delegated authority policies;
+- grant kinds;
+- executable semantic closure;
+- authority-relevant classifications;
+- conflict handling;
+- attribution assurance;
+- immutable acceptance and current validity;
+- deterministic fail-closed authority gating.
 
 ### Semantic-authority invariant
 
-> **No unresolved or unauthorized semantic assumption may silently cross the authority boundary and become executable behavior.**
+> **No unresolved, unauthorized, invalid, or silently omitted authority-relevant semantic obligation may cross the accepted-specification boundary and become executable behavior.**
 
-If a required semantic decision lacks authority, the preferred result is an explicit `UNRESOLVED` or blocked state rather than a plausible invented value.
-
-RFC 0005 defines the intent-fidelity and specification-acceptance boundary in more detail.
+Authority does not recursively prove itself. Authority chains terminate at declared trust anchors, and the anchor/declaration protection mechanism is part of the Authority TCB.
 
 ## Trust architecture
 
@@ -195,11 +174,13 @@ Trust Architecture answers:
 
 > **What exactly is being trusted, why, by whom, under what assumptions, and at which boundary?**
 
-The system must distinguish responsibility among components such as:
+The system distinguishes responsibility among components such as:
 
 ```text
-Human / domain authority
+Human / domain / governance authority
+Authority-anchor declaration mechanism
 AI / synthesis engine
+Deterministic authority evaluator / gate
 Deterministic verifier
 Target code generator
 Assembler
@@ -216,15 +197,14 @@ Examples:
 - verifier success does not prove human intent fidelity;
 - runtime agreement does not automatically prove code-generation preservation;
 - emulator execution does not equal physical-hardware validation;
-- trusting an assembler does not mean assembler correctness was proven by Spec2Exec.
+- trusting an assembler does not mean assembler correctness was proven by Spec2Exec;
+- a `CHECKED` policy evaluation does not prove that the declared AuthorityAnchor is intrinsically correct.
 
 ## Evidence architecture
 
-A correctness statement is not a sufficient trust artifact by itself.
+Trust claims are property-oriented and evidence-bearing.
 
-Trust claims must be represented as evidence-bearing records or graphs that connect claims to exact subjects and their provenance.
-
-A mature claim should be able to identify at least:
+A mature claim should identify at least:
 
 ```text
 Claim
@@ -232,21 +212,19 @@ Claim
 ├── Property
 ├── Status
 ├── Scope
-├── Evidence
-├── Method
-├── Tool / Version
+├── Method / Producer
 ├── Assumptions
 ├── Trusted Computing Base
 ├── Source Revision
-├── Artifact Bindings / Hashes
+├── Artifact / Subject Bindings
 ├── Traceability
 └── Cross-validation, when applicable
 ```
 
-This produces a machine-readable chain such as:
+The downstream chain may bind:
 
 ```text
-Accepted Requirement Clause
+Accepted Semantic / Acceptance Record
         ↓
 Accepted Specification Hash
         ↓
@@ -261,19 +239,13 @@ Executable Hash
 Runtime / Hardware Observation
 ```
 
-with a separate evidence status at each transformation boundary.
+with separate evidence at each boundary.
 
-### Evidence strength is not boolean
+### Canonical evidence vocabulary
 
-Spec2Exec must not collapse all assurance into:
+RFC 0006 is the normative owner of evidence classes and extension rules.
 
-```text
-VERIFIED = true
-```
-
-Evidence classes remain property- and boundary-specific. RFC 0006 defines the general evidence model. Current implementations additionally use more specific statuses such as `TESTED_EXHAUSTIVE` where the executed domain is mechanically bounded and fully enumerated.
-
-Typical distinctions include:
+The canonical vocabulary is:
 
 ```text
 PROVEN
@@ -281,55 +253,84 @@ CHECKED
 TESTED
 TESTED_EXHAUSTIVE
 MEASURED
+ESTIMATED
 HUMAN-DECLARED
 HUMAN-ACCEPTED
 TRUSTED
 ASSUMED
+ADVISORY
 UNRESOLVED
 ```
 
-The following equivalences are forbidden:
+These classes are not a universal scalar ranking.
+
+Forbidden equivalences include:
 
 ```text
-TESTED  != PROVEN
-TRUSTED != VERIFIED
-ASSUMED != CHECKED
-MEASURED != PROVEN
+TESTED            != PROVEN
+TESTED_EXHAUSTIVE != PROVEN
+TRUSTED           != VERIFIED
+ASSUMED           != CHECKED
+MEASURED          != PROVEN
+AUTHORIZED        != evidence status
+ACCEPTED          != VERIFIED
 ```
 
-A trust claim is only as strong as its named evidence, scope, assumptions, and TCB.
+`TESTED_EXHAUSTIVE` is valid only under RFC 0006's finite-domain, mechanically bound, fully enumerated, observable-failure requirements.
+
+## Typed state separation
+
+Semantic/authority state and evidence strength are separate namespaces.
+
+Examples:
+
+```text
+resolution_state   = UNRESOLVED
+```
+
+and:
+
+```text
+evidence_status    = UNRESOLVED
+```
+
+may coexist because the owning types differ. Implementations must not collapse them into one untyped state machine.
+
+Likewise:
+
+```text
+authority_validity = AUTHORIZED
+```
+
+is a governance state, not an evidence class.
 
 ## Deterministic verification
 
-Deterministic verification prevents the Trust Layer from becoming governance documentation without technical force.
+Deterministic verification prevents the trust architecture from becoming governance documentation without technical force.
 
 The separation is:
 
 ```text
-Probabilistic / heuristic frontend
+Probabilistic / heuristic proposal systems
         ↓
 Semantic Authority Boundary
         ↓
 Accepted Semantics
         ↓
-Deterministic Core
+Deterministic Verification Core
 ```
 
-AI may answer:
+A deterministic verifier may establish:
 
-> "This is probably what the specification means."
+> Given these accepted semantics, exact subject bindings, and assumptions, property X holds under method Y.
 
-A deterministic verifier may answer:
+That statement is reproducible and evidence-bearing. It does not establish every other property of the artifact.
 
-> "Given these accepted semantics and assumptions, property X holds under method Y."
+Methods may include schema checks, abstract interpretation, SMT solving, model checking, translation validation, proof-producing transformations, exhaustive execution, or other deterministic methods appropriate to the claim.
 
-The second statement is repeatable and evidence-bearing; it does not depend on the verifier merely judging that the result looks reasonable.
+## Target executable realization
 
-Verification methods may include schema checks, abstract interpretation, SMT solving, model checking, translation validation, proof-producing transformations, exhaustive execution, or other deterministic methods appropriate to the property.
-
-## Portable executable realization
-
-Verification of an abstract model is not sufficient to establish what a CPU actually executes.
+Verification of an abstract model is not sufficient to establish what a CPU executes.
 
 The realization chain is:
 
@@ -338,61 +339,56 @@ Accepted Specification
         ↓
 Verified SpecIR
         ↓
-Target Semantics
+Target Code Generation
         ↓
-Target Assembly / Machine Representation
+Target Assembly
         ↓
-Object / Executable / Firmware
+Object / Link / Executable / Firmware
         ↓
 Runtime / Physical Execution
 ```
 
-Portable executable generation is valuable when the **same accepted semantics** can be realized across multiple targets while preserving explicit target-specific evidence:
+Target portability means **semantic portability**: the same accepted semantics are realized across valid target configurations with target-specific evidence and TCB assumptions.
+
+RFC 0009 owns the native-primary realization architecture and the distinction between Target Configuration and Validation Binding.
+
+### Preservation boundaries
+
+RFC 0006 owns the generic and refined evidence vocabulary. RFC 0009 refines the native path as:
 
 ```text
-                    same Verified SpecIR
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-           RV32I       Armv8-M       x86_64
-              │            │            │
-              └────────────┼────────────┘
-                           ▼
-                 target-specific evidence
+P3   Verified SpecIR → Target Assembly
+P4-A Target Assembly → Generated Object
+P4-H Runtime Harness Assembly → Harness Object
+P4-L Objects + Linker Inputs → Linked Executable
+P4-R Linked Executable → Runtime Observation
 ```
 
-This is **semantic portability**, not merely source portability.
-
-RFC 0009 defines the native target-code-generation boundary and the distinction between Target Configuration and Validation Binding.
+Sensitivity experiments are diagnostic evidence and remain separate from semantic-preservation proof.
 
 ## AI synthesis quality
 
 AI synthesis quality belongs to the Intelligence Layer and is intentionally replaceable.
 
-Possible synthesis engines include hosted or local language models, search systems, planners, heuristics, domain-specific models, and future systems not yet known.
+Possible synthesis engines include language models, search systems, planners, heuristics, domain-specific models, and future systems.
 
 The trust architecture must remain valid if:
 
 - one model is replaced by another;
-- synthesis quality improves dramatically;
-- synthesis quality temporarily regresses;
+- synthesis quality improves or regresses;
 - multiple models disagree;
-- no AI is used for a particular artifact.
+- no AI is used for an artifact.
 
-A weak synthesis engine should cause more rejection, unresolved semantics, or human correction. It must not weaken the authority boundary.
+A weak synthesis engine should increase rejection, unresolved semantics, or human correction. It must not weaken the authority boundary.
 
-### Trust-oriented AI metrics
-
-Spec2Exec should evaluate synthesis quality using metrics that reflect semantic discipline rather than only compilation or test-pass rate.
-
-Candidate metrics include:
+Candidate trust-oriented metrics include:
 
 ```text
 ambiguity detection recall
 conflict detection recall
 unauthorized-assumption rate
+unsafe-resolution rate
 unsupported-assumption rate
-specification completeness
 traceability completeness
 first-pass deterministic-verification rate
 human correction distance
@@ -400,41 +396,43 @@ human intervention rate
 unresolved semantic-obligation rate
 ```
 
-A model with a slightly lower first-pass completion rate may be preferable if it makes fewer unauthorized semantic assumptions and exposes ambiguity more reliably.
-
 ## Long-term invariants
 
-The following are project-level invariants unless superseded by an explicit RFC:
+Unless superseded by an explicit Accepted RFC:
 
 1. **AI is not semantic authority by default.**
-2. **No unresolved semantic assumption silently becomes executable behavior.**
-3. **Accepted semantics are the authoritative truth source for downstream verification and realization.**
+2. **No unresolved, unauthorized, or silently omitted authority-relevant semantic obligation becomes executable behavior.**
+3. **Accepted semantics are the authoritative downstream source for verification and realization.**
 4. **Claims presented as deterministic must be reproducible by deterministic methods.**
-5. **Every trust claim identifies its evidence, scope, assumptions, subject, producer/method, and trust boundary.**
+5. **Every material trust claim identifies subject, property, evidence status, scope, method/producer, assumptions, and trust boundary.**
 6. **Evidence binds to exact subjects, artifacts, and revisions.**
-7. **Evidence-strength labels are not interchangeable.** `TESTED` is not `PROVEN`; `TRUSTED` is not `VERIFIED`; `ASSUMED` is not `CHECKED`.
-8. **Runtime agreement does not automatically prove compilation or transformation correctness.**
+7. **Evidence-strength labels are typed and not interchangeable.**
+8. **Runtime agreement does not automatically prove compilation/transformation correctness.**
 9. **Target portability means semantic portability, not merely source portability.**
-10. **AI synthesis engines are replaceable components outside the trusted semantic core.**
+10. **AI synthesis engines remain replaceable outside the trusted semantic core unless explicit delegated authority applies.**
+11. **Realization activities and assurance evidence remain distinct even when they are produced in one pipeline run.**
+
+## RFC lifecycle
+
+RFC lifecycle and normative dependency rules are defined by RFC 0006 and contribution guidance.
+
+In particular, an Accepted RFC must not silently depend on a Draft RFC for a normative guarantee. A Draft dependency must be informative, self-contained by the Accepted RFC, or explicitly block promotion/closure until resolved.
 
 ## Relationship to existing RFCs
 
-This RFC is a top-level synthesis of existing architecture decisions. It does not replace their detailed obligations.
-
-- **RFC 0005 — Trust, Intent Fidelity, and Specification Acceptance** defines the boundary between human/domain intent, ambiguity resolution, and accepted specification.
-- **RFC 0006 — Semantic Preservation and Evidence Model** defines preservation obligations, evidence classes, and no-collapsed-PASS policy.
-- **RFC 0009 — Native Target Code Generation** defines the native executable-generation boundary, Target Configuration, Validation Binding, and target-specific evidence boundaries.
-
-Where this RFC is intentionally more general than RFC 0005, `Authority Resolution` includes human/domain acceptance as the current primary mechanism while allowing authoritative standards, parent specifications, contracts, and approved governance sources to be represented explicitly.
+- **RFC 0005** preserves the intent-fidelity limitation and delegates typed authority mechanics to RFC 0011.
+- **RFC 0006** owns evidence classes, preservation boundaries, typed evidence namespace, and RFC lifecycle/dependency rules.
+- **RFC 0009** owns native target realization.
+- **RFC 0011** owns semantic-authority state and authority gating.
 
 ## Non-goals
 
-This RFC does not claim that Spec2Exec can:
+Spec2Exec does not claim that it can:
 
 - automatically determine human intent in the general case;
 - eliminate all assumptions or uncertainty;
-- prove every compiler, assembler, linker, operating system, emulator, or hardware component correct;
-- make AI synthesis trustworthy by declaration;
+- prove every compiler, assembler, linker, OS, emulator, or hardware component correct;
+- make AI synthesis trustworthy or authoritative by declaration alone;
 - replace domain authority or certification processes;
 - guarantee formal proof for every property;
 - require one specific AI model or synthesis engine.
@@ -448,13 +446,11 @@ Small outcome
     specification → firmware / executable research generator
 
 Medium outcome
-    verified code generation + auditable evidence
+    verified/checked code generation + auditable evidence
     for embedded / safety-critical software
 
 Large outcome
     trust infrastructure for AI-generated software
 ```
-
-The large outcome is the strategic direction because it remains valuable even as implementation generation becomes inexpensive and synthesis engines become interchangeable.
 
 Implementation may become disposable. **Accepted semantics and verifiable evidence must not.**
