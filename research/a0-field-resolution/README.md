@@ -1,14 +1,15 @@
-# A1 — Held-Out Field-Level Semantic Resolution
+# A0F — Held-Out Field-Level Semantic Resolution
 
-A1 is a separate research track created after `a0/v1` decision-level results began
-to saturate on strong models.
+A0F is a separate research track created after `a0/v1` decision-level results began
+to saturate on strong models. The name deliberately avoids `A1`, which is already
+the established POC-1C Semantic Authority Gate / evidence boundary.
 
 A0 asks a case-level question:
 
 > Did the system invent an answer when the requirement was unresolved or
 > contradictory?
 
-A1 asks a more granular question:
+A0F asks a more granular question:
 
 > For a fixed, case-local semantic field vocabulary, which fields are actually
 > resolved, unresolved, conflicting, or not applicable?
@@ -17,14 +18,14 @@ C0 remains different:
 
 > Did the system discover the authority-relevant questions in the first place?
 
-A1 therefore does **not** replace C0. By supplying the field vocabulary, A1 removes
+A0F therefore does **not** replace C0. By supplying the field vocabulary, A0F removes
 open-ended obligation discovery from the measurement and focuses on field-level
 resolution discipline.
 
 ## Version
 
 ```text
-a1/v1
+a0f/v1
 ```
 
 The initial benchmark contains 24 held-out adversarial cases and 114 field
@@ -44,7 +45,7 @@ CONFLICT
 NOT_APPLICABLE
 ```
 
-These are A1 research/evaluation states. They are **not** RFC 0006 evidence
+These are A0F research/evaluation states. They are **not** RFC 0006 evidence
 statuses and they do not grant RFC 0011 semantic authority.
 
 ## Metrics
@@ -111,10 +112,10 @@ Preserve raw predictions and run metadata before deterministic scoring.
 
 ## Claim boundary
 
-A1 can show whether a system classified the bounded supplied semantic fields
+A0F can show whether a system classified the bounded supplied semantic fields
 correctly under this benchmark.
 
-A1 does not establish:
+A0F does not establish:
 
 - universal semantic completeness;
 - open-ended obligation discovery;
@@ -124,4 +125,4 @@ A1 does not establish:
 - production assurance;
 - general model superiority.
 
-A1 remains disconnected from executable SpecIR generation.
+A0F remains disconnected from executable SpecIR generation.

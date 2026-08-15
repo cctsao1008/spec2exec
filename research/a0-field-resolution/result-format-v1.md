@@ -1,10 +1,10 @@
-# A1 v1 Result Format
+# A0F v1 Result Format
 
 Each prediction file is JSONL with one row per benchmark case.
 
 ```json
 {
-  "id": "A1-001",
+  "id": "A0F-001",
   "field_states": {
     "retryable_failures": "RESOLVED",
     "retry_count": "RESOLVED",

@@ -1,8 +1,8 @@
-# A1 v1 Blinded Field-Level Semantic Resolution Prompt
+# A0F v1 Blinded Field-Level Semantic Resolution Prompt
 
 ## Contamination rule
 
-For a measured A1 baseline, provide the system under test with **only**:
+For a measured A0F baseline, provide the system under test with **only**:
 
 1. this evaluation prompt; and
 2. `evaluation-input-v1.jsonl`.
@@ -12,7 +12,7 @@ README discussion containing gold states, prior model outputs, or any file expos
 the expected field labels.
 
 A run performed after the evaluated context has seen the gold field states is
-contaminated and must not be reported as a measured A1 baseline.
+contaminated and must not be reported as a measured A0F baseline.
 
 ## Task
 
@@ -50,7 +50,7 @@ Return JSONL only, preserving every case ID exactly once.
 Each row must have exactly this shape:
 
 ```json
-{"id":"A1-001","field_states":{"retry_count":"RESOLVED","backoff_policy":"UNRESOLVED"}}
+{"id":"A0F-001","field_states":{"retry_count":"RESOLVED","backoff_policy":"UNRESOLVED"}}
 ```
 
 Rules:

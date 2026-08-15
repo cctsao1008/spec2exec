@@ -1,5 +1,5 @@
 {
-  "benchmark_version": "a1/v1",
+  "benchmark_version": "a0f/v1",
   "contamination_declaration": {
     "fresh_context": false,
     "gold_not_supplied": false,

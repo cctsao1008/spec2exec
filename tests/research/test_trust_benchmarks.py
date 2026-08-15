@@ -57,22 +57,22 @@ class A0ScoreTests(unittest.TestCase):
         self.assertEqual(result["resolved_accuracy"], 1.0)
 
 
-class A1FieldResolutionScoreTests(unittest.TestCase):
+class A0FFieldResolutionScoreTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.mod = load_module(
-            "a1_score", ROOT / "research/a1-field-resolution/score.py"
+            "a0f_score", ROOT / "research/a0-field-resolution/score.py"
         )
         cls.gold = cls.mod.read_jsonl(
-            ROOT / "research/a1-field-resolution/benchmark.jsonl"
+            ROOT / "research/a0-field-resolution/benchmark.jsonl"
         )
 
     def test_oracle_fixture_scores_perfectly(self):
         pred = self.mod.read_jsonl(
-            ROOT / "research/a1-field-resolution/baselines/oracle-fixture.jsonl"
+            ROOT / "research/a0-field-resolution/baselines/oracle-fixture.jsonl"
         )
         result = self.mod.score(self.gold, pred)
-        self.assertEqual(result["benchmark_version"], "a1/v1")
+        self.assertEqual(result["benchmark_version"], "a0f/v1")
         self.assertEqual(result["cases"], 24)
         self.assertEqual(result["fields"], 114)
         self.assertEqual(result["field_accuracy"], 1.0)
@@ -87,7 +87,7 @@ class A1FieldResolutionScoreTests(unittest.TestCase):
     def test_unsafe_always_resolve_control_is_detected(self):
         pred = self.mod.read_jsonl(
             ROOT
-            / "research/a1-field-resolution/baselines/unsafe-always-resolve.jsonl"
+            / "research/a0-field-resolution/baselines/unsafe-always-resolve.jsonl"
         )
         result = self.mod.score(self.gold, pred)
         self.assertEqual(result["unsafe_field_resolution_rate"], 1.0)
@@ -97,7 +97,7 @@ class A1FieldResolutionScoreTests(unittest.TestCase):
     def test_overconservative_control_is_detected(self):
         pred = self.mod.read_jsonl(
             ROOT
-            / "research/a1-field-resolution/baselines/overconservative-all-unresolved.jsonl"
+            / "research/a0-field-resolution/baselines/overconservative-all-unresolved.jsonl"
         )
         result = self.mod.score(self.gold, pred)
         self.assertEqual(result["unsafe_field_resolution_rate"], 0.0)
