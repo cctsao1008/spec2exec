@@ -1,93 +1,88 @@
 # RFC 0005 — Trust, Intent Fidelity, and Specification Acceptance
 
-- **Status:** Draft
-- **Scope:** Trust model and the boundary between human intent and machine-verifiable artifacts
+- **Status:** Draft / Transitional
+- **Scope:** Intent fidelity and the boundary between human/domain intent and accepted semantics
+- **Normative ownership note:** RFC 0011 owns typed semantic-authority state once accepted; RFC 0006 owns evidence classes; RFC 0009 owns the native-primary realization path
 
 ## Problem
 
-Formal verification can establish that an artifact satisfies a formal specification, but it cannot generally establish that the formal specification represents what a human actually intended.
+Formal verification can establish that an artifact satisfies a formal specification, but it cannot generally establish that the formal specification represents what a human or domain authority actually intended.
 
-This distinction is fundamental to Spec2Exec.
-
-A pipeline may be internally perfect and still produce the wrong behavior if the accepted specification is wrong:
+A pipeline may be internally consistent and still produce the wrong behavior if the accepted semantics are wrong:
 
 ```text
-Human intent: shut down motor above 90 degC
+Human/domain intent: shut down motor above 90 degC
         ↓
 Incorrect specification: shut down above 120 degC
         ↓
 Formally consistent SpecIR
         ↓
-Correct lowering
+Correct target realization
         ↓
-Correct executable for the wrong requirement
+Executable for the wrong requirement
 ```
 
-Downstream verification does not repair the intent/specification mismatch.
+Downstream verification does not repair an intent/specification mismatch.
 
 ## Decision
 
-Spec2Exec shall explicitly separate:
+Spec2Exec separates:
 
 ```text
 Intent fidelity
-Specification correctness
+Semantic authority / acceptance
+Specification-to-SpecIR correctness
 Implementation conformance
 ```
 
-No single PASS state may imply all three unless separate evidence exists for each applicable layer.
+No single PASS state may imply all of these unless separate evidence exists for each applicable claim.
 
-## Architecture
+## Architecture boundary
+
+The intent/authority boundary is conceptually:
 
 ```text
-Human Intent
-     ↓
-Draft Specification
-     ↓
-AI-assisted Semantic Resolution
-     │
-     ├── ambiguity / missing semantics ─────┐
-     │                                     │
-     ▼                                     │
-Resolved Specification                    │
-     │                                     │
-     ▼                                     │
-Human / Domain Specification Gate ◄────────┘
-     │
-     ▼
+Human / Domain Sources
+        ↓
+Draft / Candidate Semantics
+        ↓
+Ambiguity / Conflict / Missing-Semantics Detection
+        ↓
+Authority Resolution
+        ↓
 Accepted Specification
-     ↓
+        ↓
 Semantic Synthesis (untrusted)
-     ↓
+        ↓
 Candidate SpecIR
-     ↓
-──── deterministic trust boundary ────
-     ↓
-Verification
-     ↓
-Lowering / Compiler Backend
-     ↓
-Executable
+        ↓
+Deterministic Verification
+        ↓
+Verified SpecIR
+        ↓
+Target Realization
 ```
 
-## Human / domain specification gate
+RFC 0011 refines the authority-resolution portion with AuthorityAnchors, policies, semantic obligations, executable semantic closure, delegated defaults, and a deterministic fail-closed authority gate.
 
-The specification gate exists to establish accountable acceptance of externally observable and domain-significant behavior before it is treated as the source of truth.
+## Human / domain authority
 
-The gate may vary by domain:
+A human or domain authority may be one authority source, but Spec2Exec does not require every semantic obligation to be manually approved one-by-one.
 
-- an individual developer for an exploratory example;
+Authority may originate from declared trust anchors and be delegated through explicit, scoped policy. Examples include:
+
+- an individual project owner for a POC;
 - a system engineer for an embedded product;
-- a safety authority for a safety-critical subsystem;
-- a formal review workflow for regulated software.
+- an approved contract or parent specification;
+- a safety/governance authority;
+- a standards/regulatory source selected by project governance;
+- a formal workflow or delegated authority policy.
 
-Spec2Exec does not prescribe one universal governance process, but the authority and acceptance state must be representable.
+The important property is not that an authority source is human. The important property is that the authority basis, scope, revision, delegation, and acceptance remain explicit and auditable.
 
-## Ambiguity handling
+## Ambiguity and uncertainty
 
-The system must prefer explicit uncertainty over invented certainty.
-
-Examples of semantic states include:
+This RFC no longer defines one mixed state list such as:
 
 ```text
 KNOWN
@@ -98,73 +93,122 @@ ACCEPTED
 VERIFIED
 ```
 
-If a required value is absent, the synthesis system should emit a structured unresolved item instead of selecting a plausible value without provenance.
+That older list combined knowledge state, derivation, semantic resolution, acceptance, and evidence strength on one axis and is therefore **not normative**.
 
-Example:
+Typed ownership is now:
 
 ```text
-thermal_shutdown_threshold:
-    status: unresolved
-    reason: no authoritative threshold supplied
-    blocks: production_release
+RFC 0011:
+    resolution_state
+    authority_validity
+    acceptance_state
+    applicability
+
+RFC 0006:
+    evidence_status
 ```
+
+A required semantic obligation that is unresolved, conflicting, unauthorized, or otherwise invalid for the selected build must fail closed before executable SpecIR synthesis according to RFC 0011.
 
 ## Provenance
 
-Important semantics should retain provenance such as:
+Authority-relevant semantics should retain provenance sufficient to distinguish source material, extraction/interpretation, authority, and evidence.
+
+Logical information includes:
 
 ```text
-requirement_id
-source
-revision
-authority
-acceptance_state
-derivation
-verification_evidence
+requirement / semantic-obligation id
+source artifact
+source revision / hash
+source locator
+extraction / interpretation record
+authority binding / policy revision
+acceptance record
+current validity context
+traceability to SpecIR and downstream artifacts
 ```
 
-The objective is not administrative overhead. The objective is to prevent an AI-derived assumption from becoming indistinguishable from an authoritative requirement.
+The objective is not administrative overhead. It is to prevent an AI-derived or tool-derived assumption from becoming indistinguishable from authorized semantics.
 
 ## Trust principle
 
-**Semantic synthesis is untrusted.**
+**Semantic synthesis is untrusted by default.**
 
-AI, search, heuristics, solvers, planners, and other synthesis mechanisms may propose candidate semantics. Their output only gains specific evidence status after the appropriate acceptance or deterministic checks.
+AI, search, heuristics, planners, solvers, and other synthesis mechanisms may propose candidate semantics. Proposal quality does not itself create semantic authority.
+
+A deterministic checker may establish that a recorded authority exercise satisfies a declared policy, but that `CHECKED` evidence does not prove the authority root itself. RFC 0006 owns those evidence distinctions.
+
+## Intent fidelity boundary
+
+Even a complete RFC 0011 authority chain cannot prove that the declared trust anchors themselves represent the ultimately correct human/domain intent.
+
+Spec2Exec therefore names the boundary honestly:
+
+```text
+Declared Authority TCB
+        ↓
+Authorized Semantics
+        ↓
+Deterministic Verification / Evidence
+```
+
+The Authority TCB is trusted/declared at the project boundary. It is not recursively proven by Spec2Exec.
+
+## Realization path
+
+The older Phase-0 sketch that mandated:
+
+```text
+Lowering
+  ↓
+C or LLVM IR
+  ↓
+Existing compiler backend
+```
+
+is no longer normative.
+
+The current primary realization architecture is defined by RFC 0009:
+
+```text
+Verified SpecIR
+        ↓
+Target Code Generation
+        ↓
+Target Assembly
+        ↓
+Assembler
+        ↓
+Object
+        ↓
+Linker
+        ↓
+Executable / Firmware
+```
+
+C and LLVM remain optional reference/comparison paths rather than mandatory stages.
+
+## Relationship to RFC 0011
+
+RFC 0011 is the intended normative successor for semantic-authority and specification-acceptance mechanics.
+
+Once RFC 0011 is Accepted, this RFC should be marked **Superseded / Historical** for those mechanics while remaining a useful statement of the intent-fidelity limitation:
+
+> Correct implementation of accepted semantics does not prove that the accepted semantics were the right human/domain intent.
 
 ## Non-goals
 
 Spec2Exec does not claim to:
 
 - read a person's mind;
-- automatically prove that a specification is complete in the general case;
-- eliminate human responsibility for domain decisions;
+- automatically prove general specification completeness;
+- eliminate human/domain responsibility for authority roots;
 - treat verifier success as proof of intent fidelity;
-- eliminate all assumptions or uncertainty.
+- eliminate all assumptions or uncertainty;
+- make untrusted synthesis authoritative by accuracy alone.
 
 ## Research objective
 
-The research question is narrower and more testable:
+The research question remains:
 
-> Can uncertainty, assumptions, provenance, human authority, deterministic verification, and implementation conformance be represented explicitly enough that unverified semantics do not silently become executable truth?
-
-## Consequence for proof of concept
-
-The first implementation should not begin with AI generation. It should first prove the deterministic lower half of the architecture:
-
-```text
-Manually constructed minimal SpecIR
-        ↓
-Parser / loader
-        ↓
-Deterministic verifier
-        ↓
-Lowering
-        ↓
-C or LLVM IR
-        ↓
-Existing compiler backend
-        ↓
-Executable
-```
-
-AI semantic synthesis should be introduced only after this path is independently testable.
+> Can uncertainty, provenance, semantic authority, deterministic verification, and implementation conformance be represented explicitly enough that unverified or unauthorized semantics do not silently become executable truth?
