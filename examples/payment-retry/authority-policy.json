@@ -1,0 +1,61 @@
+{
+  "schema": "spec2exec.semantic-review-policy/v0.1",
+  "policy_id": "PAY-RETRY-DEMO-001",
+  "revision": "1",
+  "subject": "payment-retry",
+  "codeowners_path": "examples/payment-retry/",
+  "required_owner": "@cctsao1008",
+  "attribution_assurance": {
+    "mechanism": "github-codeowners",
+    "status": "repository-declared",
+    "authentication": "unauthenticated"
+  },
+  "obligations": {
+    "retry_count": {
+      "allowed_values": [3],
+      "impact": "HIGH",
+      "authority_basis": "bounded VALUE_SET"
+    },
+    "retry_on_http_500": {
+      "allowed_values": [true],
+      "impact": "HIGH",
+      "authority_basis": "bounded VALUE"
+    },
+    "retry_on_timeout": {
+      "allowed_values": [false],
+      "impact": "HIGH",
+      "authority_basis": "bounded VALUE"
+    },
+    "backoff_policy": {
+      "allowed_values": ["exponential"],
+      "impact": "MEDIUM",
+      "authority_basis": "bounded VALUE_SET"
+    },
+    "request_timeout_ms": {
+      "allowed_values": [2000],
+      "impact": "MEDIUM",
+      "authority_basis": "bounded VALUE_SET"
+    },
+    "idempotency_requirement": {
+      "allowed_values": [true],
+      "impact": "CRITICAL",
+      "authority_basis": "closure CONSTRAINT"
+    },
+    "terminal_failure_behavior": {
+      "allowed_values": ["surface_failure"],
+      "impact": "HIGH",
+      "authority_basis": "bounded VALUE_SET"
+    }
+  },
+  "constraints": [
+    {
+      "constraint_id": "PAY-CONSTRAINT-IDEMPOTENCY",
+      "when": {"any_retry_enabled": true},
+      "require": {"idempotency_requirement": true},
+      "evidence_profile": {
+        "allowed_statuses": ["CHECKED"],
+        "method": "deterministic-semantic-review"
+      }
+    }
+  ]
+}
