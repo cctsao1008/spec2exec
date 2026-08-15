@@ -1,1 +1,0 @@
-Scaffolding placeholder; no benchmark semantics are defined in this file.

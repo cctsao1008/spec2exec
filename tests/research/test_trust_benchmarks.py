@@ -57,6 +57,80 @@ class A0ScoreTests(unittest.TestCase):
         self.assertEqual(result["resolved_accuracy"], 1.0)
 
 
+class A1FieldResolutionScoreTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_module(
+            "a1_score", ROOT / "research/a1-field-resolution/score.py"
+        )
+        cls.gold = cls.mod.read_jsonl(
+            ROOT / "research/a1-field-resolution/benchmark.jsonl"
+        )
+
+    def test_oracle_fixture_scores_perfectly(self):
+        pred = self.mod.read_jsonl(
+            ROOT / "research/a1-field-resolution/baselines/oracle-fixture.jsonl"
+        )
+        result = self.mod.score(self.gold, pred)
+        self.assertEqual(result["benchmark_version"], "a1/v1")
+        self.assertEqual(result["cases"], 24)
+        self.assertEqual(result["fields"], 114)
+        self.assertEqual(result["field_accuracy"], 1.0)
+        self.assertEqual(result["case_exact_match"], 1.0)
+        self.assertEqual(result["unsafe_field_resolution_rate"], 0.0)
+        self.assertEqual(result["overblocking_rate"], 0.0)
+        self.assertEqual(result["unresolved_field_recall"], 1.0)
+        self.assertEqual(result["conflict_field_recall"], 1.0)
+        self.assertEqual(result["resolved_field_accuracy"], 1.0)
+        self.assertEqual(result["not_applicable_accuracy"], 1.0)
+
+    def test_unsafe_always_resolve_control_is_detected(self):
+        pred = self.mod.read_jsonl(
+            ROOT
+            / "research/a1-field-resolution/baselines/unsafe-always-resolve.jsonl"
+        )
+        result = self.mod.score(self.gold, pred)
+        self.assertEqual(result["unsafe_field_resolution_rate"], 1.0)
+        self.assertEqual(result["resolved_field_accuracy"], 1.0)
+        self.assertLess(result["field_accuracy"], 0.7)
+
+    def test_overconservative_control_is_detected(self):
+        pred = self.mod.read_jsonl(
+            ROOT
+            / "research/a1-field-resolution/baselines/overconservative-all-unresolved.jsonl"
+        )
+        result = self.mod.score(self.gold, pred)
+        self.assertEqual(result["unsafe_field_resolution_rate"], 0.0)
+        self.assertEqual(result["overblocking_rate"], 1.0)
+        self.assertEqual(result["unresolved_field_recall"], 1.0)
+        self.assertEqual(result["resolved_field_accuracy"], 0.0)
+
+    def test_field_set_mismatch_fails(self):
+        pred = [
+            {
+                "id": case["id"],
+                "field_states": dict(case["field_states"]),
+            }
+            for case in self.gold
+        ]
+        pred[0]["field_states"].pop(next(iter(pred[0]["field_states"])))
+        with self.assertRaises(ValueError):
+            self.mod.score(self.gold, pred)
+
+    def test_invalid_field_state_fails(self):
+        pred = [
+            {
+                "id": case["id"],
+                "field_states": dict(case["field_states"]),
+            }
+            for case in self.gold
+        ]
+        first_field = next(iter(pred[0]["field_states"]))
+        pred[0]["field_states"][first_field] = "MAYBE"
+        with self.assertRaises(ValueError):
+            self.mod.score(self.gold, pred)
+
+
 class CompletenessScoreTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

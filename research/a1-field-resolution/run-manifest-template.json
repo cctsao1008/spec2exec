@@ -1,0 +1,23 @@
+{
+  "benchmark_version": "a1/v1",
+  "contamination_declaration": {
+    "fresh_context": false,
+    "gold_not_supplied": false,
+    "only_blinded_prompt_and_input_supplied": false,
+    "operator_notes": "",
+    "prior_results_not_supplied": false,
+    "repository_not_supplied": false
+  },
+  "effort_or_reasoning_mode": "n/a",
+  "evaluation_input_sha256": "",
+  "evaluation_prompt_sha256": "",
+  "predictions_sha256": "",
+  "provider": "",
+  "runtime": "",
+  "sampling_controls_notes": "",
+  "seed": "n/a",
+  "source_revision": "",
+  "system_id": "",
+  "system_version_or_ui_label": "",
+  "temperature": "n/a"
+}
