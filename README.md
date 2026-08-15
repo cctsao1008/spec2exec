@@ -4,11 +4,11 @@
 
 > **AI is making software implementation cheap. It is not making software trust cheap.**
 
-Spec2Exec explores specification as the primary human-facing artifact between intent and executable software, with an explicit trust chain from accepted semantics to the exact artifact that runs.
+Spec2Exec explores specification as the primary human-facing artifact between intent and executable software, with an explicit trust chain from authorized semantics to the exact artifact that runs.
 
-**Current state:** Spec2Exec is a research prototype. The project currently demonstrates the downstream half of that chain for a narrow RV32I bare-metal subject under QEMU. The semantic-authority gate is designed but not yet implemented. No AI or LLM component participates in the currently demonstrated executable pipeline. Physical RP2350 / Hazard3 validation remains pending.
+**Current state:** Spec2Exec is a research prototype. The project now demonstrates a narrow **authority-gated RV32I bare-metal path under QEMU**: a bound AuthorityAnchor/policy/semantic-obligation set is checked by a deterministic semantic-authority gate before the existing P1/P2 → SpecIR → native RV32I realization pipeline runs. No AI or LLM component participates in the currently demonstrated executable pipeline. Physical RP2350 / Hazard3 validation remains pending.
 
-The long-term direction is **trust infrastructure for AI-generated software**. Today, the evidence supports a smaller but concrete claim: a machine-generated, artifact-bound, per-boundary evidence chain from an accepted POC specification to a native executable and exhaustive observation of its declared runtime contract.
+The long-term direction is **trust infrastructure for AI-generated software**. The current evidence supports a smaller but concrete claim: a machine-readable, artifact-bound chain from a repository-declared POC authority basis through deterministic authority/verification checks to a native executable and exhaustive observation of its declared runtime contract.
 
 ## Why Spec2Exec?
 
@@ -92,53 +92,95 @@ The proposed delta is therefore not another single PASS result. It is to make th
 
 ## What Spec2Exec proposes
 
-The project architecture deliberately separates research, designed components, and demonstrated components:
+The architecture separates candidate semantics, authority, verification, realization, and evidence:
 
 ```text
-Human / Domain Intent                         [research input]
+Human / Domain / Governance Sources            [research / authority input]
         ↓
-Candidate Semantics                           [research]
+Candidate Semantics                            [research]
         ↓
-Ambiguity / Conflict / Missing-Semantics      [research]
-Detection
+Extraction / Interpretation                    [architecture; narrow POC records implemented]
         ↓
-Semantic Authority Gate                       [DESIGNED — not yet implemented, #53]
+Semantic Obligations + Authority Records       [MVI IMPLEMENTED for POC-1C]
         ↓
-Accepted Specification                       [current POC uses a minimal acceptance record]
+Executable Semantic Closure                    [explicit POC enumeration IMPLEMENTED]
         ↓
-Semantic Synthesis → Candidate SpecIR         [prototype path]
+Complete Authority-Grant Discovery             [MVI IMPLEMENTED]
         ↓
-Deterministic Verification                    [DEMONSTRATED — limited declared properties]
+Deterministic Semantic Authority Gate          [MVI IMPLEMENTED]
         ↓
-SpecIR after declared checks                  [DEMONSTRATED]
+Accepted Specification / Acceptance Record     [MVI IMPLEMENTED]
         ↓
-Target Realization                            [DEMONSTRATED for RV32I; other targets planned]
+Semantic Synthesis → Candidate SpecIR          [prototype path]
         ↓
-Executable / Firmware                         [DEMONSTRATED for RV32I validation ELF]
+Deterministic Verification                     [DEMONSTRATED — limited declared properties]
         ↓
-Runtime / Emulator / Hardware Observation     [QEMU DEMONSTRATED; physical HW pending]
+SpecIR after declared checks                   [DEMONSTRATED]
+        ↓
+Target Realization                             [DEMONSTRATED for RV32I; other targets planned]
+        ↓
+Executable / Firmware                          [DEMONSTRATED for RV32I validation ELF]
+        ↓
+Runtime / Emulator / Hardware Observation      [QEMU DEMONSTRATED; physical HW pending]
 
 Across the chain:
 Claim ↔ Evidence ↔ Artifact ↔ Tool ↔ Assumption ↔ Provenance
 ```
 
-The **Semantic Authority Gate is the central architectural commitment and is not yet implemented**. The current POC starts from a specification carrying a minimal `accepted-for-poc` record; stronger authority provenance, revision, delegation, revocation, and fail-closed `UNRESOLVED` / `CONFLICT` handling are tracked in [issue #53](https://github.com/cctsao1008/spec2exec/issues/53).
+The current Semantic Authority Gate is deliberately narrow. It demonstrates the RFC 0011 boundary with one repository-declared AuthorityAnchor, bounded `VALUE` / `VALUE_SET` / `CONSTRAINT` policies, three explicit semantic obligations, one selected build/configuration, an explicitly enumerated closure, complete applicable-grant discovery, fail-closed conflicts/staleness/exclusion, and an authority acceptance record bound into downstream evidence.
 
-The public thesis remains:
+It does **not** implement cryptographic identity, quorum/dual approval, redelegation beyond the MVI, rich standards/requirements ingestion, general multi-configuration closure analysis, runtime revocation, or certification workflows. The Authority TCB is explicitly unauthenticated in this POC: its anchor declaration and repository write-access protection are trusted/human-declared inputs rather than cryptographic proof.
 
-> **AI proposes. Humans authorize semantics. Deterministic systems verify. Evidence justifies trust. Portable backends execute.**
+The public thesis is:
 
-The normative architecture is broader than human-only approval: future authority may be represented by accountable standards, accepted parent specifications, certified domain models, contracts, or explicit governance sources. Capability alone does not grant semantic authority.
+> **AI proposes. Humans and delegated authority mechanisms authorize semantics. Deterministic systems verify. Evidence justifies trust. Target backends realize accepted semantics.**
 
-See [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md) for the project-level thesis and long-term invariants.
+Capability alone does not create authority.
+
+See:
+- [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md) for the project-level thesis;
+- [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md) for the accepted authority baseline;
+- [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md) for canonical evidence vocabulary and boundaries.
 
 ## What is demonstrated today
 
+### Semantic-authority MVI
+
+The POC-1C entry path now binds the specification to:
+
+```text
+AuthorityAnchor
+AuthorityPolicy set
+SemanticObligation set
+ClosureRecord
+Authority manifest + hashes
+```
+
+The real authority-gated semantic obligations are:
+
+```text
+overflow_behavior = forbidden
+input a range = [-100,100]
+input b range = [-100,100]
+```
+
+The MVI includes:
+
+- one direct human-declared `VALUE` authorization for overflow behavior;
+- one delegated `VALUE_SET` policy for the input-domain selection;
+- an explicit selected-build authorization;
+- a deterministic range `CONSTRAINT` over the closure;
+- fail-closed checks for no anchor, cycles, missing/no-policy authority, out-of-grant values, stale revisions, unresolved/conflicting semantics, scope/provenance failure, self-authorization violations, redelegation, classification widening, unbased closure exclusion, selected-configuration authority, cross-policy authority conflict, and closure-constraint violation;
+- complete discovery of potentially applicable grants rather than trusting only the binding supplied by the obligation;
+- an `A1.semantic_authority_gate` `CHECKED` claim bound into `evidence.json`.
+
+`AUTHORIZED` is a governance state, not an evidence class. The deterministic gate evaluation is `CHECKED`; the POC AuthorityAnchor and repository-protection basis remain human-declared / unauthenticated trust inputs.
+
 ### SpecIR
 
-**SpecIR** is the machine-independent intermediate representation used between an accepted specification and target realization. It represents the executable semantics, declared ranges, contracts, and trace links that the verifier and backends consume; target-specific machine details are kept outside machine-independent SpecIR.
+**SpecIR** is the machine-independent intermediate representation used between an accepted specification and target realization. It represents executable semantics, declared ranges, contracts, and trace links that the verifier and backends consume; target-specific machine details are kept outside machine-independent SpecIR.
 
-A real fragment from the current RV32I subject is shown below. It includes both postconditions and the executable body; the full document also carries inputs, output/ranges, overflow behavior, preconditions, and top-level trace metadata.
+A real fragment from the RV32I subject:
 
 ```json
 {
@@ -166,8 +208,6 @@ The full example is [examples/native-rv32i/safe_add_sub.specir.json](examples/na
 
 ### POC-1C.A worked example
 
-The current native test subject is deliberately small:
-
 ```text
 safe_add_sub(a, b) = (a + b) - b
 
@@ -177,7 +217,7 @@ accepted runtime contract: result == a
 contract trace: REQ-OPT-001-EQ
 ```
 
-The generated RV32I target code, shown with the canonical generated formatting, is:
+Generated RV32I target code:
 
 ```asm
     .section .text
@@ -191,10 +231,14 @@ safe_add_sub:
     .size safe_add_sub, .-safe_add_sub
 ```
 
-The primary executable-generation path uses **no generated C, LLVM IR, or other high-level-language compiler stage between SpecIR and target assembly**:
+The primary path uses **no generated C, LLVM IR, or other high-level-language compiler stage between SpecIR and target assembly**:
 
 ```text
-Accepted POC Specification
+Candidate POC Specification + bound authority manifest
+        ↓
+A1 deterministic Semantic Authority Gate
+        ↓
+Authority Acceptance Record
         ↓
 P1 / P2 deterministic checks
         ↓
@@ -215,10 +259,11 @@ QEMU rv32 virt
 40,401 exhaustive accepted-contract observations
 ```
 
-For the current POC-1C evidence report:
+Current evidence report:
 
 | Boundary | Current claim | Meaning |
 |---|---|---|
+| A1 | `CHECKED` | Deterministic authority evaluation confirms the bound POC anchor/policies/obligations/closure under the declared Authority TCB; this does not authenticate or prove the anchor itself |
 | P1 | `CHECKED` | Function identity plus constraint, range, behavior, and contract linkage/traceability against the accepted POC specification |
 | P2 | `CHECKED` | Fixed-width type-domain checks, output-range containment, and absence of signed-overflow UB for this i32 subject by blocking sound interval analysis |
 | P3 | `TESTED` | SpecIR → generated RV32I assembly has test evidence; this is not a formal compiler-equivalence proof |
@@ -226,13 +271,13 @@ For the current POC-1C evidence report:
 | P4-R | `TESTED_EXHAUSTIVE` | Every case in the mechanically bound declared finite runtime domain was observed under QEMU `rv32 virt` |
 | P4-R.sensitivity | `TESTED` | Known-bad target mutations and a trap probe were required to reach the observable failure channel |
 
-No boundary in the current POC-1C evidence set carries `PROVEN`: **`TESTED` is not `PROVEN`, and `TRUSTED` is not `VERIFIED`**.
+No boundary in the current evidence set carries `PROVEN`: **`TESTED` is not `PROVEN`, `TESTED_EXHAUSTIVE` is not `PROVEN`, and `TRUSTED` is not `VERIFIED`.**
 
 `TESTED_EXHAUSTIVE` is scoped to the accepted contract's declared domain, not the full 32-bit input space. POC-1C.A observes all **40,401** input pairs in `[-100,100] × [-100,100]` under QEMU `rv32 virt`, checking `result == a` for every pair.
 
-For P4-R, QEMU is also part of the named trusted computing base: the evidence assumes that the QEMU `rv32 virt` machine model correctly represents the exercised RV32I behavior and that the SiFive test-finisher protocol maps the observed PASS/FAIL channel correctly.
+For P4-R, QEMU is part of the named TCB: the evidence assumes the QEMU `rv32 virt` machine model correctly represents the exercised RV32I behavior and that the SiFive test-finisher protocol maps the observed PASS/FAIL channel correctly.
 
-The runtime evidence also includes negative controls:
+Runtime sensitivity controls remain:
 
 ```text
 wrong-final-operation  → exit 1
@@ -240,39 +285,43 @@ wrong-first-operation  → exit 1
 trap-path-ebreak       → exit 1
 ```
 
-This fail-closed / sensitivity evidence matters because a runtime oracle that cannot detect a known-bad implementation cannot support a meaningful success claim.
+### Current tested baseline
 
-The successful entry-hardening baseline is tied to:
+The authority-gated baseline is tied to:
 
 ```text
-source revision   65b346be4478b08a984d20b36cc47b901539371b
-GitHub Actions    run 31765577964
-POC-1C tests      28 / 28 PASS
+source revision   c96f08c46920d80a619ac6be58507e506e0850da
+GitHub Actions    run 31879494912
+POC-1C tests      50 / 50 PASS
+runtime domain    40,401 / 40,401 PASS
+safe_add_sub.s    sha256 9e78282830b5e9e87a69b22dc0c358bd07bcff248f04f2709792f45973892a6b
+safe_add_sub.o    sha256 027486b5efe99dfc21356d26620f9523316db0e32b1a5266396b96f62f799b7d
 safe_add_sub.elf  sha256 fb029132a30d8030128edf8f373978ee1643a220c448fc02d06fc95ad26fffc8
-evidence.json     sha256 7600bd471e949d961f9c0639f59bb5fd2408677c8197cbc98d0ad28be9921fa9
+evidence.json     sha256 a8db31ec9e69cd46d2a573768593e51e3da3d1894482ddb4f4f4de2c76757826
 ```
 
-See the [POC-1C.A validation results](docs/poc1c-results.md) and [GitHub Actions run 31765577964](https://github.com/cctsao1008/spec2exec/actions/runs/31765577964) for the complete evidence set.
+The target assembly/object/ELF hashes are unchanged from the prior entry-hardening baseline; the authority work changed the trusted entry/evidence chain rather than the generated target behavior for this subject.
 
-On the Ubuntu CI runner, the RV32I toolchain/emulator prerequisites are installed as `binutils-riscv64-unknown-elf` and `qemu-system-misc`, then CI runs:
+See [POC-1C.A validation results](docs/poc1c-results.md) and [GitHub Actions run 31879494912](https://github.com/cctsao1008/spec2exec/actions/runs/31879494912).
+
+CI installs `binutils-riscv64-unknown-elf` and `qemu-system-misc`, then runs:
 
 ```sh
 make test-poc1c
 make poc1c
 ```
 
-with `POC1C_REQUIRE_RUNTIME=1`, so the runtime and sensitivity path cannot silently disappear because the required emulator/toolchain is unavailable.
+with `POC1C_REQUIRE_RUNTIME=1`, so runtime and sensitivity validation cannot silently disappear when the required emulator/toolchain is unavailable.
 
-The project therefore claims a **working native RV32I emulator baseline with explicit per-boundary evidence**. It does **not** claim a formally verified native compiler, physical-hardware validation, or a completed semantic-authority mechanism.
+The project therefore claims a **working native RV32I emulator baseline with a narrow authority-gated POC entry path and explicit per-boundary evidence**. It does **not** claim a formally verified native compiler, cryptographically authenticated semantic authority, a general authority-management system, certification, or physical-hardware validation.
 
 ## Designed and research-next
 
-The project deliberately distinguishes implemented evidence from planned trust capabilities:
-
 | Area | Current state |
 |---|---|
-| Rich semantic-authority / provenance model | Designed / open — [#53](https://github.com/cctsao1008/spec2exec/issues/53) |
-| Canonical evidence vocabulary and RFC boundary normalization | Architecture work open — [#54](https://github.com/cctsao1008/spec2exec/issues/54) |
+| Semantic-authority / provenance model | RFC 0011 Accepted; narrow POC-1C MVI implemented and validated under #53 |
+| Canonical evidence vocabulary / RFC normalization | RFC 0006 Accepted; #54 CLOSED / COMPLETED |
+| Rich authority ingestion, strong identity, multi-config closure | Deferred / future authority work beyond the MVI |
 | Hazard3 / RP2350 / Pico 2 physical validation | Pending — [#36](https://github.com/cctsao1008/spec2exec/issues/36) |
 | RV32 backend multiple-live-value / forced-spill stress | Next backend experiment — [#37](https://github.com/cctsao1008/spec2exec/issues/37) |
 | Arm M-profile and hosted target expansion | Planned — [target profiles](docs/target-profiles.md) |
@@ -284,15 +333,15 @@ A0 asks a deliberately different AI question from ordinary code-generation bench
 
 > Can a synthesis system expose unresolved or conflicting semantics instead of inventing a plausible value?
 
-The benchmark track uses `RESOLVED`, `UNRESOLVED`, and `CONFLICT` decisions and defines `unsafe_resolution_rate` as a primary metric. Its key guardrail is that a plausible engineering value is still a failure when the authoritative source did not provide or authorize that value.
+The benchmark uses `RESOLVED`, `UNRESOLVED`, and `CONFLICT` decisions and defines `unsafe_resolution_rate` as a primary metric. A plausible engineering value is still a failure when the authoritative source did not provide or authorize that value.
 
-A0 is currently a **research track, not a demonstrated AI result**: no reproducible baseline run is yet claimed, and A0 remains disconnected from executable generation until the semantic-authority gate is strong enough to reject unresolved, conflicting, unauthorized, or stale semantics. See [research/a0-semantic-resolution/](research/a0-semantic-resolution/) and [issue #45](https://github.com/cctsao1008/spec2exec/issues/45).
+A0 remains a **research track, not a demonstrated AI result**: no reproducible AI baseline run is currently claimed. The accepted authority architecture now provides the boundary required for future integration, but A0 is not yet part of the demonstrated executable pipeline. See [research/a0-semantic-resolution/](research/a0-semantic-resolution/) and [issue #45](https://github.com/cctsao1008/spec2exec/issues/45).
 
 ## Target and validation scope
 
 The demonstrated architectural target is currently **RV32I + bare metal**, validated under QEMU `rv32 virt`. Raspberry Pi Pico 2 / RP2350 with Hazard3 is planned physical validation hardware; it is a validation platform, not an architectural target.
 
-Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations are roadmap work rather than demonstrated portability. The full target model, ISA / Execution / Platform Profile separation, and planned configurations live in [docs/target-profiles.md](docs/target-profiles.md) and [docs/phase1-plan.md](docs/phase1-plan.md).
+Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations are roadmap work rather than demonstrated portability. The target model and planned configurations live in [docs/target-profiles.md](docs/target-profiles.md) and [docs/phase1-plan.md](docs/phase1-plan.md).
 
 ## What Spec2Exec is not
 
@@ -302,22 +351,24 @@ Spec2Exec is not:
 - a system in which AI output gains semantic authority by being plausible or capable;
 - a certified medical, aviation, automotive, industrial-safety, or security system;
 - a claim to replace testing, formal methods, assurance cases, verified compilers, certification processes, or supply-chain provenance systems;
-- a claim that the current prototype implements the complete trust architecture or that every boundary is formally proven.
+- a claim that the current authority MVI is a production governance, identity, or certification system;
+- a claim that every boundary is formally proven.
 
 ## Where to read next
 
-- [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md): project thesis, trust layers, semantic authority, long-term invariants.
-- [RFC 0005 — Trust, Intent Fidelity, and Specification Acceptance](rfcs/0005-trust-intent-fidelity-and-specification-acceptance.md): draft authority / acceptance boundary; currently being reconciled with newer architecture work.
-- [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md): draft evidence model; boundary and vocabulary normalization is tracked in #54.
+- [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md): project thesis, trust/assurance/realization layers, and long-term invariants.
+- [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md): Accepted semantic-authority baseline and fail-closed gate architecture.
+- [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md): Accepted canonical evidence vocabulary, preservation boundaries, evidence profiles, and RFC lifecycle.
+- [RFC 0005 — Trust, Intent Fidelity, and Specification Acceptance](rfcs/0005-trust-intent-fidelity-and-specification-acceptance.md): historical intent-fidelity rationale; authority mechanics are superseded by RFC 0011.
 - [RFC 0009 — Native Target Code Generation](rfcs/0009-native-target-code-generation.md): accepted native-target architecture and target / validation separation.
-- [POC-1C.A validation results](docs/poc1c-results.md): exact tested subject, evidence boundaries, tool versions, hashes, negative controls, and remaining work.
+- [POC-1C.A validation results](docs/poc1c-results.md): exact tested subject, authority gate, evidence boundaries, tool versions, hashes, negative controls, and remaining work.
 - [Target profiles](docs/target-profiles.md): ISA, execution, ABI, platform, and planned portability model.
 - [A0 semantic-resolution benchmark](research/a0-semantic-resolution/): `UNRESOLVED` / `CONFLICT` handling and trust-oriented AI metrics.
 - [Issue #49 — active roadmap](https://github.com/cctsao1008/spec2exec/issues/49): current implementation and research workstreams.
 
 ## Roadmap snapshot
 
-Current active work is split between backend scaling and trust-chain hardening. POC-1C.B continues RV32 backend stress, while #53, #54, and A0 address the still-unimplemented semantic-authority and trust-oriented research layers. Arm M-profile, hosted portability, and physical RP2350 validation remain planned or pending.
+The first semantic-authority MVI and evidence/RFC normalization workstreams are complete. Current active work now splits between backend scaling (#37), physical validation (#36), the A0 semantic-resolution research track (#45), and later target expansion. Broader authority features such as strong identity, rich external-source ingestion, multi-configuration closure analysis, and enterprise policy management remain explicitly deferred beyond the first POC.
 
 ## License
 
