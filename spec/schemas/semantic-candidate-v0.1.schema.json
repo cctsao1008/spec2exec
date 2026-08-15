@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec2exec.local/schema/semantic-candidate-v0.1",
+  "title": "Spec2Exec Semantic Candidate v0.1",
+  "type": "object",
+  "required": ["schema", "candidate_id", "requirement_id", "proposer", "values", "provenance"],
+  "properties": {
+    "schema": {"const": "spec2exec.semantic-candidate/v0.1"},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "requirement_id": {"type": "string", "minLength": 1},
+    "proposer": {"type": "string", "minLength": 1},
+    "values": {"type": "object", "minProperties": 1},
+    "provenance": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["source_artifact", "source_requirement_id", "source_locator", "origin", "source_supports_value"],
+        "properties": {
+          "source_artifact": {"type": "string", "minLength": 1},
+          "source_requirement_id": {"type": "string", "minLength": 1},
+          "source_locator": {"type": "string", "minLength": 1},
+          "origin": {"type": "string", "minLength": 1},
+          "source_supports_value": {"const": false}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
