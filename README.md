@@ -115,7 +115,7 @@ For example:
 
 is an unsafe resolution when the source or an applicable authority policy never supplied or delegated `3`.
 
-A0 v1 currently contains cross-domain cases for motor safety, sensors, timing, payment retry, access control, cloud retry, hardware semantics, and related cases. The repository includes deterministic scorer controls, but **no measured AI/model quality is currently claimed**. A reproducible model baseline must record the exact model/system, harness/prompt revision, sampling settings, predictions, and source revision.
+A0 v1 contains cross-domain cases for motor safety, sensors, timing, payment retry, access control, cloud retry, hardware semantics, and related cases. It now has one measured blinded external-model baseline under closed issue #45: the Claude web UI configuration labeled `Opus 5` with `High` effort matched all 24 A0 v1 decision labels, with `unsafe_resolution_rate = 0/14` on the unresolved/conflict subset. This is a benchmark-specific measured result, **not** a claim of general model quality, universal semantic completeness, semantic authority, certification, or exact correctness of every free-form explanation field. See the [measured baseline report](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md).
 
 See [A0](research/a0-semantic-resolution/) and [issue #45](https://github.com/cctsao1008/spec2exec/issues/45).
 
@@ -338,7 +338,7 @@ The unsafe candidate is blocked because it contains both an unauthorized decisio
 
 This is a **workflow POC following RFC 0011 principles**, not a replacement for the validated POC-1C authority-record evaluator and not a claim that CODEOWNERS is sufficient production authority.
 
-The shared trust-research workflow validates the benchmark scorer controls, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. The current validated trust-research run is `31907601851`.
+The shared trust-research workflow validates the A0/C0 scorer controls and measured-baseline regression, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. The current validated research-regression run is `31911177163`.
 
 ### 5. Existing-compiler evidence composition
 
@@ -490,12 +490,13 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 |---|---|
 | Semantic-authority / provenance | RFC 0011 Accepted; narrow authority-gated POC-1C MVI validated under #53 |
 | Evidence vocabulary / RFC normalization | RFC 0006 Accepted; #54 completed |
-| A0 unsafe semantic resolution | `a0/v1` benchmark/scorer/control fixtures implemented; measured AI baseline still open under #45 |
+| A0 unsafe semantic resolution | `a0/v1` benchmark/scorer/control fixtures plus one blinded measured Opus 5 / High baseline recorded; #45 closed |
 | C0 obligation discovery / completeness | `c0/v1` benchmark/scorer/control fixtures implemented under #57 |
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
 | Existing-compiler evidence composition | host-C experiment implemented/tested under #60 |
 | Lifecycle-aware Trust Graph | RFC 0012 Accepted; architecture #61 closed; bounded payment-retry lifecycle implementation/validation #62 closed with 29 / 29 lifecycle tests and green CI |
+| Hostile-review umbrella | mapped F-01 through F-13 workstreams closed under #52 |
 | RV32 forced-spill experiment | backend work remains available under #37 |
 | Hazard3 / RP2350 hardware validation | pending under #36 |
 | Strong identity / OIDC / signatures / quorum | deferred future authority work |
@@ -505,6 +506,7 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 For the fastest introduction:
 
 - [Payment-retry semantic-authority example](examples/payment-retry/README.md)
+- [A0 measured baseline — Claude Opus 5 / High](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md)
 - [Bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md)
 - [Blocked semantic diff](examples/payment-retry/unsafe-review.md)
 - [C0 semantic-obligation completeness benchmark](research/semantic-obligation-completeness/)
@@ -555,6 +557,8 @@ Workflow axis
         ↓
     future stronger identity / approval mechanisms
 ```
+
+`a0/v1` and `c0/v1` should now be treated as frozen measured/research baselines. Held-out or adversarial benchmark revisions should use explicit versioning and an Issue before benchmark semantics change, rather than mutating the measured baseline after observing its result.
 
 Native backend experiments remain useful for testing realization boundaries, but the project does not need to become a full production compiler to validate the trust architecture. Existing-compiler integration is an explicit first step toward demonstrating that the same evidence model can span multiple realization strategies.
 
