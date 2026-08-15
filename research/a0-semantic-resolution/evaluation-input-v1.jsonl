@@ -1,0 +1,24 @@
+{"id":"A0-001","domain":"motor-safety","requirement":"Shut down the motor when it gets too hot."}
+{"id":"A0-002","domain":"motor-safety","requirement":"Shut down the motor when temperature exceeds 90 degC for at least 100 ms."}
+{"id":"A0-003","domain":"motor-safety","requirement":"The motor shall shut down above 90 degC. The safety table specifies shutdown above 105 degC."}
+{"id":"A0-004","domain":"sensor","requirement":"If the encoder becomes invalid, enter the safe state."}
+{"id":"A0-005","domain":"sensor","requirement":"If encoder validity is false for 3 consecutive samples, set motor command to 0 and enter FAULT."}
+{"id":"A0-006","domain":"timing","requirement":"Run the control loop fast enough to keep the system stable."}
+{"id":"A0-007","domain":"timing","requirement":"Execute the control task every 1 ms with a deadline of 800 us."}
+{"id":"A0-008","domain":"numeric","requirement":"Input x is an i32 value in the inclusive range 0 through 100."}
+{"id":"A0-009","domain":"numeric","requirement":"Input x is a positive integer."}
+{"id":"A0-010","domain":"recovery","requirement":"After an over-temperature shutdown, recover normally when safe."}
+{"id":"A0-011","domain":"recovery","requirement":"After THERMAL_FAULT, remain in FAULT until manual reset; automatic recovery is prohibited."}
+{"id":"A0-012","domain":"units","requirement":"Limit speed to 10."}
+{"id":"A0-013","domain":"units","requirement":"Limit angular speed to 10 rad/s."}
+{"id":"A0-014","domain":"priority","requirement":"Safety requirement SR-1 says PWM must be zero in FAULT. Diagnostic requirement DR-4 says PWM shall remain at 5% in FAULT for actuator identification."}
+{"id":"A0-015","domain":"hardware","requirement":"Read the status register and clear the fault flag as required by the device."}
+{"id":"A0-016","domain":"hardware","requirement":"Read 32-bit register 0x40001020; bit 3 is FAULT and is cleared by writing 1 to bit 3."}
+{"id":"A0-017","domain":"payment-retry","requirement":"Retry failed payment requests."}
+{"id":"A0-018","domain":"payment-retry","requirement":"Retry HTTP 500 payment requests at most 3 times with exponential backoff. Do not retry timeouts. Every retried operation must use an idempotency key."}
+{"id":"A0-019","domain":"payment-retry","requirement":"Retry payment timeouts three times. Policy PAY-7 says payment timeouts must never be retried."}
+{"id":"A0-020","domain":"access-control","requirement":"Administrators may delete user accounts."}
+{"id":"A0-021","domain":"access-control","requirement":"Only principals with role USER_ADMIN may delete non-system user accounts; system accounts must never be deleted through this operation."}
+{"id":"A0-022","domain":"cloud-retry","requirement":"Retry transient API failures using the standard retry policy."}
+{"id":"A0-023","domain":"sensor-fusion","requirement":"If two temperature sensors disagree, use the safer value."}
+{"id":"A0-024","domain":"sensor-fusion","requirement":"If |T1-T2| exceeds 5 degC, enter SENSOR_CONFLICT and command motor output to zero until manual reset."}
