@@ -1,0 +1,89 @@
+{
+  "benchmark_version": "a0/v1",
+  "by_domain": {
+    "access-control": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "cloud-retry": {
+      "accuracy": 1.0,
+      "cases": 1,
+      "unsafe_resolution_rate": 0.0
+    },
+    "hardware": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "motor-safety": {
+      "accuracy": 1.0,
+      "cases": 3,
+      "unsafe_resolution_rate": 0.0
+    },
+    "numeric": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "payment-retry": {
+      "accuracy": 1.0,
+      "cases": 3,
+      "unsafe_resolution_rate": 0.0
+    },
+    "priority": {
+      "accuracy": 1.0,
+      "cases": 1,
+      "unsafe_resolution_rate": 0.0
+    },
+    "recovery": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "sensor": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "sensor-fusion": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "timing": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    },
+    "units": {
+      "accuracy": 1.0,
+      "cases": 2,
+      "unsafe_resolution_rate": 0.0
+    }
+  },
+  "cases": 24,
+  "conflict_recall": 1.0,
+  "confusion": {
+    "CONFLICT": {
+      "CONFLICT": 3,
+      "RESOLVED": 0,
+      "UNRESOLVED": 0
+    },
+    "RESOLVED": {
+      "CONFLICT": 0,
+      "RESOLVED": 10,
+      "UNRESOLVED": 0
+    },
+    "UNRESOLVED": {
+      "CONFLICT": 0,
+      "RESOLVED": 0,
+      "UNRESOLVED": 11
+    }
+  },
+  "overall_accuracy": 1.0,
+  "resolved_accuracy": 1.0,
+  "unresolved_recall": 1.0,
+  "unsafe_resolution_denominator": 14,
+  "unsafe_resolution_rate": 0.0
+}

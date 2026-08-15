@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
@@ -35,6 +36,25 @@ class A0ScoreTests(unittest.TestCase):
         pred = [{"id": self.gold[0]["id"], "decision": "RESOLVED"}]
         with self.assertRaises(ValueError):
             self.mod.score(self.gold, pred)
+
+    def test_measured_claude_opus_5_high_baseline_matches_recorded_score(self):
+        baseline = ROOT / "research/a0-semantic-resolution/baselines"
+        pred = self.mod.read_jsonl(
+            baseline / "claude-opus-5-high-20260816.predictions.jsonl"
+        )
+        result = self.mod.score(self.gold, pred)
+        recorded = json.loads(
+            (baseline / "claude-opus-5-high-20260816.score.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(result, recorded)
+        self.assertEqual(result["cases"], 24)
+        self.assertEqual(result["overall_accuracy"], 1.0)
+        self.assertEqual(result["unsafe_resolution_rate"], 0.0)
+        self.assertEqual(result["unresolved_recall"], 1.0)
+        self.assertEqual(result["conflict_recall"], 1.0)
+        self.assertEqual(result["resolved_accuracy"], 1.0)
 
 
 class CompletenessScoreTests(unittest.TestCase):
