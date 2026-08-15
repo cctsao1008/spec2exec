@@ -1,0 +1,133 @@
+{
+  "policies": [
+    {
+      "allowed_authority_agents": [
+        "project-owner"
+      ],
+      "attribution_requirement": {
+        "allowed_mechanisms": [
+          "repository-declared"
+        ]
+      },
+      "grant": {
+        "value": "POC-1C.A.safe_add_sub|rv32i-baremetal|default"
+      },
+      "grant_kind": "VALUE",
+      "policy_id": "POL-POC1C-BUILD",
+      "redelegation_allowed": false,
+      "revision": "1",
+      "scope": {
+        "build_ids": [
+          "POC-1C.A.safe_add_sub"
+        ]
+      },
+      "self_authorization_allowed": true,
+      "source_anchor_id": "ANCHOR-POC1C-PROJECT",
+      "source_revision": "1",
+      "subjects": [
+        "selected-build"
+      ]
+    },
+    {
+      "allowed_authority_agents": [
+        "project-owner"
+      ],
+      "attribution_requirement": {
+        "allowed_mechanisms": [
+          "repository-declared"
+        ]
+      },
+      "grant": {
+        "value": "forbidden"
+      },
+      "grant_kind": "VALUE",
+      "policy_id": "POL-POC1C-OVERFLOW",
+      "redelegation_allowed": false,
+      "revision": "1",
+      "scope": {
+        "build_ids": [
+          "POC-1C.A.safe_add_sub"
+        ]
+      },
+      "self_authorization_allowed": true,
+      "source_anchor_id": "ANCHOR-POC1C-PROJECT",
+      "source_revision": "1",
+      "subjects": [
+        "REQ-OPT-001-OVF"
+      ]
+    },
+    {
+      "allowed_authority_agents": [
+        "poc1c-default-engine-v1"
+      ],
+      "attribution_requirement": {
+        "allowed_mechanisms": [
+          "deterministic-local-policy"
+        ]
+      },
+      "grant": {
+        "allowed_values": [
+          {
+            "max": 100,
+            "min": -100
+          },
+          {
+            "max": 50,
+            "min": -50
+          }
+        ]
+      },
+      "grant_kind": "VALUE_SET",
+      "policy_id": "POL-POC1C-INPUT-DOMAIN",
+      "redelegation_allowed": false,
+      "revision": "1",
+      "scope": {
+        "build_ids": [
+          "POC-1C.A.safe_add_sub"
+        ]
+      },
+      "self_authorization_allowed": true,
+      "source_anchor_id": "ANCHOR-POC1C-PROJECT",
+      "source_revision": "1",
+      "subjects": [
+        "REQ-OPT-001-A.range",
+        "REQ-OPT-001-B.range"
+      ]
+    },
+    {
+      "allowed_authority_agents": [
+        "poc1c-authority-gate-v0.1"
+      ],
+      "evidence_profile": {
+        "allowed_statuses": [
+          "CHECKED"
+        ],
+        "required_method_class": "deterministic-range-check"
+      },
+      "grant": {
+        "rule": {
+          "kind": "input_ranges_within",
+          "max": 100,
+          "min": -100
+        }
+      },
+      "grant_kind": "CONSTRAINT",
+      "policy_id": "POL-POC1C-DOMAIN-CONSTRAINT",
+      "redelegation_allowed": false,
+      "revision": "1",
+      "scope": {
+        "build_ids": [
+          "POC-1C.A.safe_add_sub"
+        ]
+      },
+      "self_authorization_allowed": false,
+      "source_anchor_id": "ANCHOR-POC1C-PROJECT",
+      "source_revision": "1",
+      "subjects": [
+        "REQ-OPT-001-A.range",
+        "REQ-OPT-001-B.range"
+      ]
+    }
+  ],
+  "schema": "spec2exec.authority-policies/v0.1"
+}
