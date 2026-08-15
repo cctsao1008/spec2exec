@@ -428,8 +428,23 @@ This rule permits architecture work to proceed in stages without representing dr
 ## Relationship to RFC 0009 and RFC 0010
 
 - RFC 0009 owns native target-realization architecture and refines the generic P3/P4 boundaries without redefining evidence classes.
-- RFC 0010 owns the top-level trust-chain thesis and must distinguish Realization activities from Assurance/Preservation Evidence.
-- RFC 0011 owns semantic-authority states and may consume the canonical evidence vocabulary from this RFC.
+- RFC 0010 owns the top-level trust-chain thesis and distinguishes Realization activities from Assurance/Preservation Evidence.
+- RFC 0011 owns semantic-authority states and consumes the canonical evidence vocabulary from this RFC.
+
+## #54 closure note
+
+Issue #54 reconciled the following architecture drift:
+
+- RFC 0006 and RFC 0009 now share compatible P3/P4-A/P4-H/P4-L/P4-R boundaries;
+- `TESTED_EXHAUSTIVE` is normatively defined;
+- one canonical evidence vocabulary and extension rule exist;
+- typed state namespaces separate RFC 0011 semantic-authority state from evidence strength;
+- RFC 0005 no longer owns the mixed authority/evidence state machine and no longer mandates C/LLVM as the primary realization path;
+- RFC lifecycle and Draft/Accepted dependency rules are explicit;
+- RFC 0010 separates Realization from Assurance/Preservation Evidence;
+- RFC 0011 uses RFC 0006 evidence profiles rather than inventing authority-specific evidence classes.
+
+No executable behavior was changed by #54. Therefore #54 required architecture/document consistency review, not a new executable CI baseline.
 
 ## No collapsed PASS
 
