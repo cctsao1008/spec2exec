@@ -21,7 +21,7 @@
     },
     "policies": {
       "path": "policies.json",
-      "sha256": "86357168ee50970ac6d64205a1f835b313bf9c4cca05e8073538eeafd478c35d"
+      "sha256": "9fa05ecbd64b1d62e1ac1c207d18a1f8e70b9f3838d73d767160a94fb2837526"
     }
   },
   "record_set_id": "AUTHSET-POC1C-001",
