@@ -1,0 +1,26 @@
+{
+  "anchor_id": "ANCHOR-POC1C-PROJECT",
+  "attribution": {
+    "authenticated": false,
+    "evidence_status": "HUMAN-DECLARED",
+    "mechanism": "repository-declared"
+  },
+  "authority_kind": "project-governance",
+  "declared_by": "project-owner",
+  "protection": {
+    "authenticated": false,
+    "evidence_status": "HUMAN-DECLARED",
+    "mechanism": "repository-write-access"
+  },
+  "revision": "1",
+  "schema": "spec2exec.authority-anchor/v0.1",
+  "scope": {
+    "subjects": [
+      "REQ-OPT-001",
+      "REQ-OPT-001-A.range",
+      "REQ-OPT-001-B.range",
+      "REQ-OPT-001-OVF",
+      "selected-build"
+    ]
+  }
+}
