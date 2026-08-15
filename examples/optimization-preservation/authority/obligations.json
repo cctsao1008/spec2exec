@@ -1,0 +1,86 @@
+{
+  "obligations": [
+    {
+      "applicability": "APPLICABLE",
+      "attribution": {
+        "evidence_status": "HUMAN-DECLARED",
+        "mechanism": "repository-declared"
+      },
+      "authority_agent": "project-owner",
+      "authority_policy_id": "POL-POC1C-OVERFLOW",
+      "authority_state": "CURRENT",
+      "classification_basis": {
+        "kind": "deterministic",
+        "method": "explicit-poc1c-subject-map-v1"
+      },
+      "obligation_id": "AUTH-OVF-001",
+      "policy_revision": "1",
+      "proposer": "project-owner",
+      "provenance": {
+        "source_artifact": "examples/optimization-preservation/specification.json",
+        "source_locator": "/function/overflow_behavior/mode"
+      },
+      "resolution_state": "RESOLVED",
+      "spec_locator": "/function/overflow_behavior/mode",
+      "subject": "REQ-OPT-001-OVF",
+      "value": "forbidden"
+    },
+    {
+      "applicability": "APPLICABLE",
+      "attribution": {
+        "evidence_status": "CHECKED",
+        "mechanism": "deterministic-local-policy"
+      },
+      "authority_agent": "poc1c-default-engine-v1",
+      "authority_policy_id": "POL-POC1C-INPUT-DOMAIN",
+      "authority_state": "CURRENT",
+      "classification_basis": {
+        "kind": "deterministic",
+        "method": "explicit-poc1c-subject-map-v1"
+      },
+      "obligation_id": "AUTH-DOMAIN-A",
+      "policy_revision": "1",
+      "proposer": "poc1c-default-engine-v1",
+      "provenance": {
+        "source_artifact": "examples/optimization-preservation/specification.json",
+        "source_locator": "/function/inputs/0/range"
+      },
+      "resolution_state": "RESOLVED",
+      "spec_locator": "/function/inputs/0/range",
+      "subject": "REQ-OPT-001-A.range",
+      "value": {
+        "max": 100,
+        "min": -100
+      }
+    },
+    {
+      "applicability": "APPLICABLE",
+      "attribution": {
+        "evidence_status": "CHECKED",
+        "mechanism": "deterministic-local-policy"
+      },
+      "authority_agent": "poc1c-default-engine-v1",
+      "authority_policy_id": "POL-POC1C-INPUT-DOMAIN",
+      "authority_state": "CURRENT",
+      "classification_basis": {
+        "kind": "deterministic",
+        "method": "explicit-poc1c-subject-map-v1"
+      },
+      "obligation_id": "AUTH-DOMAIN-B",
+      "policy_revision": "1",
+      "proposer": "poc1c-default-engine-v1",
+      "provenance": {
+        "source_artifact": "examples/optimization-preservation/specification.json",
+        "source_locator": "/function/inputs/1/range"
+      },
+      "resolution_state": "RESOLVED",
+      "spec_locator": "/function/inputs/1/range",
+      "subject": "REQ-OPT-001-B.range",
+      "value": {
+        "max": 100,
+        "min": -100
+      }
+    }
+  ],
+  "schema": "spec2exec.semantic-obligations/v0.1"
+}
