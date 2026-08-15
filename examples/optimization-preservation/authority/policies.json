@@ -96,8 +96,13 @@
     },
     {
       "allowed_authority_agents": [
-        "poc1c-authority-gate-v0.1"
+        "project-owner"
       ],
+      "attribution_requirement": {
+        "allowed_mechanisms": [
+          "repository-declared"
+        ]
+      },
       "evidence_profile": {
         "allowed_statuses": [
           "CHECKED"
