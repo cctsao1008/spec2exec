@@ -1,0 +1,32 @@
+{
+  "candidate_subjects": [
+    "AUTH-OVF-001",
+    "AUTH-DOMAIN-A",
+    "AUTH-DOMAIN-B"
+  ],
+  "closure_id": "CLOSURE-POC1C-001",
+  "constraint_policy_ids": [
+    "POL-POC1C-DOMAIN-CONSTRAINT"
+  ],
+  "excluded_subjects": [],
+  "included_obligations": [
+    "AUTH-OVF-001",
+    "AUTH-DOMAIN-A",
+    "AUTH-DOMAIN-B"
+  ],
+  "method": "explicit-enumeration-v1",
+  "method_version": "1",
+  "schema": "spec2exec.authority-closure/v0.1",
+  "selected_build": {
+    "attribution": {
+      "evidence_status": "HUMAN-DECLARED",
+      "mechanism": "repository-declared"
+    },
+    "authority_agent": "project-owner",
+    "authority_policy_id": "POL-POC1C-BUILD",
+    "build_id": "POC-1C.A.safe_add_sub",
+    "configuration": "default",
+    "policy_revision": "1",
+    "target_profile": "rv32i-baremetal"
+  }
+}
