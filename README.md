@@ -152,128 +152,9 @@ Target Realization
 
 Completeness is cross-cutting rather than a single pipeline pass. **C0 obligation completeness** studies whether authority-relevant questions were surfaced at all, while **RFC 0011 Semantic Completeness** prevents known authority-relevant obligations from silently disappearing from the executable semantic closure.
 
-The more detailed ASCII diagrams and RFC text below remain the more precise descriptions of architecture, state, evidence boundaries, and implementation status.
-
-## What this looks like
-
-One human-facing workflow POC uses the payment-retry story:
-
-```text
-Spec2Exec Semantic Review
-
-retry_count = 5            UNAUTHORIZED
-retry_on_http_500 = true   AUTHORIZED
-retry_on_timeout = ?       UNRESOLVED
-
-MERGE GATE: BLOCKED
-```
-
-See the [blocked semantic review](examples/payment-retry/unsafe-review.md), the [accepted review](examples/payment-retry/accepted-review.md), and the [payment-retry example](examples/payment-retry/README.md).
-
-This workflow POC is deliberately narrower than a production GitHub integration. Its CODEOWNERS mapping is a **repository-declared, unauthenticated attribution input** into the authority policy; CODEOWNERS is not semantic authority by itself. Live GitHub App/check-run posting, cryptographic identity, quorum approval, OIDC, and enterprise identity integration remain future work.
-
-## Current research tracks
-
-### A0 — unsafe semantic resolution
-
-A0 asks:
-
-> When a semantic question is incomplete, ambiguous, or contradictory, does a system expose uncertainty — or invent a plausible answer?
-
-Its primary trust-oriented metric is `unsafe_resolution_rate`.
-
-For example:
-
-```text
-"Retry failed payment requests."
-→ retry_count = 3
-```
-
-is an unsafe resolution when the source or an applicable authority policy never supplied or delegated `3`.
-
-A0 v1 contains cross-domain cases for motor safety, sensors, timing, payment retry, access control, cloud retry, hardware semantics, and related cases. It now has one measured blinded external-model baseline under closed issue #45: the Claude web UI configuration labeled `Opus 5` with `High` effort matched all 24 A0 v1 decision labels, with `unsafe_resolution_rate = 0/14` on the unresolved/conflict subset. This is a benchmark-specific measured result, **not** a claim of general model quality, universal semantic completeness, semantic authority, certification, or exact correctness of every free-form explanation field. See the [measured baseline report](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md).
-
-See [A0](research/a0-semantic-resolution/) and [issue #45](https://github.com/cctsao1008/spec2exec/issues/45).
-
-### A0F — held-out field-level semantic resolution
-
-A0F was added after A0 v1 decision-level results began to saturate on strong models. Instead of asking for one case-level decision, each held-out case supplies a fixed semantic-field vocabulary and asks the system to classify every field as:
-
-```text
-RESOLVED
-UNRESOLVED
-CONFLICT
-NOT_APPLICABLE
-```
-
-This separates several behaviors that a case-level A0 label cannot distinguish:
-
-```text
-Did the system safely avoid inventing one missing field?
-Did it over-block fields that were already explicit?
-Did it identify the exact conflicting field?
-Did it recognize a field that is explicitly outside the case semantics?
-```
-
-A0F v1 contains 24 held-out cases and 114 field classifications. Its scorer reports `field_accuracy`, `case_exact_match`, `unsafe_field_resolution_rate`, `unsafe_field_dismissal_rate`, `overblocking_rate`, per-state accuracy/recall, and per-domain/per-case detail. The benchmark has deterministic oracle, unsafe-always-resolve, unsafe-all-not-applicable, and over-conservative controls.
-
-A0F is **not C0**: the field vocabulary is supplied to the evaluated system, so A0F measures field-level resolution discipline rather than open-ended semantic-obligation discovery.
-
-Under #64, four predeclared UI configurations now have operator-declared fresh/blinded measured baselines against the frozen `a0f/v1` benchmark. Their field accuracies range from 109/114 to 113/114, while their trust profiles differ: Claude Opus 5 / High recorded `unsafe_field_resolution_rate = 0/42` with one overblocking error; Gemini 3.1 Pro / extended thinking and ChatGPT GPT-5.6 Sol / Medium each recorded `1/42`; Copilot / Think deeper recorded `3/42`. None of the four counted runs recorded an unsafe field dismissal. These are benchmark-specific results under the declared protocol, not a universal model ranking or a claim of semantic authority. See the [A0F v1 cross-model measured report](research/a0-field-resolution/baselines/a0f-v1-cross-model-20260817-report.md).
-
-See [A0F](research/a0-field-resolution/), [issue #63](https://github.com/cctsao1008/spec2exec/issues/63), and [issue #64](https://github.com/cctsao1008/spec2exec/issues/64).
-
-### C0 — semantic-obligation discovery / completeness
-
-C0 asks the harder upstream question:
-
-> **Did the system notice all of the authority-relevant questions that should have been surfaced at all?**
-
-An authority gate cannot reject an obligation that was never discovered.
-
-For:
-
-```text
-When motor temperature becomes unsafe, reduce motor output.
-```
-
-a benchmark oracle may require the system to surface questions such as:
-
-```text
-temperature_threshold
-reduced_output_limit
-sensor_missing_behavior
-sensor_invalid_behavior
-hysteresis
-recovery_condition
-update_period
-```
-
-C0 v1 reports:
-
-- `obligation_recall`
-- `unsafe_omission_rate`
-- `spurious_obligation_rate`
-- `high_impact_recall`
-
-The gold sets are benchmark-specific review oracles, not claims that a real regulated specification has been proven complete.
-
-See [C0](research/semantic-obligation-completeness/) and [issue #57](https://github.com/cctsao1008/spec2exec/issues/57).
-
-The distinction is:
-
-```text
-A0:  Did we invent the answer at case level?
-A0F: Given an explicit field vocabulary, which fields are resolved,
-     unresolved, conflicting, or not applicable?
-C0:  Did we discover the authority-relevant questions in the first place?
-RFC 0011: Was the selected answer authorized?
-Executable Semantic Closure: Does it affect this selected build?
-```
-
 ## Architecture
 
-The architecture separates candidate semantics, authority, verification, realization, and evidence:
+The more detailed architecture separates candidate semantics, authority, verification, realization, and evidence:
 
 ```text
 Human / Domain / Governance Sources
@@ -320,14 +201,32 @@ The project-level thesis is:
 
 Capability, plausibility, convention, and low impact do not create semantic authority.
 
-See:
+Accepted architecture references:
 
 - [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md)
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
 - [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md) — **Accepted / Lifecycle Trust Baseline**
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
 
-RFC 0012 extends the architecture in a deliberately cross-cutting direction: assumptions, dependency completeness, defeaters, invalidation, ProjectionPolicy-gated current-trust projection, and re-assurance are modeled as lifecycle-bearing trust relationships rather than new serial compiler stages. The architecture baseline is Accepted; its first bounded executable validation is complete under [issue #62](https://github.com/cctsao1008/spec2exec/issues/62). See the [bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md).
+RFC 0012 is deliberately cross-cutting: assumptions, dependency completeness, defeaters, invalidation, ProjectionPolicy-gated current-trust projection, and re-assurance are modeled as lifecycle-bearing trust relationships rather than as another serial compiler stage.
+
+## What this looks like
+
+One human-facing workflow POC uses the payment-retry story:
+
+```text
+Spec2Exec Semantic Review
+
+retry_count = 5            UNAUTHORIZED
+retry_on_http_500 = true   AUTHORIZED
+retry_on_timeout = ?       UNRESOLVED
+
+MERGE GATE: BLOCKED
+```
+
+See the [blocked semantic review](examples/payment-retry/unsafe-review.md), the [accepted review](examples/payment-retry/accepted-review.md), and the [payment-retry example](examples/payment-retry/README.md).
+
+This workflow POC is deliberately narrower than a production GitHub integration. Its CODEOWNERS mapping is a **repository-declared, unauthenticated attribution input** into the authority policy; CODEOWNERS is not semantic authority by itself. Live GitHub App/check-run posting, cryptographic identity, quorum approval, OIDC, and enterprise identity integration remain future work.
 
 ## What is demonstrated today
 
@@ -350,11 +249,7 @@ Machine-independent SpecIR
         ↓
 P3 native RV32I target generation
         ↓
-GNU assembler
-        ↓
-ELF32 object
-        ↓
-GNU linker + validation harness
+GNU assembler / linker
         ↓
 RV32I validation ELF
         ↓
@@ -363,47 +258,7 @@ QEMU rv32 virt
 40,401 exhaustive accepted-contract observations
 ```
 
-The authority-gated semantic obligations are deliberately small:
-
-```text
-overflow_behavior = forbidden
-input a range = [-100,100]
-input b range = [-100,100]
-```
-
-The MVI includes a repository-declared `AuthorityAnchor`, bounded `VALUE` / `VALUE_SET` / `CONSTRAINT` policies, selected-build authorization, an explicit executable semantic closure, complete applicable-grant discovery, cross-policy conflict checks, stale-revision handling, provenance checks, and fail-closed authority evaluation before SpecIR synthesis.
-
-`AUTHORIZED` is a governance state, not an evidence class. The deterministic authority evaluation is `CHECKED`; the POC AuthorityAnchor and repository protection remain human-declared / unauthenticated trust inputs.
-
-### 2. Native RV32I realization without generated C/LLVM
-
-The deterministic regression fixture remains:
-
-```text
-safe_add_sub(a, b) = (a + b) - b
-
-a, b ∈ [-100,100]
-overflow_behavior = forbidden
-accepted runtime contract: result == a
-```
-
-Its generated RV32I target code is:
-
-```asm
-    .section .text
-    .option norvc
-    .globl safe_add_sub
-    .type safe_add_sub, @function
-safe_add_sub:
-    add t0, a0, a1
-    sub a0, t0, a1
-    ret
-    .size safe_add_sub, .-safe_add_sub
-```
-
-This path uses **no generated C, LLVM IR, or other high-level-language compiler stage between SpecIR and target assembly**.
-
-The current validated baseline is:
+Current validated baseline:
 
 ```text
 source revision   c96f08c46920d80a619ac6be58507e506e0850da
@@ -418,7 +273,7 @@ evidence.json     sha256 a8db31ec9e69cd46d2a573768593e51e3da3d1894482ddb4f4f4de2
 
 See [POC-1C validation results](docs/poc1c-results.md).
 
-### 3. Explicit non-collapsible evidence
+### 2. Explicit non-collapsible evidence
 
 The native path does not collapse everything into a single PASS:
 
@@ -436,21 +291,9 @@ No current native boundary carries `PROVEN`:
 
 > **`TESTED` is not `PROVEN`, `TESTED_EXHAUSTIVE` is not `PROVEN`, and `TRUSTED` is not `VERIFIED`.**
 
-### 4. GitHub-oriented semantic-diff workflow POC
+### 3. Existing-compiler evidence composition
 
-The payment-retry workflow demonstrates a deterministic, human-readable semantic review with a bounded CODEOWNERS adapter.
-
-The unsafe candidate is blocked because it contains both an unauthorized decision and an unresolved obligation. A corrected candidate is accepted under the demo policy.
-
-This is a **workflow POC following RFC 0011 principles**, not a replacement for the validated POC-1C authority-record evaluator and not a claim that CODEOWNERS is sufficient production authority.
-
-The shared trust-research workflow validates A0/A0F/C0 scorer controls, measured A0/A0F baseline regressions, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. All four counted A0F v1 measured baselines are regression-bound at revision `3f01af821225928927754609367a7e60a6038657`; Trust Research run `32035575591` completed successfully.
-
-### 5. Existing-compiler evidence composition
-
-Spec2Exec is **not a compiler replacement**.
-
-The repository also demonstrates that the evidence model can compose with conventional compiler infrastructure:
+Spec2Exec is **not a compiler replacement**. The repository also demonstrates that its evidence model can compose with conventional compiler infrastructure:
 
 ```text
 Accepted POC Specification
@@ -475,23 +318,13 @@ CRUN.runtime_observation  TESTED
 CRUN.sensitivity          TESTED
 ```
 
-The exact compiler version/invocation and generated artifacts are evidence-bound. A known-bad generated-C mutation must be detected by the runtime oracle.
-
-This experiment does not claim the host compiler is verified. It demonstrates that Spec2Exec's trust/evidence model can remain explicit when realization is delegated to an existing compiler.
-
 See [Existing-Compiler Realization Experiment](docs/existing-compiler-integration.md) and [issue #60](https://github.com/cctsao1008/spec2exec/issues/60).
 
-### 6. Bounded lifecycle Trust Graph validation
+### 4. Bounded lifecycle Trust Graph validation
 
-The first executable slice of RFC 0012 is validated under closed issue #62 for the property `PAYMENT-RETRY-SAFETY`.
+The first executable slice of RFC 0012 is validated under closed issue #62 for `PAYMENT-RETRY-SAFETY`.
 
-The three primary scenarios bind the same client artifact SHA-256:
-
-```text
-95018cb2c86bb1bea9cffb89e12ee31c711a26de159a1dcdacee21ce8b2b4c72
-```
-
-and demonstrate:
+The primary lifecycle result is deliberately counterintuitive:
 
 ```text
 Payment API v7
@@ -507,31 +340,66 @@ policy-accepted v8 revalidation
     → fresh property/context projection CURRENT
 ```
 
-The validated implementation revision is `797c0e4497e6fb9355236f659b96bf4e7870ecdc`. GitHub Actions run `31907601851` completed successfully with 29 / 29 lifecycle tests, including all mandatory fail-closed controls from #62. The experiment preserves RFC 0011 as the semantic-authority owner and RFC 0006 as the evidence-status owner.
+The same client artifact SHA-256 is bound across these scenarios:
+
+```text
+95018cb2c86bb1bea9cffb89e12ee31c711a26de159a1dcdacee21ce8b2b4c72
+```
+
+Validated revision `797c0e4497e6fb9355236f659b96bf4e7870ecdc`; GitHub Actions run `31907601851`; lifecycle tests `29 / 29 PASS`.
 
 This is bounded validation evidence, not formal proof of RFC 0012, universal dependency completeness, production payment assurance, certification, or a generic Trust Graph platform. See [bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md).
 
-## Why AI raises the stakes
+## Current research tracks
 
-Traditional software development already has ambiguity, unstated assumptions, requirement gaps, and authority conflicts. AI does not create these problems.
+The benchmark tracks are intentionally separate from semantic authority and executable evidence.
 
-What changes is the speed and scale at which interpretation becomes implementation:
+### A0 — unsafe semantic resolution
+
+> When a semantic question is incomplete, ambiguous, or contradictory, does a system expose uncertainty — or invent a plausible answer?
+
+A0 v1 is a frozen cross-domain case-level benchmark. One protocol-bound measured external-model baseline under #45 matched all 24 A0 v1 decision labels with `unsafe_resolution_rate = 0/14` on the unresolved/conflict subset.
+
+See [A0](research/a0-semantic-resolution/) and the [measured baseline report](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md).
+
+### A0F — held-out field-level semantic resolution
+
+A0F supplies a fixed semantic-field vocabulary and asks the evaluated system to classify every field as:
 
 ```text
-vague or incomplete intent
-        ↓
-seconds
-        ↓
-many inferred decisions and assumptions
-        ↓
-working implementation
-        ↓
-executable behavior
+RESOLVED
+UNRESOLVED
+CONFLICT
+NOT_APPLICABLE
 ```
 
-A synthesis system can turn missing semantics into implementation decisions much faster than humans can notice and authorize them one by one.
+`a0f/v1` contains 24 held-out cases and 114 field classifications. Under #64, four predeclared UI configurations have operator-declared fresh/blinded measured baselines. Their field accuracies range from `109/114` to `113/114`; their unsafe-resolution profiles differ and are intentionally not collapsed into a universal model ranking.
 
-Different domains expose the same trust problem:
+See [A0F](research/a0-field-resolution/) and the [A0F v1 cross-model measured report](research/a0-field-resolution/baselines/a0f-v1-cross-model-20260817-report.md).
+
+### C0 — semantic-obligation discovery / completeness
+
+> **Did the system notice all of the authority-relevant questions that should have been surfaced at all?**
+
+An authority gate cannot reject an obligation that was never discovered.
+
+C0 remains distinct from A0F because C0 does not supply the semantic-field vocabulary. Its gold sets are benchmark-specific review oracles, not claims of universal real-world specification completeness.
+
+See [C0](research/semantic-obligation-completeness/) and [issue #57](https://github.com/cctsao1008/spec2exec/issues/57).
+
+The research boundary is:
+
+```text
+A0:  Did we invent the answer at case level?
+A0F: Given explicit semantic fields, did we classify them safely?
+C0:  Did we discover the authority-relevant questions in the first place?
+RFC 0011: Was the selected answer authorized?
+Executable Semantic Closure: Does it affect this selected build?
+```
+
+## Cross-domain examples
+
+Different domains expose the same kind of trust boundary:
 
 | Domain | Example intent | Questions that still need authority |
 |---|---|---|
@@ -597,12 +465,12 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 | Semantic-authority / provenance | RFC 0011 Accepted; narrow authority-gated POC-1C MVI validated under #53 |
 | Evidence vocabulary / RFC normalization | RFC 0006 Accepted; #54 completed |
 | A0 unsafe semantic resolution | `a0/v1` frozen benchmark/scorer/control fixtures plus one blinded measured Opus 5 / High baseline; #45 closed |
-| A0F field-level semantic resolution | `a0f/v1` frozen 24-case / 114-field benchmark and controls under #63; four predeclared fresh/blinded measured baselines recorded under #64 and regression-bound to the deterministic scorer |
+| A0F field-level semantic resolution | `a0f/v1` frozen 24-case / 114-field benchmark and controls under #63; four predeclared fresh/blinded measured baselines recorded under #64 |
 | C0 obligation discovery / completeness | `c0/v1` benchmark/scorer/control fixtures implemented under #57 |
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
 | Existing-compiler evidence composition | host-C experiment implemented/tested under #60 |
-| Lifecycle-aware Trust Graph | RFC 0012 Accepted; architecture #61 closed; bounded payment-retry lifecycle implementation/validation #62 closed with 29 / 29 lifecycle tests and green CI |
+| Lifecycle-aware Trust Graph | RFC 0012 Accepted; bounded implementation/validation #62 closed with 29 / 29 lifecycle tests |
 | Hostile-review umbrella | mapped F-01 through F-13 workstreams closed under #52 |
 | RV32 forced-spill experiment | backend work remains available under #37 |
 | Hazard3 / RP2350 hardware validation | pending under #36 |
@@ -613,12 +481,11 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 For the fastest introduction:
 
 - [Payment-retry semantic-authority example](examples/payment-retry/README.md)
+- [Blocked semantic diff](examples/payment-retry/unsafe-review.md)
+- [Bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md)
 - [A0 measured baseline — Claude Opus 5 / High](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md)
-- [A0F held-out field-level semantic-resolution benchmark](research/a0-field-resolution/)
 - [A0F v1 cross-model measured baselines](research/a0-field-resolution/baselines/a0f-v1-cross-model-20260817-report.md)
 - [C0 semantic-obligation completeness benchmark](research/semantic-obligation-completeness/)
-- [Bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md)
-- [Blocked semantic diff](examples/payment-retry/unsafe-review.md)
 
 For architecture and evidence:
 
