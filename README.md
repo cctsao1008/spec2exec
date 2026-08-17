@@ -1,6 +1,7 @@
 # Spec2Exec
 
-**Specification-to-Executable Architecture**
+**Specification-to-Executable Architecture**  
+**Trust infrastructure for AI-generated executable systems**
 
 > **AI can correctly implement a decision that nobody ever authorized.**
 
@@ -25,23 +26,78 @@ But if nobody or no authorized policy selected `5`, the implementation has silen
 
 > **AI is making software implementation cheap. It is not making software trust cheap.**
 
-## What this looks like
+## Why now?
 
-The repository now contains a small GitHub-oriented semantic-review POC built around the payment-retry story:
+Traditional software development already has ambiguity, unstated assumptions, requirement gaps, and authority conflicts. AI does not create these problems.
+
+What changes is the speed and scale at which interpretation becomes implementation:
 
 ```text
-Spec2Exec Semantic Review
-
-retry_count = 5            UNAUTHORIZED
-retry_on_http_500 = true   AUTHORIZED
-retry_on_timeout = ?       UNRESOLVED
-
-MERGE GATE: BLOCKED
+vague or incomplete intent
+        ↓
+AI-assisted interpretation / synthesis
+        ↓
+many behavior-determining decisions
+        ↓
+working implementation
+        ↓
+executable behavior
 ```
 
-See the [blocked semantic review](examples/payment-retry/unsafe-review.md), the [accepted review](examples/payment-retry/accepted-review.md), and the [payment-retry example](examples/payment-retry/README.md).
+As implementation becomes increasingly synthesizable, the engineering bottleneck can move upstream: from producing behavior toward deciding, exposing, authorizing, verifying, and maintaining trust in the semantics that behavior realizes.
 
-This workflow POC is deliberately narrower than a production GitHub integration. Its CODEOWNERS mapping is a **repository-declared, unauthenticated attribution input** into the authority policy; CODEOWNERS is not semantic authority by itself. Live GitHub App/check-run posting, cryptographic identity, quorum approval, OIDC, and enterprise identity integration remain future work.
+That motivates a different class of questions:
+
+```text
+Old question:
+Did we implement the specification correctly?
+
+Additional questions:
+What behavior-determining questions should have been surfaced?
+Which semantics were supplied, inferred, or invented?
+Who or what was authorized to decide them?
+Did the accepted semantics reach this exact artifact?
+Is the evidence that justified trust still current?
+```
+
+## Four trust shifts
+
+Spec2Exec is built around several distinctions that are easy to collapse in ordinary software workflows:
+
+```text
+1. CORRECT IMPLEMENTATION ≠ AUTHORIZED SEMANTICS
+
+   A system may faithfully implement a behavior
+   that nobody had authority to choose.
+
+2. KNOWN OBLIGATIONS ≠ COMPLETE OBLIGATIONS
+
+   An authority gate cannot reject a semantic question
+   that was never discovered in the first place.
+
+3. DOWNSTREAM PASS ≠ UPSTREAM AUTHORITY
+
+   Compilation, testing, or verification cannot
+   retroactively authorize an earlier semantic decision.
+
+4. UNCHANGED ARTIFACT ≠ CURRENT TRUST
+
+   The same artifact bytes can lose current trust when
+   assumptions, dependencies, policies, evidence, or
+   governing context become stale or invalid.
+```
+
+These are research propositions and architecture boundaries, not claims that Spec2Exec has solved them generally.
+
+## Research hypothesis
+
+> **Spec2Exec investigates whether semantic-obligation discovery, explicit semantic authority, deterministic verification, artifact binding, and lifecycle-aware evidence can form a defensible trust architecture for AI-generated executable systems.**
+
+A stronger version of the hypothesis is deliberately open to falsification:
+
+> **As implementation becomes increasingly synthesizable, semantic authority may become a first-class engineering concern.**
+
+Spec2Exec does not assume that its mechanisms are universally necessary, sufficient, or superior to conventional requirements engineering, review, testing, formal methods, assurance cases, or provenance systems. Comparative assurance and engineering overhead remain research questions.
 
 ## The three questions
 
@@ -95,6 +151,24 @@ Target Realization
 Completeness is cross-cutting rather than a single pipeline pass. **C0 obligation completeness** studies whether authority-relevant questions were surfaced at all, while **RFC 0011 Semantic Completeness** prevents known authority-relevant obligations from silently disappearing from the executable semantic closure.
 
 The more detailed ASCII diagrams and RFC text below remain the more precise descriptions of architecture, state, evidence boundaries, and implementation status.
+
+## What this looks like
+
+One human-facing workflow POC uses the payment-retry story:
+
+```text
+Spec2Exec Semantic Review
+
+retry_count = 5            UNAUTHORIZED
+retry_on_http_500 = true   AUTHORIZED
+retry_on_timeout = ?       UNRESOLVED
+
+MERGE GATE: BLOCKED
+```
+
+See the [blocked semantic review](examples/payment-retry/unsafe-review.md), the [accepted review](examples/payment-retry/accepted-review.md), and the [payment-retry example](examples/payment-retry/README.md).
+
+This workflow POC is deliberately narrower than a production GitHub integration. Its CODEOWNERS mapping is a **repository-declared, unauthenticated attribution input** into the authority policy; CODEOWNERS is not semantic authority by itself. Live GitHub App/check-run posting, cryptographic identity, quorum approval, OIDC, and enterprise identity integration remain future work.
 
 ## Current research tracks
 
