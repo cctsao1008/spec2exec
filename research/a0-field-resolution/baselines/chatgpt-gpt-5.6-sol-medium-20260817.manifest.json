@@ -1,0 +1,29 @@
+{
+  "status": "PENDING_OPERATOR_PROTOCOL_CONFIRMATION",
+  "benchmark_version": "a0f/v1",
+  "benchmark_source_revision": "9bef54b6f45b9568dd6b89097d7c02f8576a3861",
+  "provider": "OpenAI",
+  "system_ui_label": "GPT-5.6 Sol",
+  "effort": "Medium",
+  "runtime": "ChatGPT Temporary chat",
+  "temperature": "n/a",
+  "seed": "n/a",
+  "operator_supplied_metadata": {
+    "fresh_context": "Temporary chat stated by operator",
+    "only_blinded_prompt_and_input_supplied": null,
+    "repository_supplied": null,
+    "gold_or_scorer_supplied": null,
+    "prior_a0f_results_supplied": null,
+    "web_or_search_used": null,
+    "external_tools_or_research_used": null,
+    "screenshot_available": null
+  },
+  "protocol_note": "Raw predictions were committed before deterministic scoring. The run is not counted toward #64 until the remaining contamination/protocol declarations are confirmed by the operator.",
+  "prompt_sha256": "2ba0a354a088286e2fbf2491e1524f6344d1cfe0313983b009b8aa9a2447881c",
+  "input_sha256": "2f428fc8214abbf6e2b2a8f6add00e12eccf6599d712617a6f4a5fd0d7773ed7",
+  "blinded_zip_sha256": "87cb46f1d5ece62e763872a9c864b134d8e481023594ad3cea2ab8826550b16a",
+  "raw_predictions_sha256": "e401f2f4bdf78602136fe8b0cfd4498f188eed238951f2f00570ab2cfd7cc072",
+  "score_sha256": "f5d627855703026886322b2877a9719de0faa72b4a994cd1dd8f939ef9d96fe4",
+  "raw_preservation_commit": "e5f77c8a50484314da7f3847b6c081f56ace4c19",
+  "score_record_commit": "d247b0d10978501888d4fb8c1fb46933903f92eb"
+}
