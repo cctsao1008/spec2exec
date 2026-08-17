@@ -1,5 +1,5 @@
 {
-  "status": "PENDING_OPERATOR_PROTOCOL_CONFIRMATION",
+  "status": "COUNTED_MEASURED_BASELINE",
   "benchmark_version": "a0f/v1",
   "benchmark_source_revision": "9bef54b6f45b9568dd6b89097d7c02f8576a3861",
   "provider": "Microsoft",
@@ -8,11 +8,11 @@
   "runtime": "Copilot chat",
   "operator_description": "copilot (think deeper)",
   "operator_supplied_metadata": {
-    "fresh_context": null,
-    "only_blinded_prompt_and_input_supplied": null,
-    "repository_gold_scorer_or_prior_a0f_results_supplied": null,
-    "web_search_tools_or_external_research_used": null,
-    "screenshot_available": null
+    "fresh_context": true,
+    "only_blinded_prompt_and_input_supplied": true,
+    "repository_gold_scorer_or_prior_a0f_results_supplied": false,
+    "web_search_tools_or_external_research_used": false,
+    "screenshot_available": false
   },
   "normalization": {
     "required": true,
@@ -20,7 +20,7 @@
     "scored_artifact": "copilot-think-deeper-20260817.predictions.jsonl",
     "transformation": "Removed presentation escape backslashes before underscores and split the space-separated JSON objects into one JSON object per line. No field state was changed."
   },
-  "counting_note": "This is the predeclared Copilot Think deeper configuration, but it is not counted toward #64 until the operator confirms the fresh/blinded contamination protocol metadata. Raw text was preserved before the normalized scoring artifact.",
+  "counting_note": "Operator explicitly confirmed a fresh Copilot context, only the two blinded A0F files, no repository/gold/scorer/prior A0F results, and no web/search/tools/external research. No screenshot was available. Protocol identity/contamination metadata are operator-declared and not cryptographically attested. Raw text was preserved before normalization and scoring.",
   "prompt_sha256": "2ba0a354a088286e2fbf2491e1524f6344d1cfe0313983b009b8aa9a2447881c",
   "input_sha256": "2f428fc8214abbf6e2b2a8f6add00e12eccf6599d712617a6f4a5fd0d7773ed7",
   "blinded_zip_sha256": "87cb46f1d5ece62e763872a9c864b134d8e481023594ad3cea2ab8826550b16a",
