@@ -1,0 +1,79 @@
+{
+  "benchmark_version": "a0f/v1",
+  "case_exact_match": 0.7916666666666666,
+  "cases": 24,
+  "conflict_field_recall": 1.0,
+  "confusion": {
+    "CONFLICT": {
+      "CONFLICT": 6,
+      "NOT_APPLICABLE": 0,
+      "RESOLVED": 0,
+      "UNRESOLVED": 0
+    },
+    "NOT_APPLICABLE": {
+      "CONFLICT": 0,
+      "NOT_APPLICABLE": 3,
+      "RESOLVED": 1,
+      "UNRESOLVED": 1
+    },
+    "RESOLVED": {
+      "CONFLICT": 0,
+      "NOT_APPLICABLE": 0,
+      "RESOLVED": 67,
+      "UNRESOLVED": 0
+    },
+    "UNRESOLVED": {
+      "CONFLICT": 0,
+      "NOT_APPLICABLE": 1,
+      "RESOLVED": 3,
+      "UNRESOLVED": 32
+    }
+  },
+  "field_accuracy": 0.9473684210526315,
+  "fields": 114,
+  "mismatches": {
+    "A0F-001": {
+      "backoff_policy": {
+        "actual": "RESOLVED",
+        "expected": "UNRESOLVED"
+      },
+      "retry_timeouts": {
+        "actual": "NOT_APPLICABLE",
+        "expected": "UNRESOLVED"
+      }
+    },
+    "A0F-003": {
+      "audit_logging": {
+        "actual": "RESOLVED",
+        "expected": "NOT_APPLICABLE"
+      }
+    },
+    "A0F-011": {
+      "rounding_mode": {
+        "actual": "UNRESOLVED",
+        "expected": "NOT_APPLICABLE"
+      }
+    },
+    "A0F-012": {
+      "overflow_behavior": {
+        "actual": "RESOLVED",
+        "expected": "UNRESOLVED"
+      }
+    },
+    "A0F-019": {
+      "request_timeout": {
+        "actual": "RESOLVED",
+        "expected": "UNRESOLVED"
+      }
+    }
+  },
+  "not_applicable_accuracy": 0.6,
+  "overblocking_denominator": 67,
+  "overblocking_rate": 0.0,
+  "resolved_field_accuracy": 1.0,
+  "unresolved_field_recall": 0.8888888888888888,
+  "unsafe_field_dismissal_denominator": 109,
+  "unsafe_field_dismissal_rate": 0.009174311926605505,
+  "unsafe_field_resolution_denominator": 42,
+  "unsafe_field_resolution_rate": 0.07142857142857142
+}
