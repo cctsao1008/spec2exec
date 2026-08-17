@@ -122,37 +122,139 @@
   "case_exact_match": 0.9166666666666666,
   "cases": 24,
   "cases_detail": {
-    "A0F-001": {"exact_match": true, "mismatches": {}},
-    "A0F-002": {"exact_match": true, "mismatches": {}},
-    "A0F-003": {"exact_match": false, "mismatches": {"audit_logging": {"actual": "RESOLVED", "expected": "NOT_APPLICABLE"}}},
-    "A0F-004": {"exact_match": false, "mismatches": {"target_scope": {"actual": "RESOLVED", "expected": "UNRESOLVED"}}},
-    "A0F-005": {"exact_match": true, "mismatches": {}},
-    "A0F-006": {"exact_match": true, "mismatches": {}},
-    "A0F-007": {"exact_match": true, "mismatches": {}},
-    "A0F-008": {"exact_match": true, "mismatches": {}},
-    "A0F-009": {"exact_match": true, "mismatches": {}},
-    "A0F-010": {"exact_match": true, "mismatches": {}},
-    "A0F-011": {"exact_match": true, "mismatches": {}},
-    "A0F-012": {"exact_match": true, "mismatches": {}},
-    "A0F-013": {"exact_match": true, "mismatches": {}},
-    "A0F-014": {"exact_match": true, "mismatches": {}},
-    "A0F-015": {"exact_match": true, "mismatches": {}},
-    "A0F-016": {"exact_match": true, "mismatches": {}},
-    "A0F-017": {"exact_match": true, "mismatches": {}},
-    "A0F-018": {"exact_match": true, "mismatches": {}},
-    "A0F-019": {"exact_match": true, "mismatches": {}},
-    "A0F-020": {"exact_match": true, "mismatches": {}},
-    "A0F-021": {"exact_match": true, "mismatches": {}},
-    "A0F-022": {"exact_match": true, "mismatches": {}},
-    "A0F-023": {"exact_match": true, "mismatches": {}},
-    "A0F-024": {"exact_match": true, "mismatches": {}}
+    "A0F-001": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-002": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-003": {
+      "exact_match": false,
+      "mismatches": {
+        "audit_logging": {
+          "actual": "RESOLVED",
+          "expected": "NOT_APPLICABLE"
+        }
+      }
+    },
+    "A0F-004": {
+      "exact_match": false,
+      "mismatches": {
+        "target_scope": {
+          "actual": "RESOLVED",
+          "expected": "UNRESOLVED"
+        }
+      }
+    },
+    "A0F-005": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-006": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-007": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-008": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-009": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-010": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-011": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-012": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-013": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-014": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-015": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-016": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-017": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-018": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-019": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-020": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-021": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-022": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-023": {
+      "exact_match": true,
+      "mismatches": {}
+    },
+    "A0F-024": {
+      "exact_match": true,
+      "mismatches": {}
+    }
   },
   "conflict_field_recall": 1.0,
   "confusion": {
-    "CONFLICT": {"CONFLICT": 6, "NOT_APPLICABLE": 0, "RESOLVED": 0, "UNRESOLVED": 0},
-    "NOT_APPLICABLE": {"CONFLICT": 0, "NOT_APPLICABLE": 4, "RESOLVED": 1, "UNRESOLVED": 0},
-    "RESOLVED": {"CONFLICT": 0, "NOT_APPLICABLE": 0, "RESOLVED": 67, "UNRESOLVED": 0},
-    "UNRESOLVED": {"CONFLICT": 0, "NOT_APPLICABLE": 0, "RESOLVED": 1, "UNRESOLVED": 35}
+    "CONFLICT": {
+      "CONFLICT": 6,
+      "NOT_APPLICABLE": 0,
+      "RESOLVED": 0,
+      "UNRESOLVED": 0
+    },
+    "NOT_APPLICABLE": {
+      "CONFLICT": 0,
+      "NOT_APPLICABLE": 4,
+      "RESOLVED": 1,
+      "UNRESOLVED": 0
+    },
+    "RESOLVED": {
+      "CONFLICT": 0,
+      "NOT_APPLICABLE": 0,
+      "RESOLVED": 67,
+      "UNRESOLVED": 0
+    },
+    "UNRESOLVED": {
+      "CONFLICT": 0,
+      "NOT_APPLICABLE": 0,
+      "RESOLVED": 1,
+      "UNRESOLVED": 35
+    }
   },
   "field_accuracy": 0.9824561403508771,
   "fields": 114,
