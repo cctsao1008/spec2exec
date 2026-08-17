@@ -1,0 +1,33 @@
+{
+  "status": "PENDING_OPERATOR_PROTOCOL_CONFIRMATION",
+  "benchmark_version": "a0f/v1",
+  "benchmark_source_revision": "9bef54b6f45b9568dd6b89097d7c02f8576a3861",
+  "provider": "Microsoft",
+  "system_ui_label": "Copilot",
+  "effort": "Think deeper",
+  "runtime": "Copilot chat",
+  "operator_description": "copilot (think deeper)",
+  "operator_supplied_metadata": {
+    "fresh_context": null,
+    "only_blinded_prompt_and_input_supplied": null,
+    "repository_gold_scorer_or_prior_a0f_results_supplied": null,
+    "web_search_tools_or_external_research_used": null,
+    "screenshot_available": null
+  },
+  "normalization": {
+    "required": true,
+    "raw_artifact": "copilot-think-deeper-20260817.raw.txt",
+    "scored_artifact": "copilot-think-deeper-20260817.predictions.jsonl",
+    "transformation": "Removed presentation escape backslashes before underscores and split the space-separated JSON objects into one JSON object per line. No field state was changed."
+  },
+  "counting_note": "This is the predeclared Copilot Think deeper configuration, but it is not counted toward #64 until the operator confirms the fresh/blinded contamination protocol metadata. Raw text was preserved before the normalized scoring artifact.",
+  "prompt_sha256": "2ba0a354a088286e2fbf2491e1524f6344d1cfe0313983b009b8aa9a2447881c",
+  "input_sha256": "2f428fc8214abbf6e2b2a8f6add00e12eccf6599d712617a6f4a5fd0d7773ed7",
+  "blinded_zip_sha256": "87cb46f1d5ece62e763872a9c864b134d8e481023594ad3cea2ab8826550b16a",
+  "raw_output_sha256": "9d87464d9c74085d7f94263a3a3d6e791cd7c5af3b7544e59f63a2a3c8231674",
+  "normalized_predictions_sha256": "9dffd9256ef68d3a61da704804c5951bfbfb82474bd06c5b15314e54c993c761",
+  "score_git_blob_sha": "169431214a937a52385b7ba27b444528a608ac8b",
+  "raw_preservation_commit": "92bac787219c25b0057ce2a61a3e7dfaa9479882",
+  "normalization_commit": "b54f29f5ccd29c171f86ecfcdea581b658b62321",
+  "score_record_commit": "e261b544235a5664fe5892dfb7c3ae30fe4810ea"
+}
