@@ -1,0 +1,28 @@
+{
+  "status": "PENDING_FRESH_CONTEXT_CONFIRMATION",
+  "benchmark_version": "a0f/v1",
+  "benchmark_source_revision": "9bef54b6f45b9568dd6b89097d7c02f8576a3861",
+  "provider": "Microsoft",
+  "system_ui_label": "Copilot",
+  "effort": "Smart",
+  "runtime": "Copilot chat",
+  "operator_description": "copilot (smart)",
+  "operator_supplied_metadata": {
+    "fresh_context": null,
+    "only_blinded_prompt_and_input_supplied": null,
+    "repository_supplied": null,
+    "gold_or_scorer_supplied": null,
+    "prior_a0f_results_supplied": null,
+    "web_or_search_used": null,
+    "external_tools_or_research_used": null,
+    "screenshot_available": null
+  },
+  "counting_note": "The raw output is preserved and scored, but the run is not counted toward #64 until the operator confirms the fresh-context and contamination protocol declarations.",
+  "prompt_sha256": "2ba0a354a088286e2fbf2491e1524f6344d1cfe0313983b009b8aa9a2447881c",
+  "input_sha256": "2f428fc8214abbf6e2b2a8f6add00e12eccf6599d712617a6f4a5fd0d7773ed7",
+  "blinded_zip_sha256": "87cb46f1d5ece62e763872a9c864b134d8e481023594ad3cea2ab8826550b16a",
+  "raw_predictions_sha256": "ba066c4be024f90c5aed4f70e517e764445fc32e27c87f1e320815be92d39eda",
+  "score_sha256": "accf43fbd0219d5acbe9b08bd8228a5fc000a1534fe1f00979489e1d8c9ee5df",
+  "raw_preservation_commit": "bc25586cb9b1ae689b3752940eedcbeec46bc79f",
+  "score_record_commit": "ab19458e300966d0aab1bf22465bc8141866852e"
+}
