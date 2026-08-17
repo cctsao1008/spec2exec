@@ -119,6 +119,31 @@ class A0FFieldResolutionScoreTests(unittest.TestCase):
         self.assertEqual(result["unresolved_field_recall"], 1.0)
         self.assertEqual(result["resolved_field_accuracy"], 0.0)
 
+    def test_counted_a0f_measured_baselines_match_recorded_scores(self):
+        baseline = ROOT / "research/a0-field-resolution/baselines"
+        fixtures = [
+            (
+                "chatgpt-gpt-5.6-sol-medium-20260817.raw.jsonl",
+                "chatgpt-gpt-5.6-sol-medium-20260817.score.json",
+            ),
+            (
+                "gemini-3.1-pro-continuation-20260817.raw.jsonl",
+                "gemini-3.1-pro-continuation-20260817.score.json",
+            ),
+            (
+                "claude-opus-5-high-20260817.predictions.jsonl",
+                "claude-opus-5-high-20260817.score.json",
+            ),
+        ]
+        for predictions_name, score_name in fixtures:
+            with self.subTest(predictions=predictions_name):
+                pred = self.mod.read_jsonl(baseline / predictions_name)
+                result = self.mod.score(self.gold, pred)
+                recorded = json.loads(
+                    (baseline / score_name).read_text(encoding="utf-8")
+                )
+                self.assertEqual(result, recorded)
+
     def test_field_set_mismatch_fails(self):
         pred = [
             {
