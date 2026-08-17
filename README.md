@@ -139,11 +139,13 @@ Did it identify the exact conflicting field?
 Did it recognize a field that is explicitly outside the case semantics?
 ```
 
-A0F v1 contains 24 held-out cases and 114 field classifications. Its scorer reports `field_accuracy`, `case_exact_match`, `unsafe_field_resolution_rate`, `overblocking_rate`, per-state accuracy/recall, and per-domain/per-case detail. The benchmark has deterministic oracle, unsafe-always-resolve, and over-conservative controls.
+A0F v1 contains 24 held-out cases and 114 field classifications. Its scorer reports `field_accuracy`, `case_exact_match`, `unsafe_field_resolution_rate`, `unsafe_field_dismissal_rate`, `overblocking_rate`, per-state accuracy/recall, and per-domain/per-case detail. The benchmark has deterministic oracle, unsafe-always-resolve, unsafe-all-not-applicable, and over-conservative controls.
 
-A0F is **not C0**: the field vocabulary is supplied to the evaluated system, so A0F measures field-level resolution discipline rather than open-ended semantic-obligation discovery. No measured external-model A0F quality is currently claimed; such a run must use a fresh blinded context with only the A0F evaluation prompt/input.
+A0F is **not C0**: the field vocabulary is supplied to the evaluated system, so A0F measures field-level resolution discipline rather than open-ended semantic-obligation discovery.
 
-See [A0F](research/a0-field-resolution/) and [issue #63](https://github.com/cctsao1008/spec2exec/issues/63).
+Under #64, four predeclared UI configurations now have operator-declared fresh/blinded measured baselines against the frozen `a0f/v1` benchmark. Their field accuracies range from 109/114 to 113/114, while their trust profiles differ: Claude Opus 5 / High recorded `unsafe_field_resolution_rate = 0/42` with one overblocking error; Gemini 3.1 Pro / extended thinking and ChatGPT GPT-5.6 Sol / Medium each recorded `1/42`; Copilot / Think deeper recorded `3/42`. None of the four counted runs recorded an unsafe field dismissal. These are benchmark-specific results under the declared protocol, not a universal model ranking or a claim of semantic authority. See the [A0F v1 cross-model measured report](research/a0-field-resolution/baselines/a0f-v1-cross-model-20260817-report.md).
+
+See [A0F](research/a0-field-resolution/), [issue #63](https://github.com/cctsao1008/spec2exec/issues/63), and [issue #64](https://github.com/cctsao1008/spec2exec/issues/64).
 
 ### C0 — semantic-obligation discovery / completeness
 
@@ -366,7 +368,7 @@ The unsafe candidate is blocked because it contains both an unauthorized decisio
 
 This is a **workflow POC following RFC 0011 principles**, not a replacement for the validated POC-1C authority-record evaluator and not a claim that CODEOWNERS is sufficient production authority.
 
-The shared trust-research workflow validates A0/A0F/C0 scorer controls, the measured A0 baseline regression, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. The A0F infrastructure revision `43f2e761f311282671f47068f60c33cf73d9ac64` passed Trust Research run `31913085179`.
+The shared trust-research workflow validates A0/A0F/C0 scorer controls, measured A0/A0F baseline regressions, semantic-review/CODEOWNERS fail-closed behavior, the bounded lifecycle experiment, and the existing-compiler experiment. All four counted A0F v1 measured baselines are regression-bound at revision `3f01af821225928927754609367a7e60a6038657`; Trust Research run `32035575591` completed successfully.
 
 ### 5. Existing-compiler evidence composition
 
@@ -519,7 +521,7 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 | Semantic-authority / provenance | RFC 0011 Accepted; narrow authority-gated POC-1C MVI validated under #53 |
 | Evidence vocabulary / RFC normalization | RFC 0006 Accepted; #54 completed |
 | A0 unsafe semantic resolution | `a0/v1` frozen benchmark/scorer/control fixtures plus one blinded measured Opus 5 / High baseline; #45 closed |
-| A0F field-level semantic resolution | `a0f/v1` held-out 24-case / 114-field benchmark, scorer, blinded protocol, and controls implemented under #63; infrastructure CI green; no measured external-model A0F result yet |
+| A0F field-level semantic resolution | `a0f/v1` frozen 24-case / 114-field benchmark and controls under #63; four predeclared fresh/blinded measured baselines recorded under #64 and regression-bound to the deterministic scorer |
 | C0 obligation discovery / completeness | `c0/v1` benchmark/scorer/control fixtures implemented under #57 |
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
@@ -537,6 +539,7 @@ For the fastest introduction:
 - [Payment-retry semantic-authority example](examples/payment-retry/README.md)
 - [A0 measured baseline — Claude Opus 5 / High](research/a0-semantic-resolution/baselines/claude-opus-5-high-20260816-report.md)
 - [A0F held-out field-level semantic-resolution benchmark](research/a0-field-resolution/)
+- [A0F v1 cross-model measured baselines](research/a0-field-resolution/baselines/a0f-v1-cross-model-20260817-report.md)
 - [C0 semantic-obligation completeness benchmark](research/semantic-obligation-completeness/)
 - [Bounded lifecycle Trust Graph validation](docs/lifecycle-trust-validation.md)
 - [Blocked semantic diff](examples/payment-retry/unsafe-review.md)
