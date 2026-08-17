@@ -134,6 +134,10 @@ class A0FFieldResolutionScoreTests(unittest.TestCase):
                 "claude-opus-5-high-20260817.predictions.jsonl",
                 "claude-opus-5-high-20260817.score.json",
             ),
+            (
+                "copilot-think-deeper-20260817.predictions.jsonl",
+                "copilot-think-deeper-20260817.score.json",
+            ),
         ]
         for predictions_name, score_name in fixtures:
             with self.subTest(predictions=predictions_name):
