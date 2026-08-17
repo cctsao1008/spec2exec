@@ -18,6 +18,8 @@ Question:
 Who authorized 5?
 ```
 
+**The question is not whether `5` is reasonable. The question is whether anyone had authority to choose it.**
+
 The code can compile. The tests can pass. Five retries may even sound reasonable.
 
 But if nobody or no authorized policy selected `5`, the implementation has silently converted a missing semantic decision into executable behavior.
