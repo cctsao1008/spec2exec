@@ -101,6 +101,18 @@ A stronger version of the hypothesis is deliberately open to falsification:
 
 Spec2Exec does not assume that its mechanisms are universally necessary, sufficient, or superior to conventional requirements engineering, review, testing, formal methods, assurance cases, or provenance systems. Comparative assurance and engineering overhead remain research questions.
 
+## AI-facing engineering substrate
+
+Spec2Exec is designed primarily as a **machine-operable engineering substrate for AI-assisted or AI-driven implementation workflows**.
+
+Humans remain responsible for intent, policy, semantic authority, risk acceptance, and assurance review. AI agents may perform obligation discovery, semantic-resolution proposals, synthesis, transformation, optimization, and evidence production through the Spec2Exec trust architecture.
+
+A useful long-term framing is:
+
+> **Spec2Exec is an AI-facing software engineering substrate for turning authorized human intent into trustworthy executable behavior.**
+
+This is an architectural hypothesis, not a claim that human-readable source languages are obsolete, that C/C++/Rust must disappear from engineering workflows, or that the current prototype has demonstrated a fully AI-native software stack.
+
 ## The three questions
 
 Spec2Exec separates three problems that ordinary code review can easily collapse:
@@ -158,6 +170,10 @@ The more detailed architecture separates candidate semantics, authority, verific
 
 ```text
 Human / Domain / Governance Sources
+        ↓
+Intent / Requirements / Policy / Authority
+        ↓
+AI-assisted semantic processing
         ↓
 Candidate Semantics
         ↓
@@ -397,6 +413,26 @@ RFC 0011: Was the selected answer authorized?
 Executable Semantic Closure: Does it affect this selected build?
 ```
 
+## Next research phase — Comparative assurance
+
+The current architecture has reached a bounded proof-of-method stage. The next primary research question is no longer only whether Spec2Exec can reach executable behavior under a bounded trust architecture.
+
+It is:
+
+> **Does Spec2Exec provide enough incremental assurance over simpler structured AI-assisted engineering workflows to justify its additional authoring, review, training, and lifecycle cost?**
+
+The planned comparative design distinguishes:
+
+- `CONV` — conventional AI-assisted engineering;
+- `LITE` — lightweight structured semantic control;
+- `S2E` — the Spec2Exec workflow.
+
+The primary comparison is `S2E` versus `LITE`; `S2E` versus `CONV` is secondary.
+
+The design is intentionally capable of falsifying a stronger Spec2Exec claim: if a substantially simpler structured workflow achieves comparable assurance with materially lower engineering cost, the necessity of the fuller Spec2Exec architecture would be weakened.
+
+The comparative study is designed to examine semantic escape, safe-release yield, discovery adequacy, authoring/review cost, traceability, and lifecycle revalidation behavior without collapsing these outcomes into a single scalar assurance score.
+
 ## Cross-domain examples
 
 Different domains expose the same kind of trust boundary:
@@ -441,6 +477,7 @@ Spec2Exec is not:
 - a system in which plausible AI output gains authority automatically;
 - a requirements-management replacement;
 - a compiler replacement;
+- a claim that human-readable programming languages are obsolete or unnecessary;
 - a general formal-verification system;
 - a certification replacement;
 - a claim that CODEOWNERS or repository identity is sufficient real-world organizational authority;
@@ -452,6 +489,8 @@ Spec2Exec is not:
 
 ## Target and validation scope
 
+**Target realization is a validation substrate for executable trust boundaries, not the primary research objective.** Expanding backend coverage is therefore subordinate to trust questions that require it.
+
 The demonstrated native architectural target is currently **RV32I + bare metal**, validated under QEMU `rv32 virt`.
 
 Raspberry Pi Pico 2 / RP2350 with Hazard3 remains planned physical validation hardware; it is a validation platform, not the architectural target.
@@ -460,21 +499,35 @@ Arm M-profile and hosted x86_64 / AArch64 / RV64 configurations remain roadmap w
 
 ## Current workstreams
 
+### Active research
+
+| Area | Current state |
+|---|---|
+| Comparative assurance / bootstrapping cost | protocol design at freeze-candidate stage; compares `CONV`, `LITE`, and `S2E`, with `S2E` vs `LITE` primary |
+| C0 discovery adequacy | `c0/v1` benchmark/scorer/control fixtures implemented under #57; scaling and independent assessment remain research priorities |
+| Lifecycle revalidation economics | RFC 0012 baseline and bounded lifecycle experiment exist; comparative change-impact and revalidation cost remain active research questions |
+| A0 / A0F measurement infrastructure | frozen benchmark tracks retained as bounded regression and measurement infrastructure; not treated as universal model rankings |
+
+### Validated bounded baselines
+
 | Area | Current state |
 |---|---|
 | Semantic-authority / provenance | RFC 0011 Accepted; narrow authority-gated POC-1C MVI validated under #53 |
 | Evidence vocabulary / RFC normalization | RFC 0006 Accepted; #54 completed |
-| A0 unsafe semantic resolution | `a0/v1` frozen benchmark/scorer/control fixtures plus one blinded measured Opus 5 / High baseline; #45 closed |
-| A0F field-level semantic resolution | `a0f/v1` frozen 24-case / 114-field benchmark and controls under #63; four predeclared fresh/blinded measured baselines recorded under #64 |
-| C0 obligation discovery / completeness | `c0/v1` benchmark/scorer/control fixtures implemented under #57 |
+| Lifecycle-aware Trust Graph | RFC 0012 Accepted; bounded implementation/validation #62 closed with 29 / 29 lifecycle tests |
 | Payment-retry semantic POC | deterministic BLOCKED/ACCEPTED examples implemented under #58 |
 | GitHub semantic diff / CODEOWNERS adapter | deterministic workflow POC implemented under #59; live GitHub App integration deferred |
 | Existing-compiler evidence composition | host-C experiment implemented/tested under #60 |
-| Lifecycle-aware Trust Graph | RFC 0012 Accepted; bounded implementation/validation #62 closed with 29 / 29 lifecycle tests |
 | Hostile-review umbrella | mapped F-01 through F-13 workstreams closed under #52 |
-| RV32 forced-spill experiment | backend work remains available under #37 |
-| Hazard3 / RP2350 hardware validation | pending under #36 |
+
+### Deferred / supporting realization work
+
+| Area | Current state |
+|---|---|
+| Hazard3 / RP2350 hardware validation | pending under #36; useful for physical closure, not the current primary research blocker |
+| RV32 forced-spill experiment | backend work remains available under #37; expand only when a trust question requires it |
 | Strong identity / OIDC / signatures / quorum | deferred future authority work |
+| Broader backend coverage | Arm M-profile and hosted x86_64 / AArch64 / RV64 remain supporting roadmap work rather than the primary research axis |
 
 ## Where to read next
 
@@ -500,44 +553,29 @@ For architecture and evidence:
 
 ## Roadmap direction
 
-The project now has three deliberately separate scaling axes:
+The earlier phase asked whether the trust architecture could exist as an executable, evidence-bound system. The repository now contains bounded proof-of-method results for authority gating, semantic-resolution/discovery research infrastructure, target realization, evidence composition, and lifecycle-aware trust.
+
+The current phase asks a harder question:
 
 ```text
-Research axis
-    A0 unsafe case-level resolution
+Can the architecture exist?
         ↓
-    A0F field-level resolution discipline
+bounded proof-of-method
         ↓
-    C0 open-ended obligation discovery/completeness
+Does it provide enough incremental assurance
+        to justify its additional cost?
         ↓
-    authority
+CONV vs LITE vs S2E
         ↓
-    evidence
-
-Lifecycle trust axis
-    property-scoped dependencies
-        ↓
-    dependency completeness
-        ↓
-    assumptions / defeaters
-        ↓
-    invalidation / selective reuse
-        ↓
-    re-assurance
-
-Workflow axis
-    semantic diff
-        ↓
-    repository identity / CODEOWNERS adapter
-        ↓
-    CI merge gate
-        ↓
-    future stronger identity / approval mechanisms
+semantic escape / safe-release yield
+obligation discovery / traceability
+bootstrapping / review / training cost
+lifecycle revalidation cost
 ```
 
 `a0/v1` and `c0/v1` remain frozen measured/research baselines. A0F is a separately versioned held-out track and must not be used to rewrite A0 v1 after observing A0 results. Future benchmark-semantic revisions likewise require explicit versioning and an Issue rather than silent mutation.
 
-Native backend experiments remain useful for testing realization boundaries, but the project does not need to become a full production compiler to validate the trust architecture. Existing-compiler integration is an explicit first step toward demonstrating that the same evidence model can span multiple realization strategies.
+Native backend experiments remain useful when they test a specific realization or trust boundary, but the project does not need to become a full production compiler. Backend expansion is therefore driven by research need rather than by target-count growth.
 
 ## License
 
