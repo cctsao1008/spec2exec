@@ -95,7 +95,7 @@ A useful long-term framing is:
 
 > **Spec2Exec is an AI-facing software engineering substrate for turning authorized human intent into trustworthy executable behavior.**
 
-This is an architectural hypothesis, not a claim that human-readable source languages are obsolete or that the current prototype demonstrates a fully AI-native software stack.
+This is an architectural hypothesis, not a claim that human-readable source languages are obsolete or that a bounded implementation demonstrates a fully AI-native software stack.
 
 ## The three questions
 
@@ -180,54 +180,19 @@ Evidence is property-specific and should identify its subject, scope, method, as
 
 The accepted evidence vocabulary and preservation rules are defined in RFC 0006.
 
-## What has been demonstrated
+## Evidence boundary
 
-Spec2Exec is a research prototype, not a production assurance platform.
+Repository evidence is bounded research evidence. It can support claims about specific authority-gating, semantic representation, deterministic checking, executable realization, evidence composition, lifecycle invalidation, and semantic-obligation measurement experiments.
 
-Bounded experiments in this repository demonstrate that the architecture can be instantiated for:
+It does not by itself establish production qualification, certification, universal obligation completeness, universal dependency completeness, general formal proof, or comparative superiority over simpler workflows.
 
-- semantic-authority gating before executable realization;
-- machine-independent semantic representation and deterministic checks;
-- native RV32I realization with explicit evidence boundaries;
-- composition with a conventional host compiler without pretending the compiler is verified;
-- property-specific evidence that distinguishes `CHECKED`, `TESTED`, `TRUSTED`, and related states;
-- lifecycle invalidation in which unchanged artifact bytes no longer imply current trust;
-- measurement infrastructure for unsafe semantic resolution, field-level classification, and open-ended obligation discovery.
+Exact revisions, CI runs, metrics, artifact hashes, benchmark results, and validation details belong in the corresponding research directories, validation documents, and Issues.
 
-Exact revisions, CI runs, metrics, artifact hashes, benchmark results, and validation details live in the corresponding research directories, validation documents, and Issues.
+## Comparative assurance
 
-## Research distinctions
+Spec2Exec must justify whether its additional structure provides enough incremental assurance to warrant its authoring, review, training, and lifecycle cost.
 
-Three benchmark tracks capture different failure modes:
-
-```text
-A0
-Did the system invent the answer at case level?
-
-A0F
-Given explicit semantic fields, did it classify them safely?
-
-C0
-Did it discover the authority-relevant question in the first place?
-```
-
-These are distinct from semantic authority itself:
-
-```text
-A0 / A0F / C0
-        ≠
-RFC 0011 authority
-        ≠
-Executable Semantic Closure
-        ≠
-artifact evidence
-```
-
-## Comparative assurance as an open research question
-
-A central unresolved question is not merely whether the architecture can work, but whether its additional structure is worth its cost:
-
-> **Does Spec2Exec provide enough incremental assurance over simpler structured AI-assisted engineering workflows to justify its additional authoring, review, training, and lifecycle cost?**
+> **Does Spec2Exec provide enough incremental assurance over simpler structured AI-assisted engineering workflows to justify that additional cost?**
 
 A simpler workflow achieving comparable assurance at materially lower cost would weaken the necessity of the fuller Spec2Exec architecture.
 
@@ -257,7 +222,7 @@ Spec2Exec follows three rules:
 3. **Design experiments that can weaken the thesis.**
 
 A plausible architecture is not evidence.  
-A passing prototype is not general validation.  
+A passing implementation is not general validation.  
 A useful mechanism is not necessarily worth its cost.
 
 ## Architecture references
@@ -266,6 +231,5 @@ A useful mechanism is not necessarily worth its cost.
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
 - [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md)
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
-- [RFC 0009 — Native Target Code Generation](rfcs/0009-native-target-code-generation.md)
 
 For roadmap, issue history, exact baselines, and research state, see [Issue #49](https://github.com/cctsao1008/spec2exec/issues/49).
