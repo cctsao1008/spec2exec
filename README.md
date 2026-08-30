@@ -89,7 +89,14 @@ Spec2Exec does not assume that its mechanisms are universally necessary, suffici
 
 Spec2Exec is designed primarily as a **machine-operable engineering substrate for AI-assisted or AI-driven implementation workflows**.
 
-Humans and governance mechanisms define intent, policy, authority roots and delegation, risk acceptance, and assurance expectations. AI agents may perform obligation discovery, semantic-resolution proposals, synthesis, transformation, optimization, and evidence production through the Spec2Exec trust architecture.
+Humans and governance mechanisms define intent, policy, authority roots and delegation, risk acceptance, and assurance expectations. AI agents and tools may discover obligations, propose semantic resolutions, synthesize, transform, optimize, verify, and produce evidence through the Spec2Exec trust architecture.
+
+Machine-to-machine handoff does not create authority. Agreement does not turn an unsupported semantic choice into an authorized one, and unresolved or conflicting semantics must not disappear merely because another agent or tool continues the workflow.
+
+```text
+AGREEMENT ≠ AUTHORITY
+LOCAL PASS ≠ PRESERVED SEMANTICS
+```
 
 A useful long-term framing is:
 
