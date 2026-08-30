@@ -28,7 +28,7 @@ But if nobody or no authorized policy selected `5`, the implementation has silen
 
 > **AI is making software implementation cheap. It is not making software trust cheap.**
 
-## Why this matters
+## 💡 Why this matters
 
 Traditional software development already has ambiguity, unstated assumptions, requirement gaps, and authority conflicts. AI does not create these problems.
 
@@ -48,7 +48,7 @@ executable behavior
 
 As implementation becomes increasingly synthesizable, the engineering bottleneck can move upstream: from producing behavior toward deciding, exposing, authorizing, verifying, and maintaining trust in the semantics that behavior realizes.
 
-## Four trust shifts
+## 🔐 Four trust shifts
 
 ```text
 1. CORRECT IMPLEMENTATION ≠ AUTHORIZED SEMANTICS
@@ -75,7 +75,7 @@ As implementation becomes increasingly synthesizable, the engineering bottleneck
 
 These are research propositions and architecture boundaries, not claims that Spec2Exec has solved them generally.
 
-## Research hypothesis
+## 🧭 Research hypothesis
 
 > **Spec2Exec investigates whether semantic-obligation discovery, explicit semantic authority, deterministic verification, artifact binding, and lifecycle-aware evidence can form a defensible trust architecture for AI-generated executable systems.**
 
@@ -124,7 +124,7 @@ semantic authority
 
 A formally verified implementation can still faithfully implement a specification containing the wrong, incomplete, stale, or never-authorized semantics.
 
-## Architecture
+## 🧩 Architecture
 
 ```text
 Human / Domain / Governance Sources
@@ -165,7 +165,7 @@ The project-level thesis is:
 
 Capability, plausibility, convention, and low impact do not create semantic authority.
 
-## Evidence discipline
+## 🔬 Evidence discipline
 
 Spec2Exec deliberately avoids collapsing heterogeneous claims into one generic `PASS`.
 
@@ -188,7 +188,7 @@ It does not by itself establish production qualification, certification, univers
 
 Exact revisions, CI runs, metrics, artifact hashes, benchmark results, and validation details belong in the corresponding research directories, validation documents, and Issues.
 
-## Comparative assurance
+## ⚖️ Comparative assurance
 
 Spec2Exec must justify whether its additional structure provides enough incremental assurance to warrant its authoring, review, training, and lifecycle cost.
 
@@ -213,7 +213,7 @@ Spec2Exec is not:
 - a claim that emulator execution is physical-hardware validation;
 - a claim that every semantic obligation or lifecycle dependency can be discovered completely.
 
-## Research discipline
+## 🧪 Research discipline
 
 Spec2Exec follows three rules:
 
