@@ -85,7 +85,7 @@ A stronger version is deliberately open to falsification:
 
 Spec2Exec does not assume that its mechanisms are universally necessary, sufficient, or superior to conventional requirements engineering, review, testing, formal methods, assurance cases, provenance systems, or lighter-weight structured workflows.
 
-## AI-facing engineering substrate
+## 🤖 AI-facing engineering substrate
 
 Spec2Exec is designed primarily as a **machine-operable engineering substrate for AI-assisted or AI-driven implementation workflows**.
 
@@ -104,7 +104,7 @@ A useful long-term framing is:
 
 This is an architectural hypothesis, not a claim that human-readable source languages are obsolete or that a bounded implementation demonstrates a fully AI-native software stack.
 
-## The three questions
+## ❓ The three questions
 
 ```text
 1. Semantic Obligation Discovery
@@ -190,7 +190,7 @@ Evidence is property-specific and should identify its subject, scope, method, as
 
 The accepted evidence vocabulary and preservation rules are defined in RFC 0006.
 
-## Evidence boundary
+## 📏 Evidence boundary
 
 Repository evidence is bounded research evidence. It can support claims about specific authority-gating, semantic representation, deterministic checking, executable realization, evidence composition, lifecycle invalidation, and semantic-obligation measurement experiments.
 
@@ -206,7 +206,7 @@ Spec2Exec must justify whether its additional structure provides enough incremen
 
 A simpler workflow achieving comparable assurance at materially lower cost would weaken the necessity of the fuller Spec2Exec architecture.
 
-## What Spec2Exec is not
+## 🚫 What Spec2Exec is not
 
 Spec2Exec is not:
 
@@ -235,7 +235,7 @@ A plausible architecture is not evidence.
 A passing implementation is not general validation.  
 A useful mechanism is not necessarily worth its cost.
 
-## Architecture references
+## 📚 Architecture references
 
 - [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md)
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
