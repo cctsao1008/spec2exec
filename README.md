@@ -89,7 +89,7 @@ Spec2Exec does not assume that its mechanisms are universally necessary, suffici
 
 Spec2Exec is designed primarily as a **machine-operable engineering substrate for AI-assisted or AI-driven implementation workflows**.
 
-Humans remain responsible for intent, policy, semantic authority, risk acceptance, and assurance review. AI agents may perform obligation discovery, semantic-resolution proposals, synthesis, transformation, optimization, and evidence production through the Spec2Exec trust architecture.
+Humans and governance mechanisms define intent, policy, authority roots and delegation, risk acceptance, and assurance expectations. AI agents may perform obligation discovery, semantic-resolution proposals, synthesis, transformation, optimization, and evidence production through the Spec2Exec trust architecture.
 
 A useful long-term framing is:
 
@@ -109,7 +109,8 @@ This is an architectural hypothesis, not a claim that human-readable source lang
 
 3. Executable Trust Chain
    What evidence shows that the accepted semantics
-   reached this exact executable artifact?
+   reached this exact executable artifact,
+   and whether that evidence remains applicable?
 ```
 
 This distinction matters because:
@@ -139,15 +140,17 @@ Semantic Obligation Discovery
         ↓
 Semantic Resolution / Conflict Exposure
         ↓
-Executable Semantic Closure
+Conservative Executable Semantic Closure
         ↓
-Semantic Authority
+Authority Discovery / Evaluation
+        ↓
+Deterministic Semantic Authority Gate
         ↓
 Accepted Specification
         ↓
-Semantic Synthesis / SpecIR
+Semantic Synthesis
         ↓
-Deterministic Verification / Evidence
+Candidate / Verified SpecIR
         ↓
 Target Realization
         ↓
@@ -173,7 +176,7 @@ Spec2Exec deliberately avoids collapsing heterogeneous claims into one generic `
 TESTED ≠ PROVEN
 TESTED_EXHAUSTIVE ≠ PROVEN
 TRUSTED ≠ VERIFIED
-CHECKED ≠ AUTHORIZED
+CHECKED evidence ≠ semantic authority
 ```
 
 Evidence is property-specific and should identify its subject, scope, method, assumptions, trusted computing base, provenance, and artifact binding.
