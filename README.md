@@ -28,7 +28,7 @@ But if nobody or no authorized policy selected `5`, the implementation has silen
 
 > **AI is making software implementation cheap. It is not making software trust cheap.**
 
-## Why this matters
+## 💡 Why this matters
 
 Traditional software development already has ambiguity, unstated assumptions, requirement gaps, and authority conflicts. AI increases the speed and scale at which interpretation becomes implementation:
 
@@ -46,7 +46,7 @@ executable behavior
 
 As implementation becomes increasingly synthesizable, the engineering bottleneck can move upstream: from producing behavior toward deciding, exposing, authorizing, verifying, and maintaining trust in the semantics that behavior realizes.
 
-## Four trust shifts
+## 🔐 Four trust shifts
 
 ```text
 1. CORRECT IMPLEMENTATION ≠ AUTHORIZED SEMANTICS
@@ -71,13 +71,13 @@ As implementation becomes increasingly synthesizable, the engineering bottleneck
    governing context become stale or invalid.
 ```
 
-## Research hypothesis
+## 🧭 Research hypothesis
 
 > **Spec2Exec investigates whether semantic-obligation discovery, explicit semantic authority, deterministic verification, artifact binding, and lifecycle-aware evidence can form a defensible trust architecture for AI-generated executable systems.**
 
 As implementation becomes increasingly synthesizable, semantic authority may become a first-class engineering concern.
 
-## AI-facing engineering substrate
+## 🤖 AI-facing engineering substrate
 
 Spec2Exec is designed primarily as a **machine-operable engineering substrate for AI-assisted or AI-driven implementation workflows**.
 
@@ -92,7 +92,7 @@ LOCAL PASS ≠ PRESERVED SEMANTICS
 
 > **Spec2Exec is an AI-facing software engineering substrate for turning authorized human intent into trustworthy executable behavior.**
 
-## The three questions
+## ❓ The three questions
 
 ```text
 1. Semantic Obligation Discovery
@@ -118,7 +118,7 @@ semantic authority
 
 A formally verified implementation can still faithfully implement a specification containing the wrong, incomplete, stale, or never-authorized semantics.
 
-## Architecture
+## 🧩 Architecture
 
 ```text
 Human / Domain / Governance Sources
@@ -161,7 +161,7 @@ The project-level thesis is:
 
 Capability, plausibility, convention, and low impact do not create semantic authority.
 
-## Evidence discipline
+## 🔬 Evidence discipline
 
 Spec2Exec keeps evidence property-specific rather than collapsing heterogeneous claims into one generic `PASS`.
 
@@ -176,7 +176,7 @@ Evidence identifies its subject, scope, method, assumptions, trusted computing b
 
 The accepted evidence vocabulary and preservation rules are defined in RFC 0006.
 
-## Architecture references
+## 📚 Architecture references
 
 - [RFC 0010 — Trust-Chain Architecture](rfcs/0010-trust-chain-architecture.md)
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
