@@ -182,3 +182,9 @@ The accepted evidence vocabulary and preservation rules are defined in RFC 0006.
 - [RFC 0011 — Semantic Authority, Delegation, and Default Policy](rfcs/0011-semantic-authority-delegation-and-default-policy.md)
 - [RFC 0012 — Lifecycle-Aware Trust Graph](rfcs/0012-lifecycle-aware-trust-graph.md)
 - [RFC 0006 — Semantic Preservation and Evidence Model](rfcs/0006-semantic-preservation-and-evidence-model.md)
+
+## Documentation principle
+
+> **README explains the system. Issues explain the journey. Code proves the current state.**
+
+README, RFCs, and durable documentation explain the trust architecture, semantic distinctions, authority model, evidence vocabulary, and stable boundaries. GitHub Issues preserve research rounds, experiments, implementation work, unresolved questions, temporary limitations, alternatives, and closure conclusions. Code, schemas, configuration, tests, and artifact-bound evidence remain the authoritative proof of executable behavior.
